@@ -11,6 +11,19 @@ interface Message {
   timestamp: Date;
 }
 
+interface SuggestedAnswer {
+  id: string;
+  text: string;
+  intent: string;
+}
+
+interface DialogueRound {
+  round: number;
+  userMessage: string;
+  aiQuestion: string;
+  timestamp: Date;
+}
+
 export default function ConversationChatPage() {
   const params = useParams();
   const router = useRouter();
@@ -22,6 +35,15 @@ export default function ConversationChatPage() {
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoStartExecutedRef = useRef(false); // 使用ref防止严格模式下重复执行
+
+  // 新增状态：助手面板
+  const [suggestedAnswers, setSuggestedAnswers] = useState<SuggestedAnswer[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [dialogueHistory, setDialogueHistory] = useState<DialogueRound[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -221,6 +243,86 @@ export default function ConversationChatPage() {
     }
   };
 
+  // 生成建议答案
+  const generateSuggestions = async (aiQuestion: string) => {
+    if (!aiQuestion) return;
+
+    setLoadingSuggestions(true);
+    try {
+      const response = await fetch(`/api/conversations/${params.id}/suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: aiQuestion,
+          conversationHistory: dialogueHistory
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedAnswers(data.suggestions || []);
+      }
+    } catch (error) {
+      console.error('生成建议答案失败:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  // 使用建议答案
+  const useSuggestedAnswer = (answer: string) => {
+    setInput(answer);
+  };
+
+  // 生成总结
+  const generateSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const response = await fetch(`/api/conversations/${params.id}/summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rounds: dialogueHistory })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSummary(data.summary);
+        setShowSummary(true);
+      }
+    } catch (error) {
+      console.error('生成总结失败:', error);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  // 监听AI回复完成，生成建议并更新轮次
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant' && !isLoading) {
+      const userMessages = messages.filter(m => m.role === 'user');
+      const newRound = Math.ceil(userMessages.length / 1);
+
+      if (newRound !== currentRound) {
+        setCurrentRound(newRound);
+
+        // 更新对话历史
+        const lastUserMsg = userMessages[userMessages.length - 1];
+        if (lastUserMsg) {
+          setDialogueHistory(prev => [...prev, {
+            round: newRound,
+            userMessage: lastUserMsg.content,
+            aiQuestion: lastMessage.content,
+            timestamp: new Date()
+          }]);
+        }
+
+        // 生成建议答案
+        generateSuggestions(lastMessage.content);
+      }
+    }
+  }, [messages, isLoading]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex flex-col">
       {/* Header */}
@@ -261,9 +363,12 @@ export default function ConversationChatPage() {
         </div>
       </header>
 
-      {/* Messages Area */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
+      {/* Messages Area - Two Column Layout */}
+      <main className="flex-1 overflow-hidden flex">
+        {/* Left: Chat Area - Independent Scrolling */}
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
+          <div className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-6 max-w-3xl">
           {messages.length === 0 && !isLoading ? (
             <div className="text-center py-12 space-y-6">
               <div className="text-6xl mb-4">💭</div>
@@ -395,6 +500,137 @@ export default function ConversationChatPage() {
               <div ref={messagesEndRef} />
             </div>
           )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Assistant Panel - Independent Scrolling */}
+        <div className="w-96 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-lg">💡 智能助手</h3>
+              {currentRound > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    第 {currentRound}/5 轮
+                  </span>
+                  <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500"
+                      style={{ width: `${(currentRound / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              参考答案和提问意图分析
+            </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* 提问意图分析 */}
+            {messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                  <span>🎯</span>
+                  <span>提问意图</span>
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  AI正在通过这个问题引导你思考问题的核心本质，帮助你发现隐藏的假设和潜在的矛盾。
+                </p>
+              </div>
+            )}
+
+            {/* 建议答案 */}
+            {loadingSuggestions ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex gap-2 items-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                  <span className="text-sm text-gray-500 ml-2">生成参考答案...</span>
+                </div>
+              </div>
+            ) : suggestedAnswers.length > 0 ? (
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <span>📝</span>
+                  <span>参考答案</span>
+                </h4>
+                {suggestedAnswers.map((suggestion) => (
+                  <div
+                    key={suggestion.id}
+                    className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                    onClick={() => useSuggestedAnswer(suggestion.text)}
+                  >
+                    <p className="text-sm mb-2">{suggestion.text}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                      💡 {suggestion.intent}
+                    </p>
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                  点击任意答案直接使用
+                </p>
+              </div>
+            ) : null}
+
+            {/* 5轮对话完成提示 */}
+            {currentRound >= 5 && !showSummary && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🎓</span>
+                  <h4 className="font-semibold">对话已完成5轮</h4>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                  您可以选择继续深入探讨，或结束对话生成思维总结
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={generateSummary}
+                    disabled={loadingSummary}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium text-sm"
+                  >
+                    {loadingSummary ? '生成中...' : '✅ 结束并总结'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 继续对话，不做任何操作，用户可以继续输入
+                    }}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
+                  >
+                    🔄 继续追问
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 显示总结 */}
+            {showSummary && summary && (
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span>🎓</span>
+                  <span>思维总结</span>
+                </h4>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <p className="text-sm whitespace-pre-wrap">{summary}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setCurrentRound(0);
+                    setDialogueHistory([]);
+                    setShowSummary(false);
+                    setSummary('');
+                    setSuggestedAnswers([]);
+                  }}
+                  className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
+                >
+                  开始新一轮对话
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
