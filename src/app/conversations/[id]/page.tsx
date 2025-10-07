@@ -505,9 +505,9 @@ export default function ConversationChatPage() {
       <main className="flex-1 overflow-hidden flex">
         {/* Left: Chat Area - Independent Scrolling */}
         <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
-          {/* Toggle Assistant Panel Button */}
+          {/* Toggle Assistant Panel Button - PC Only */}
           {messages.length > 0 && (
-            <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+            <div className="hidden lg:flex p-3 border-b border-gray-200 dark:border-gray-700 justify-between items-center bg-gray-50 dark:bg-gray-900/50">
               {conversationEnded && (
                 <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -692,9 +692,9 @@ export default function ConversationChatPage() {
           </div>
         </div>
 
-        {/* Right: Assistant Panel - Independent Scrolling */}
+        {/* Right: Assistant Panel - Independent Scrolling - PC Only */}
         {showAssistant && (
-        <div className="w-96 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
+        <div className="hidden lg:flex lg:w-96 bg-white dark:bg-gray-800 flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-lg">💡 智能助手</h3>
@@ -846,9 +846,193 @@ export default function ConversationChatPage() {
         )}
       </main>
 
+      {/* Mobile: Assistant Panel Drawer - Bottom Sheet */}
+      {showAssistant && messages.length > 0 && (
+        <div className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAssistant(false)}>
+          <div
+            className="w-full max-h-[70vh] bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            </div>
+
+            {/* Header */}
+            <div className="px-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">💡 智能助手</h3>
+                <button
+                  onClick={() => setShowAssistant(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {currentRound > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    第 {currentRound}/5 轮
+                  </span>
+                  <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500"
+                      style={{ width: `${(currentRound / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* 提问意图分析 */}
+              {messages[messages.length - 1]?.role === 'assistant' && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    <span>🎯</span>
+                    <span>提问意图</span>
+                  </h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    AI正在通过这个问题引导你思考问题的核心本质，帮助你发现隐藏的假设和潜在的矛盾。
+                  </p>
+                </div>
+              )}
+
+              {/* 建议答案 */}
+              {loadingSuggestions ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex gap-2 items-center">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <span className="text-sm text-gray-500 ml-2">生成参考答案...</span>
+                  </div>
+                </div>
+              ) : suggestedAnswers.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <span>📝</span>
+                    <span>参考答案（由浅入深）</span>
+                  </h4>
+                  {suggestedAnswers.map((suggestion, index) => {
+                    const difficultyConfig = {
+                      simple: { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', label: '入门', icon: '🌱' },
+                      moderate: { color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', label: '进阶', icon: '🌿' },
+                      deep: { color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', label: '深度', icon: '🌳' }
+                    };
+                    const difficulty = suggestion.difficulty || (index === 0 ? 'simple' : index === 1 ? 'moderate' : 'deep');
+                    const config = difficultyConfig[difficulty];
+
+                    return (
+                      <div
+                        key={suggestion.id}
+                        className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 active:bg-gray-100 dark:active:bg-gray-600 transition border border-transparent active:border-blue-300 dark:active:border-blue-600"
+                        onClick={() => {
+                          useSuggestedAnswer(suggestion.text);
+                          setShowAssistant(false);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="text-sm flex-1">{suggestion.text}</p>
+                          <span className={`${config.color} px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap flex items-center gap-1`}>
+                            <span>{config.icon}</span>
+                            <span>{config.label}</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          💡 {suggestion.intent}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                    点击任意答案直接使用 • 建议从简单答案开始思考
+                  </p>
+                </div>
+              ) : null}
+
+              {/* 5轮对话完成提示 */}
+              {currentRound >= 5 && !showSummary && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🎓</span>
+                    <h4 className="font-semibold">对话已完成5轮</h4>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                    您可以选择继续深入探讨，或结束对话生成思维总结
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        generateSummary();
+                        setShowAssistant(false);
+                      }}
+                      disabled={loadingSummary}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium text-sm"
+                    >
+                      {loadingSummary ? '生成中...' : '✅ 结束并总结'}
+                    </button>
+                    <button
+                      onClick={() => setShowAssistant(false)}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
+                    >
+                      🔄 继续追问
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 显示总结 */}
+              {showSummary && summary && (
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                  <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <span>🎓</span>
+                    <span>思维总结</span>
+                  </h4>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <p className="text-sm whitespace-pre-wrap">{summary}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentRound(0);
+                      setDialogueHistory([]);
+                      setShowSummary(false);
+                      setSummary('');
+                      setSuggestedAnswers([]);
+                      setShowAssistant(false);
+                    }}
+                    className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
+                  >
+                    开始新一轮对话
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="border-t bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
+          {/* Mobile: Assistant Toggle Button - Only show when messages exist */}
+          {messages.length > 0 && (
+            <div className="lg:hidden mb-3 flex justify-center">
+              <button
+                onClick={() => setShowAssistant(!showAssistant)}
+                className="flex items-center gap-2 px-4 py-2 text-sm rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition font-medium shadow-lg"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>💡 查看助手提示</span>
+              </button>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <textarea
               value={input}
@@ -862,7 +1046,7 @@ export default function ConversationChatPage() {
             <button
               onClick={handleSendMessage}
               disabled={!input.trim() || isLoading || conversationEnded}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm sm:text-base"
             >
               {isLoading ? '思考中...' : conversationEnded ? '已结束' : '发送'}
             </button>
