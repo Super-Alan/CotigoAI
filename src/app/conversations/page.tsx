@@ -162,6 +162,12 @@ export default function ConversationsPageV2() {
       }
 
       const data = await response.json();
+
+      // 显示去重统计信息
+      if (data.stats && data.stats.existing > 0) {
+        console.log(`[话题生成] 总计: ${data.stats.total}, 新增: ${data.stats.new}, 已存在: ${data.stats.existing}`);
+      }
+
       // 生成后切换到列表Tab
       setTopicList(data.topics);
       setActiveTab('list');
