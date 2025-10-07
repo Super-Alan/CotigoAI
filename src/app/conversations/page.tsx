@@ -257,56 +257,56 @@ export default function ConversationsPageV2() {
 
       <main className="container mx-auto px-4 py-8 lg:py-12">
         <div className="max-w-7xl mx-auto space-y-8 lg:space-y-10">
-          {/* Title - Modern tech style */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center gap-3 px-6 py-2 glass rounded-full mb-4">
-              <span className="relative flex h-3 w-3">
+          {/* Title - Modern tech style with mobile optimization */}
+          <div className="text-center space-y-3 lg:space-y-4">
+            <div className="inline-flex items-center gap-2 lg:gap-3 px-4 lg:px-6 py-1.5 lg:py-2 glass rounded-full mb-2 lg:mb-4">
+              <span className="relative flex h-2.5 w-2.5 lg:h-3 lg:w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 lg:h-3 lg:w-3 bg-primary"></span>
               </span>
-              <span className="text-sm font-mono font-medium">QS Top 10 面试标准</span>
+              <span className="text-xs lg:text-sm font-mono font-medium">QS Top 10 面试标准</span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-display font-bold mb-4 text-gradient tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-display font-bold mb-2 lg:mb-4 text-gradient tracking-tight px-4">
               苏格拉底对话
             </h1>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+            <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-muted-foreground max-w-2xl mx-auto font-light px-4">
               一场随时可以开始的对话，开启名校顶级思维训练
             </p>
           </div>
 
-          {/* Quick Start Input - Minimalist & Bold */}
+          {/* Quick Start Input - Mobile optimized */}
           <div className="group relative">
             {/* 极简标题 */}
-            <h2 className="text-sm font-medium text-muted-foreground mb-3 tracking-wide">快速开始自定义对话</h2>
+            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3 tracking-wide">快速开始自定义对话</h2>
 
-            {/* 主输入区 - 大气简约 */}
+            {/* 主输入区 - 移动端优化 */}
             <div className="relative">
               <textarea
                 id="topic-input"
-                rows={4}
+                rows={3}
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="输入你的观点，开启一场思维挑战..."
-                className="w-full px-6 py-5 text-lg border-2 border-border/60 dark:border-border/40 rounded-2xl focus:ring-0 focus:border-primary bg-card dark:bg-card text-foreground placeholder:text-muted-foreground/60 transition-all duration-300 resize-none shadow-sm hover:border-border/80 focus:shadow-lg"
-                style={{ minHeight: '120px' }}
+                className="w-full px-4 sm:px-6 py-3 sm:py-5 text-base sm:text-lg border-2 border-border/60 dark:border-border/40 rounded-xl sm:rounded-2xl focus:ring-0 focus:border-primary bg-card dark:bg-card text-foreground placeholder:text-muted-foreground/60 transition-all duration-300 resize-none shadow-sm hover:border-border/80 focus:shadow-lg"
+                style={{ minHeight: '100px' }}
               />
 
-              {/* 悬浮操作按钮 */}
-              <div className="absolute bottom-4 right-4">
+              {/* 悬浮操作按钮 - 移动端适配 */}
+              <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4">
                 <button
                   onClick={() => handleStartConversation()}
                   disabled={!topic.trim() || isCreating}
-                  className="group/btn flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                  className="group/btn flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary/90 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isCreating ? (
                     <>
-                      <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
-                      <span className="text-sm">创建中</span>
+                      <span className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-white/30 border-t-white rounded-full"></span>
+                      <span className="text-xs sm:text-sm">创建中</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-sm font-semibold">开始对话</span>
-                      <svg className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <span className="text-xs sm:text-sm font-semibold">开始对话</span>
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </>
@@ -316,13 +316,13 @@ export default function ConversationsPageV2() {
             </div>
           </div>
 
-          {/* Tab Navigation - Modern style */}
-          <div className="glass rounded-3xl shadow-colored overflow-hidden flex flex-col border-2 border-white/20 dark:border-white/10" style={{ height: 'calc(100vh - 450px)', minHeight: '600px' }}>
-            <div className="border-b border-border/50 flex-shrink-0 p-2 bg-muted/30">
-              <div className="flex gap-2">
+          {/* Tab Navigation - Mobile optimized */}
+          <div className="glass rounded-2xl sm:rounded-3xl shadow-colored overflow-hidden flex flex-col border-2 border-white/20 dark:border-white/10" style={{ height: 'auto', minHeight: '500px', maxHeight: 'calc(100vh - 350px)' }}>
+            <div className="border-b border-border/50 flex-shrink-0 p-1.5 sm:p-2 bg-muted/30">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setActiveTab('list')}
-                  className={`relative flex-1 px-6 py-3 text-center font-display font-semibold transition-smooth rounded-xl overflow-hidden ${
+                  className={`relative flex-1 px-3 sm:px-6 py-2 sm:py-3 text-center font-display font-semibold transition-smooth rounded-lg sm:rounded-xl overflow-hidden text-sm sm:text-base ${
                     activeTab === 'list'
                       ? 'text-white'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -331,16 +331,17 @@ export default function ConversationsPageV2() {
                   {activeTab === 'list' && (
                     <span className="absolute inset-0 bg-gradient-to-r from-primary to-secondary"></span>
                   )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    话题广场
+                    <span className="hidden xs:inline">话题广场</span>
+                    <span className="xs:hidden">广场</span>
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('generate')}
-                  className={`relative flex-1 px-6 py-3 text-center font-display font-semibold transition-smooth rounded-xl overflow-hidden ${
+                  className={`relative flex-1 px-3 sm:px-6 py-2 sm:py-3 text-center font-display font-semibold transition-smooth rounded-lg sm:rounded-xl overflow-hidden text-sm sm:text-base ${
                     activeTab === 'generate'
                       ? 'text-white'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -349,31 +350,43 @@ export default function ConversationsPageV2() {
                   {activeTab === 'generate' && (
                     <span className="absolute inset-0 bg-gradient-to-r from-secondary to-accent"></span>
                   )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
-                    定制生成
+                    <span className="hidden xs:inline">定制生成</span>
+                    <span className="xs:hidden">生成</span>
                   </span>
                 </button>
               </div>
             </div>
 
-            <div id="topic-list-container" className="flex-1 overflow-y-auto p-6">
+            <div id="topic-list-container" className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
               {/* Tab 1: Topic List */}
               {activeTab === 'list' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-base sm:text-lg font-bold">
                       {topicList.length > 0 ? '最近生成的话题' : '暂无话题'}
                     </h3>
                     {topicList.length > 0 && (
                       <button
                         onClick={shuffleTopics}
                         disabled={isLoadingList}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 text-xs sm:text-sm flex items-center gap-1.5"
                       >
-                        {isLoadingList ? '⏳ 加载中...' : '🎲 随机换一换'}
+                        {isLoadingList ? (
+                          <>
+                            <span>⏳</span>
+                            <span className="hidden sm:inline">加载中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🎲</span>
+                            <span className="hidden sm:inline">随机换一换</span>
+                            <span className="sm:hidden">换一换</span>
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -397,50 +410,52 @@ export default function ConversationsPageV2() {
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 gap-6">
+                      <div className="grid grid-cols-1 gap-4 sm:gap-6">
                         {topicList.map((genTopic) => (
                         <div
                           key={genTopic.id}
-                          className="group relative glass rounded-2xl p-6 border-2 border-border hover:border-primary/50 transition-smooth hover:shadow-colored"
+                          className="group relative glass rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 border-border hover:border-primary/50 transition-smooth hover:shadow-colored"
                         >
                           {/* Glow effect on hover */}
-                          <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-smooth -z-10"></div>
+                          <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-smooth -z-10"></div>
 
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex gap-2 flex-wrap">
-                              <span className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-lg backdrop-blur-sm ${getDimensionColorClass(genTopic.dimension as CriticalThinkingDimension)}`}>
-                                {DIMENSION_ICONS[genTopic.dimension as CriticalThinkingDimension]} {DIMENSION_LABELS[genTopic.dimension as CriticalThinkingDimension]}
+                          {/* Header - Mobile optimized */}
+                          <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+                              <span className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-mono font-semibold rounded-md sm:rounded-lg backdrop-blur-sm ${getDimensionColorClass(genTopic.dimension as CriticalThinkingDimension)}`}>
+                                <span className="hidden sm:inline">{DIMENSION_ICONS[genTopic.dimension as CriticalThinkingDimension]} </span>
+                                <span className="sm:hidden">{DIMENSION_ICONS[genTopic.dimension as CriticalThinkingDimension]}</span>
+                                <span className="hidden lg:inline">{DIMENSION_LABELS[genTopic.dimension as CriticalThinkingDimension]}</span>
                               </span>
-                              <span className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-lg backdrop-blur-sm ${getDifficultyColor(genTopic.difficulty as DifficultyLevel)}`}>
+                              <span className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-mono font-semibold rounded-md sm:rounded-lg backdrop-blur-sm ${getDifficultyColor(genTopic.difficulty as DifficultyLevel)}`}>
                                 {DIFFICULTY_LABELS[genTopic.difficulty as DifficultyLevel]}
                               </span>
                             </div>
-                            <span className="text-xs font-mono text-muted-foreground shrink-0 px-3 py-1.5 bg-muted/50 rounded-lg">{genTopic.referenceUniversity}</span>
+                            <span className="text-[10px] sm:text-xs font-mono text-muted-foreground shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 bg-muted/50 rounded-md sm:rounded-lg">{genTopic.referenceUniversity}</span>
                           </div>
 
                           {/* Topic */}
-                          <h3 className="font-display font-bold text-xl mb-3 text-foreground group-hover:text-gradient transition-smooth leading-snug">
+                          <h3 className="font-display font-bold text-base sm:text-lg lg:text-xl mb-2 sm:mb-3 text-foreground group-hover:text-gradient transition-smooth leading-snug">
                             {genTopic.topic}
                           </h3>
 
                           {/* Context */}
-                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{genTopic.context}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed">{genTopic.context}</p>
 
                           {/* Tags */}
-                          <div className="flex flex-wrap gap-2 mb-4">
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                             {genTopic.tags.map((tag) => (
-                              <span key={tag} className="text-xs font-mono px-3 py-1 bg-muted/70 text-muted-foreground rounded-lg hover:bg-muted transition-smooth">
+                              <span key={tag} className="text-[10px] sm:text-xs font-mono px-2 sm:px-3 py-0.5 sm:py-1 bg-muted/70 text-muted-foreground rounded-md sm:rounded-lg hover:bg-muted transition-smooth">
                                 #{tag}
                               </span>
                             ))}
                           </div>
 
                           {/* Core Challenge */}
-                          <div className="relative p-4 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border-l-4 border-amber-500 rounded-r-xl mb-4 overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
-                            <p className="text-sm font-medium text-amber-900 dark:text-amber-100 relative z-10 leading-relaxed">
-                              <span className="text-lg mr-2">🎯</span>
+                          <div className="relative p-3 sm:p-4 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border-l-2 sm:border-l-4 border-amber-500 rounded-r-lg sm:rounded-r-xl mb-3 sm:mb-4 overflow-hidden">
+                            <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                            <p className="text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-100 relative z-10 leading-relaxed">
+                              <span className="text-base sm:text-lg mr-1.5 sm:mr-2">🎯</span>
                               {genTopic.thinkingFramework.coreChallenge}
                             </p>
                           </div>
@@ -499,33 +514,32 @@ export default function ConversationsPageV2() {
                             </div>
                           </details>
 
-                          {/* Footer: Time + Button */}
-                          <div className="flex items-center justify-between gap-4">
+                          {/* Footer: Time + Button - Mobile optimized */}
+                          <div className="flex items-center justify-between gap-2 sm:gap-4">
                             {/* Left: Created Time */}
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <span className="font-mono text-xs">
+                              <span className="font-mono text-[10px] sm:text-xs">
                                 {genTopic.createdAt
                                   ? new Date(genTopic.createdAt).toLocaleDateString('zh-CN', {
-                                      year: 'numeric',
                                       month: '2-digit',
                                       day: '2-digit',
                                       hour: '2-digit',
                                       minute: '2-digit',
                                     })
-                                  : '未知时间'}
+                                  : '未知'}
                               </span>
                             </div>
 
                             {/* Right: Start Button (Compact) */}
                             <button
                               onClick={() => handleCopyTopicToInput(genTopic.topic)}
-                              className="group/btn flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white font-medium px-5 py-2.5 rounded-lg hover:shadow-lg transition-smooth text-sm shrink-0"
+                              className="group/btn flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-primary to-secondary text-white font-medium px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg hover:shadow-lg transition-smooth text-xs sm:text-sm shrink-0"
                             >
                               <span>开始训练</span>
-                              <svg className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
                             </button>
@@ -559,39 +573,39 @@ export default function ConversationsPageV2() {
                 </div>
               )}
 
-              {/* Tab 2: Generate */}
+              {/* Tab 2: Generate - Mobile optimized */}
               {activeTab === 'generate' && (
-                <div className="space-y-6">
-                  {/* Pro Tip */}
-                  <div className="relative p-6 bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-blue-950/30 rounded-2xl border-2 border-purple-200/50 dark:border-purple-800/50 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl"></div>
-                    <div className="relative z-10 flex items-start gap-4">
-                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-2xl shadow-lg">
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Pro Tip - Mobile optimized */}
+                  <div className="relative p-4 sm:p-6 bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-blue-950/30 rounded-xl sm:rounded-2xl border-2 border-purple-200/50 dark:border-purple-800/50 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-purple-500/10 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-pink-500/10 rounded-full blur-3xl"></div>
+                    <div className="relative z-10 flex items-start gap-3 sm:gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-secondary rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-lg">
                         ✨
                       </div>
                       <div>
-                        <p className="font-display font-bold text-lg text-purple-900 dark:text-purple-100 mb-2">
+                        <p className="font-display font-bold text-base sm:text-lg text-purple-900 dark:text-purple-100 mb-1 sm:mb-2">
                           专业提示词系统已启用
                         </p>
-                        <p className="text-sm text-purple-700 dark:text-purple-200 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-200 leading-relaxed">
                           基于 QS Top 10 高校面试题深度优化，每个维度都有专业的出题框架和质量保障机制。
-                          选择特定维度可获得更精准、更专业的话题生成。
+                          <span className="hidden sm:inline">选择特定维度可获得更精准、更专业的话题生成。</span>
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Dimension Selector */}
+                  {/* Dimension Selector - Mobile optimized */}
                   <div>
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="h-8 w-1 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
-                      <h3 className="text-xl font-display font-bold">选择批判性思维训练维度</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-5">
+                      <div className="h-6 sm:h-8 w-0.5 sm:w-1 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
+                      <h3 className="text-base sm:text-lg lg:text-xl font-display font-bold">选择批判性思维训练维度</h3>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-3 sm:mb-4">
                       <button
                         onClick={() => setSelectedDimension(null)}
-                        className={`group/dim relative p-5 rounded-2xl border-2 transition-smooth overflow-hidden ${
+                        className={`group/dim relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 transition-smooth overflow-hidden ${
                           selectedDimension === null
                             ? 'border-primary bg-gradient-to-br from-primary/10 to-secondary/10'
                             : 'border-border hover:border-primary/50 hover:bg-muted/50'
@@ -601,15 +615,18 @@ export default function ConversationsPageV2() {
                           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5"></div>
                         )}
                         <div className="relative z-10 text-center">
-                          <div className="text-3xl mb-2">🌈</div>
-                          <div className="font-display font-semibold text-sm">混合训练</div>
+                          <div className="text-2xl sm:text-2xl lg:text-3xl mb-1 sm:mb-2">🌈</div>
+                          <div className="font-display font-semibold text-[10px] sm:text-xs lg:text-sm leading-tight">
+                            <span className="hidden sm:inline">混合训练</span>
+                            <span className="sm:hidden">混合</span>
+                          </div>
                         </div>
                       </button>
                       {Object.values(CriticalThinkingDimension).map((dim) => (
                         <button
                           key={dim}
                           onClick={() => setSelectedDimension(dim)}
-                          className={`group/dim relative p-5 rounded-2xl border-2 transition-smooth overflow-hidden ${
+                          className={`group/dim relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 transition-smooth overflow-hidden ${
                             selectedDimension === dim
                               ? 'border-primary bg-gradient-to-br from-primary/10 to-secondary/10'
                               : 'border-border hover:border-primary/50 hover:bg-muted/50'
@@ -619,8 +636,8 @@ export default function ConversationsPageV2() {
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5"></div>
                           )}
                           <div className="relative z-10 text-center">
-                            <div className="text-3xl mb-2">{DIMENSION_ICONS[dim]}</div>
-                            <div className="font-display font-semibold text-xs leading-tight">{DIMENSION_LABELS[dim]}</div>
+                            <div className="text-2xl sm:text-2xl lg:text-3xl mb-1 sm:mb-2">{DIMENSION_ICONS[dim]}</div>
+                            <div className="font-display font-semibold text-[10px] sm:text-xs lg:text-sm leading-tight line-clamp-2">{DIMENSION_LABELS[dim]}</div>
                           </div>
                         </button>
                       ))}
@@ -636,16 +653,16 @@ export default function ConversationsPageV2() {
                     )}
                   </div>
 
-                  {/* Difficulty Selector */}
+                  {/* Difficulty Selector - Mobile optimized */}
                   <div>
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="h-8 w-1 bg-gradient-to-b from-secondary to-accent rounded-full"></div>
-                      <h3 className="text-xl font-display font-bold">选择难度级别</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-5">
+                      <div className="h-6 sm:h-8 w-0.5 sm:w-1 bg-gradient-to-b from-secondary to-accent rounded-full"></div>
+                      <h3 className="text-base sm:text-lg lg:text-xl font-display font-bold">选择难度级别</h3>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                       <button
                         onClick={() => setSelectedDifficulty(null)}
-                        className={`relative p-5 rounded-2xl border-2 transition-smooth overflow-hidden ${
+                        className={`relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 transition-smooth overflow-hidden ${
                           selectedDifficulty === null
                             ? 'border-secondary bg-gradient-to-br from-secondary/10 to-accent/10'
                             : 'border-border hover:border-secondary/50 hover:bg-muted/50'
@@ -655,15 +672,15 @@ export default function ConversationsPageV2() {
                           <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-accent/5"></div>
                         )}
                         <div className="relative z-10">
-                          <div className="font-display font-semibold mb-1">🎲 混合难度</div>
-                          <div className="text-xs font-mono text-muted-foreground">自适应推荐</div>
+                          <div className="font-display font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base">🎲 混合难度</div>
+                          <div className="text-[10px] sm:text-xs font-mono text-muted-foreground">自适应推荐</div>
                         </div>
                       </button>
                       {(['beginner', 'intermediate', 'advanced'] as DifficultyLevel[]).map((diff) => (
                         <button
                           key={diff}
                           onClick={() => setSelectedDifficulty(diff)}
-                          className={`relative p-5 rounded-2xl border-2 transition-smooth overflow-hidden ${
+                          className={`relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 transition-smooth overflow-hidden ${
                             selectedDifficulty === diff
                               ? 'border-secondary bg-gradient-to-br from-secondary/10 to-accent/10'
                               : 'border-border hover:border-secondary/50 hover:bg-muted/50'
@@ -673,8 +690,8 @@ export default function ConversationsPageV2() {
                             <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-accent/5"></div>
                           )}
                           <div className="relative z-10">
-                            <div className="font-display font-semibold mb-1">{DIFFICULTY_LABELS[diff]}</div>
-                            <div className="text-xs font-mono text-muted-foreground">
+                            <div className="font-display font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base">{DIFFICULTY_LABELS[diff]}</div>
+                            <div className="text-[10px] sm:text-xs font-mono text-muted-foreground">
                               {diff === 'beginner' && '本地化·单一领域'}
                               {diff === 'intermediate' && '国家级·跨领域'}
                               {diff === 'advanced' && '全球性·系统性'}
@@ -685,46 +702,50 @@ export default function ConversationsPageV2() {
                     </div>
                   </div>
 
-                  {/* Generate Button */}
-                  <div className="space-y-5">
+                  {/* Generate Button - Mobile optimized */}
+                  <div className="space-y-3 sm:space-y-5">
                     {isGenerating && (
-                      <div className="relative p-5 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-500/50 rounded-2xl overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
-                        <div className="relative z-10 flex items-center gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-                            <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                      <div className="relative p-4 sm:p-5 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-500/50 rounded-xl sm:rounded-2xl overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                        <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 sm:border-3 border-white border-t-transparent"></div>
                           </div>
                           <div>
-                            <p className="font-display font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                            <p className="font-display font-semibold text-sm sm:text-base text-amber-900 dark:text-amber-100 mb-0.5 sm:mb-1">
                               正在生成话题中，请勿离开页面
                             </p>
-                            <p className="text-sm text-amber-700 dark:text-amber-200 leading-relaxed">
-                              这个过程需要5-10秒，完成后会自动切换到「话题广场」
+                            <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-200 leading-relaxed">
+                              <span className="hidden sm:inline">这个过程需要5-10秒，完成后会自动切换到「话题广场」</span>
+                              <span className="sm:hidden">请稍候5-10秒...</span>
                             </p>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    <div className="text-center pt-2">
+                    <div className="text-center pt-1 sm:pt-2">
                       <button
                         onClick={generateTopics}
                         disabled={isGenerating}
-                        className="group relative px-12 py-5 bg-gradient-to-r from-primary via-secondary to-accent text-white font-display font-bold text-lg rounded-2xl hover:shadow-colored transition-smooth disabled:opacity-50 disabled:cursor-not-allowed shadow-xl overflow-hidden"
+                        className="group relative px-6 sm:px-10 lg:px-12 py-3 sm:py-4 lg:py-5 bg-gradient-to-r from-primary via-secondary to-accent text-white font-display font-bold text-base sm:text-lg rounded-xl sm:rounded-2xl hover:shadow-colored transition-smooth disabled:opacity-50 disabled:cursor-not-allowed shadow-xl overflow-hidden w-full sm:w-auto"
                       >
-                        <span className="relative z-10 flex items-center justify-center gap-3">
+                        <span className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
                           {isGenerating ? (
                             <>
-                              <span className="animate-spin h-6 w-6 border-3 border-white border-t-transparent rounded-full"></span>
-                              生成中...
+                              <span className="animate-spin h-5 w-5 sm:h-6 sm:w-6 border-2 sm:border-3 border-white border-t-transparent rounded-full"></span>
+                              <span className="text-sm sm:text-base lg:text-lg">生成中...</span>
                             </>
                           ) : (
                             <>
-                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                               </svg>
-                              生成专属话题推荐
-                              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <span className="text-sm sm:text-base lg:text-lg">
+                                <span className="hidden sm:inline">生成专属话题推荐</span>
+                                <span className="sm:hidden">生成话题</span>
+                              </span>
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                               </svg>
                             </>
