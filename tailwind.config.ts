@@ -9,6 +9,32 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'var(--font-inter)',
+          'PingFang SC',
+          'Hiragino Sans GB',
+          'Microsoft YaHei',
+          'Source Han Sans SC',
+          'Noto Sans CJK SC',
+          'WenQuanYi Micro Hei',
+          'sans-serif',
+        ],
+        display: [
+          'var(--font-inter)',
+          'PingFang SC',
+          'Hiragino Sans GB',
+          'sans-serif',
+        ],
+        mono: [
+          'SF Mono',
+          'Monaco',
+          'Cascadia Code',
+          'Consolas',
+          'Courier New',
+          'monospace',
+        ],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
