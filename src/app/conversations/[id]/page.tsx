@@ -481,21 +481,44 @@ export default function ConversationChatPage() {
       <div className="flex-shrink-0">
         <Header />
         {conversationTitle && (
-          <div className="border-b bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm px-4 py-2">
+          <div className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3">
             <div className="container mx-auto flex items-center gap-3">
+              {/* Icon-only Back Button */}
               <Link
                 href="/conversations"
-                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1 text-sm"
+                className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                title="返回对话列表"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                 </svg>
-                返回对话列表
               </Link>
-              <span className="text-gray-400">|</span>
-              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">
-                {conversationTitle}
-              </p>
+
+              {/* Topic Title with Icon */}
+              <div className="flex-1 flex items-center gap-2 min-w-0">
+                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 animate-pulse"></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 truncate">
+                    {conversationTitle}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                    苏格拉底式对话
+                  </p>
+                </div>
+              </div>
+
+              {/* Desktop: Quick Actions */}
+              <div className="hidden lg:flex items-center gap-2">
+                <button
+                  onClick={() => copyToClipboard(conversationTitle)}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
+                  title="复制话题"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         )}
