@@ -632,7 +632,7 @@ export default function ConversationChatPage() {
       {/* Messages Area - Two Column Layout */}
       <main className="flex-1 overflow-hidden flex">
         {/* Left: Chat Area - Independent Scrolling */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
+        <div className="flex-1 flex flex-col overflow-hidden lg:border-r border-gray-200 dark:border-gray-700">
           {/* Toggle Assistant Panel Button - PC Only */}
           {messages.length > 0 && (
             <div className="hidden lg:flex p-3 border-b border-gray-200 dark:border-gray-700 justify-between items-center bg-gray-50 dark:bg-gray-900/50">
@@ -664,8 +664,8 @@ export default function ConversationChatPage() {
               </button>
             </div>
           )}
-          <div className="flex-1 overflow-y-auto">
-            <div className="container mx-auto px-4 py-6 max-w-3xl">
+          <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth">
+            <div className="container mx-auto px-4 py-6 pb-32 lg:pb-6 max-w-3xl">
           {messages.length === 0 && !isLoading ? (
             <div className="text-center py-12 space-y-6">
               <div className="text-6xl mb-4">💭</div>
@@ -678,50 +678,11 @@ export default function ConversationChatPage() {
                 </p>
               </div>
 
-              {/* 引导提示卡片 */}
-              <div className="max-w-2xl mx-auto mt-8">
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                    <span>🎯</span>
-                    <span>对话将如何进行？</span>
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                    <div className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full text-xs font-bold">1</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">澄清概念</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">明确关键术语的定义</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-purple-500 text-white rounded-full text-xs font-bold">2</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">检验证据</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">追溯论点的事实依据</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-green-500 text-white rounded-full text-xs font-bold">3</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">挖掘假设</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">揭示隐藏的前提条件</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-orange-500 text-white rounded-full text-xs font-bold">4</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">探索视角</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">换位思考其他可能性</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2">
-                      <span>💡</span>
-                      <span>AI不会直接给出答案,而是通过连续的开放式问题引导你自己发现真理</span>
-                    </p>
-                  </div>
-                </div>
+              {/* 引导提示 */}
+              <div className="max-w-2xl mx-auto mt-4">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center leading-relaxed">
+                  💡 AI会通过连续的开放式问题引导你深入思考，而不是直接给出答案
+                </p>
               </div>
             </div>
           ) : (
@@ -1167,7 +1128,7 @@ export default function ConversationChatPage() {
       {messages.length > 0 && !showAssistant && (
         <button
           onClick={() => setShowAssistant(true)}
-          className="lg:hidden fixed bottom-24 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200"
+          className="lg:hidden fixed bottom-36 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200"
         >
           {/* Badge for suggestions count */}
           {suggestedAnswers.length > 0 && (

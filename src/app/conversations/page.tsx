@@ -759,64 +759,6 @@ export default function ConversationsPageV2() {
               )}
             </div>
           </div>
-
-          {/* Feature Description - Modern card grid */}
-          <div className="glass rounded-3xl shadow-colored p-8 border-2 border-white/20 dark:border-white/10">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-10 w-1 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
-              <h2 className="text-2xl font-display font-bold">苏格拉底对话四阶段</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200/50 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 transition-smooth overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
-                <div className="relative z-10 flex items-start gap-4">
-                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-primary to-blue-500 text-white rounded-2xl font-display font-bold text-lg shadow-lg">
-                    1
-                  </span>
-                  <div>
-                    <h3 className="font-display font-bold text-lg mb-2">澄清概念</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">AI会帮你明确术语定义,避免模糊表述</p>
-                  </div>
-                </div>
-              </div>
-              <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border-2 border-purple-200/50 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 transition-smooth overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
-                <div className="relative z-10 flex items-start gap-4">
-                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-secondary to-pink-500 text-white rounded-2xl font-display font-bold text-lg shadow-lg">
-                    2
-                  </span>
-                  <div>
-                    <h3 className="font-display font-bold text-lg mb-2">检验证据</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">追溯你的论点是否有事实支持</p>
-                  </div>
-                </div>
-              </div>
-              <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200/50 dark:border-green-800/50 hover:border-green-400 dark:hover:border-green-600 transition-smooth overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl"></div>
-                <div className="relative z-10 flex items-start gap-4">
-                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-green-500 to-emerald-500 text-white rounded-2xl font-display font-bold text-lg shadow-lg">
-                    3
-                  </span>
-                  <div>
-                    <h3 className="font-display font-bold text-lg mb-2">挖掘假设</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">揭示你没有意识到的隐藏前提</p>
-                  </div>
-                </div>
-              </div>
-              <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20 border-2 border-orange-200/50 dark:border-orange-800/50 hover:border-orange-400 dark:hover:border-orange-600 transition-smooth overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl"></div>
-                <div className="relative z-10 flex items-start gap-4">
-                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-2xl font-display font-bold text-lg shadow-lg">
-                    4
-                  </span>
-                  <div>
-                    <h3 className="font-display font-bold text-lg mb-2">探索视角</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">引导你换位思考,看到其他可能性</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
