@@ -287,8 +287,8 @@ export default function ConversationsPageV2() {
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="输入你的观点，开启一场思维挑战..."
-                className="w-full pl-4 sm:pl-6 pr-28 sm:pr-36 py-3 sm:py-5 text-base sm:text-lg border-2 border-border/60 dark:border-border/40 rounded-xl sm:rounded-2xl focus:ring-0 focus:border-primary bg-card dark:bg-card text-foreground placeholder:text-muted-foreground/60 transition-all duration-300 resize-none shadow-sm hover:border-border/80 focus:shadow-lg"
-                style={{ minHeight: '100px' }}
+                className="w-full px-4 sm:px-6 py-3 sm:py-5 pb-14 sm:pb-16 text-base sm:text-lg border-2 border-border/60 dark:border-border/40 rounded-xl sm:rounded-2xl focus:ring-0 focus:border-primary bg-card dark:bg-card text-foreground placeholder:text-muted-foreground/60 transition-all duration-300 resize-none shadow-sm hover:border-border/80 focus:shadow-lg"
+                style={{ minHeight: '120px' }}
               />
 
               {/* 悬浮操作按钮 - 移动端适配 */}
