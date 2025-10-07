@@ -848,9 +848,12 @@ export default function ConversationChatPage() {
 
       {/* Mobile: Assistant Panel Drawer - Bottom Sheet */}
       {showAssistant && messages.length > 0 && (
-        <div className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAssistant(false)}>
+        <div
+          className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setShowAssistant(false)}
+        >
           <div
-            className="w-full max-h-[70vh] bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-h-[75vh] bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Handle */}
@@ -859,21 +862,26 @@ export default function ConversationChatPage() {
             </div>
 
             {/* Header */}
-            <div className="px-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div className="px-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-lg">💡 智能助手</h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-lg">💡</span>
+                  </div>
+                  <h3 className="font-bold text-lg">智能助手</h3>
+                </div>
                 <button
                   onClick={() => setShowAssistant(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition active:scale-95"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
               </div>
               {currentRound > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                     第 {currentRound}/5 轮
                   </span>
                   <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -882,6 +890,9 @@ export default function ConversationChatPage() {
                       style={{ width: `${(currentRound / 5) * 100}%` }}
                     />
                   </div>
+                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                    {Math.round((currentRound / 5) * 100)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -929,22 +940,31 @@ export default function ConversationChatPage() {
                     return (
                       <div
                         key={suggestion.id}
-                        className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 active:bg-gray-100 dark:active:bg-gray-600 transition border border-transparent active:border-blue-300 dark:active:border-blue-600"
+                        className="group bg-white dark:bg-gray-700/50 rounded-xl p-4 active:bg-blue-50 dark:active:bg-blue-900/20 transition-all duration-200 border-2 border-gray-200 dark:border-gray-600 active:border-blue-400 dark:active:border-blue-500 shadow-sm active:shadow-md"
                         onClick={() => {
                           useSuggestedAnswer(suggestion.text);
                           setShowAssistant(false);
                         }}
                       >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="text-sm flex-1">{suggestion.text}</p>
-                          <span className={`${config.color} px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap flex items-center gap-1`}>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <p className="text-sm flex-1 font-medium text-gray-800 dark:text-gray-200">{suggestion.text}</p>
+                          <span className={`${config.color} px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shadow-sm`}>
                             <span>{config.icon}</span>
                             <span>{config.label}</span>
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                          💡 {suggestion.intent}
-                        </p>
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs">💡</span>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 italic flex-1">
+                            {suggestion.intent}
+                          </p>
+                        </div>
+                        {/* Tap hint */}
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 opacity-0 group-active:opacity-100 transition-opacity">
+                          <p className="text-xs text-blue-600 dark:text-blue-400 text-center font-medium">
+                            点击使用此答案 ✓
+                          </p>
+                        </div>
                       </div>
                     );
                   })}
@@ -1015,23 +1035,28 @@ export default function ConversationChatPage() {
         </div>
       )}
 
+      {/* Mobile: Floating Assistant Button - Fixed Bottom Right */}
+      {messages.length > 0 && !showAssistant && (
+        <button
+          onClick={() => setShowAssistant(true)}
+          className="lg:hidden fixed bottom-24 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200"
+        >
+          {/* Badge for suggestions count */}
+          {suggestedAnswers.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+              {suggestedAnswers.length}
+            </span>
+          )}
+          {/* Icon */}
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </button>
+      )}
+
       {/* Input Area */}
       <div className="border-t bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
-          {/* Mobile: Assistant Toggle Button - Only show when messages exist */}
-          {messages.length > 0 && (
-            <div className="lg:hidden mb-3 flex justify-center">
-              <button
-                onClick={() => setShowAssistant(!showAssistant)}
-                className="flex items-center gap-2 px-4 py-2 text-sm rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition font-medium shadow-lg"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <span>💡 查看助手提示</span>
-              </button>
-            </div>
-          )}
 
           <div className="flex gap-3">
             <textarea
