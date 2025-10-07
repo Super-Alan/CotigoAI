@@ -25,6 +25,9 @@ export default function ConversationsPageV2() {
   // 话题列表状态
   const [topicList, setTopicList] = useState<GeneratedTopic[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // 话题生成状态
   const [selectedDimension, setSelectedDimension] = useState<CriticalThinkingDimension | null>(null);
@@ -109,15 +112,20 @@ export default function ConversationsPageV2() {
     }, 500);
   };
 
-  const loadTopicList = async () => {
+  const loadTopicList = async (page: number = 1) => {
     setIsLoadingList(true);
     try {
-      const response = await fetch('/api/topics/list?limit=20');
+      const response = await fetch(`/api/topics/list?limit=10&page=${page}`);
       if (!response.ok) {
         throw new Error('Failed to load topics');
       }
       const data = await response.json();
       setTopicList(data.topics);
+      if (data.pagination) {
+        setCurrentPage(data.pagination.page);
+        setTotalPages(data.pagination.totalPages);
+        setTotal(data.pagination.total);
+      }
     } catch (error) {
       console.error('Error loading topics:', error);
     } finally {
@@ -168,8 +176,8 @@ export default function ConversationsPageV2() {
         console.log(`[话题生成] 总计: ${data.stats.total}, 新增: ${data.stats.new}, 已存在: ${data.stats.existing}`);
       }
 
-      // 生成后切换到列表Tab
-      setTopicList(data.topics);
+      // 生成后切换到列表Tab并刷新列表
+      await loadTopicList(1);
       setActiveTab('list');
     } catch (error) {
       console.error('Error generating topics:', error);
@@ -357,8 +365,9 @@ export default function ConversationsPageV2() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-6">
-                      {topicList.map((genTopic) => (
+                    <>
+                      <div className="grid grid-cols-1 gap-6">
+                        {topicList.map((genTopic) => (
                         <div
                           key={genTopic.id}
                           className="group relative glass rounded-2xl p-6 border-2 border-border hover:border-primary/50 transition-smooth hover:shadow-colored"
@@ -459,22 +468,83 @@ export default function ConversationsPageV2() {
                             </div>
                           </details>
 
-                          {/* Start Button */}
-                          <button
-                            onClick={() => handleCopyTopicToInput(genTopic.topic)}
-                            className="group/btn relative w-full bg-gradient-to-r from-primary via-secondary to-accent text-white font-display font-semibold py-3 rounded-xl hover:shadow-colored transition-smooth overflow-hidden"
-                          >
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                              开始训练
-                              <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          {/* Footer: Time + Button */}
+                          <div className="flex items-center justify-between gap-4">
+                            {/* Left: Created Time */}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                          </button>
+                              <span className="font-mono text-xs">
+                                {genTopic.createdAt
+                                  ? new Date(genTopic.createdAt).toLocaleDateString('zh-CN', {
+                                      year: 'numeric',
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : '未知时间'}
+                              </span>
+                            </div>
+
+                            {/* Right: Start Button (Compact) */}
+                            <button
+                              onClick={() => handleCopyTopicToInput(genTopic.topic)}
+                              className="group/btn flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white font-medium px-5 py-2.5 rounded-lg hover:shadow-lg transition-smooth text-sm shrink-0"
+                            >
+                              <span>开始训练</span>
+                              <svg className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-border/50">
+                          <button
+                            onClick={() => loadTopicList(currentPage - 1)}
+                            disabled={currentPage === 1 || isLoadingList}
+                            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-smooth text-sm font-medium"
+                          >
+                            上一页
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                onClick={() => loadTopicList(pageNum)}
+                                disabled={isLoadingList}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-smooth ${
+                                  pageNum === currentPage
+                                    ? 'bg-primary text-white'
+                                    : 'hover:bg-muted/50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => loadTopicList(currentPage + 1)}
+                            disabled={currentPage === totalPages || isLoadingList}
+                            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-smooth text-sm font-medium"
+                          >
+                            下一页
+                          </button>
+
+                          <span className="ml-4 text-sm text-muted-foreground">
+                            共 {total} 个话题
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

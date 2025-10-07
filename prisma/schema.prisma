@@ -27,6 +27,7 @@ model User {
   conversations       Conversation[]
   argumentAnalyses    ArgumentAnalysis[]
   perspectiveSessions PerspectiveSession[]
+  generatedTopics     GeneratedConversationTopic[]
   settings            UserSettings?
 
   @@map("users")
@@ -176,6 +177,33 @@ model PerspectiveMessage {
 
   @@index([sessionId, createdAt])
   @@map("perspective_messages")
+}
+
+// ============ 话题生成与推荐 ============
+model GeneratedConversationTopic {
+  id                   String   @id @default(cuid())
+  userId               String?
+  topic                String   @db.Text
+  category             String
+  context              String   @db.Text
+  referenceUniversity  String
+  dimension            String   // causal_analysis | premise_challenge | fallacy_detection | iterative_reflection | connection_transfer
+  difficulty           String   // beginner | intermediate | advanced
+  tags                 String[]
+  thinkingFramework    Json     // { coreChallenge, commonPitfalls, excellentResponseIndicators }
+  guidingQuestions     Json     // Array of { level, stage, question }
+  expectedOutcomes     String[]
+  isPublic             Boolean  @default(false) // 是否为公开话题（系统预生成）
+  usageCount           Int      @default(0) // 使用次数统计
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([isPublic, dimension, difficulty])
+  @@index([usageCount])
+  @@map("generated_conversation_topics")
 }
 
 // ============ 系统配置 (管理端) ============
