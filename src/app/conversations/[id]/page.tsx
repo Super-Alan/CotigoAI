@@ -15,6 +15,7 @@ interface SuggestedAnswer {
   id: string;
   text: string;
   intent: string;
+  difficulty?: 'simple' | 'moderate' | 'deep';
 }
 
 interface DialogueRound {
@@ -324,9 +325,9 @@ export default function ConversationChatPage() {
   }, [messages, isLoading]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -539,6 +540,12 @@ export default function ConversationChatPage() {
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   AI正在通过这个问题引导你思考问题的核心本质，帮助你发现隐藏的假设和潜在的矛盾。
                 </p>
+                <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2">
+                    <span>💡</span>
+                    <span>提示：AI每次只会提出一个核心问题，专注思考这个问题即可。下方的参考答案按难度排序，选择适合你的思考深度。</span>
+                  </p>
+                </div>
               </div>
             )}
 
@@ -556,22 +563,38 @@ export default function ConversationChatPage() {
               <div className="space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
                   <span>📝</span>
-                  <span>参考答案</span>
+                  <span>参考答案（由浅入深）</span>
                 </h4>
-                {suggestedAnswers.map((suggestion) => (
-                  <div
-                    key={suggestion.id}
-                    className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
-                    onClick={() => useSuggestedAnswer(suggestion.text)}
-                  >
-                    <p className="text-sm mb-2">{suggestion.text}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                      💡 {suggestion.intent}
-                    </p>
-                  </div>
-                ))}
+                {suggestedAnswers.map((suggestion, index) => {
+                  const difficultyConfig = {
+                    simple: { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', label: '入门', icon: '🌱' },
+                    moderate: { color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', label: '进阶', icon: '🌿' },
+                    deep: { color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', label: '深度', icon: '🌳' }
+                  };
+                  const difficulty = suggestion.difficulty || (index === 0 ? 'simple' : index === 1 ? 'moderate' : 'deep');
+                  const config = difficultyConfig[difficulty];
+
+                  return (
+                    <div
+                      key={suggestion.id}
+                      className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer border border-transparent hover:border-blue-300 dark:hover:border-blue-600"
+                      onClick={() => useSuggestedAnswer(suggestion.text)}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <p className="text-sm flex-1">{suggestion.text}</p>
+                        <span className={`${config.color} px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap flex items-center gap-1`}>
+                          <span>{config.icon}</span>
+                          <span>{config.label}</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                        💡 {suggestion.intent}
+                      </p>
+                    </div>
+                  );
+                })}
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                  点击任意答案直接使用
+                  点击任意答案直接使用 • 建议从简单答案开始思考
                 </p>
               </div>
             ) : null}
@@ -635,7 +658,7 @@ export default function ConversationChatPage() {
       </main>
 
       {/* Input Area */}
-      <div className="border-t bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-t bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
           <div className="flex gap-3">
             <textarea
