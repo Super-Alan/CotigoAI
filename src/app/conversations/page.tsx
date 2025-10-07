@@ -26,7 +26,7 @@ export default function ConversationsPageV2() {
   const [topicList, setTopicList] = useState<GeneratedTopic[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
 
   // 话题生成状态
@@ -70,6 +70,26 @@ export default function ConversationsPageV2() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isGenerating]);
 
+  // 懒加载：监听滚动事件
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLDivElement;
+      if (!target || activeTab !== 'list') return;
+
+      const { scrollTop, scrollHeight, clientHeight } = target;
+      // 滚动到距离底部 100px 时触发加载
+      if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !isLoadingList) {
+        loadTopicList(currentPage + 1, true);
+      }
+    };
+
+    const scrollContainer = document.getElementById('topic-list-container');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [activeTab, currentPage, hasMore, isLoadingList]);
+
   const handleStartConversation = async (selectedTopic?: string) => {
     const topicText = selectedTopic || topic.trim();
     if (!topicText || isCreating) return;
@@ -112,7 +132,9 @@ export default function ConversationsPageV2() {
     }, 500);
   };
 
-  const loadTopicList = async (page: number = 1) => {
+  const loadTopicList = async (page: number = 1, append: boolean = false) => {
+    if (isLoadingList) return;
+
     setIsLoadingList(true);
     try {
       const response = await fetch(`/api/topics/list?limit=10&page=${page}`);
@@ -120,11 +142,20 @@ export default function ConversationsPageV2() {
         throw new Error('Failed to load topics');
       }
       const data = await response.json();
-      setTopicList(data.topics);
+
+      if (append) {
+        // 懒加载模式：追加新数据
+        setTopicList((prev) => [...prev, ...data.topics]);
+      } else {
+        // 初始加载：替换数据
+        setTopicList(data.topics);
+      }
+
       if (data.pagination) {
         setCurrentPage(data.pagination.page);
-        setTotalPages(data.pagination.totalPages);
         setTotal(data.pagination.total);
+        // 判断是否还有更多数据
+        setHasMore(data.pagination.page < data.pagination.totalPages);
       }
     } catch (error) {
       console.error('Error loading topics:', error);
@@ -328,7 +359,7 @@ export default function ConversationsPageV2() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div id="topic-list-container" className="flex-1 overflow-y-auto p-6">
               {/* Tab 1: Topic List */}
               {activeTab === 'list' && (
                 <div className="space-y-6">
@@ -503,45 +534,24 @@ export default function ConversationsPageV2() {
                         ))}
                       </div>
 
-                      {/* Pagination */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-border/50">
-                          <button
-                            onClick={() => loadTopicList(currentPage - 1)}
-                            disabled={currentPage === 1 || isLoadingList}
-                            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-smooth text-sm font-medium"
-                          >
-                            上一页
-                          </button>
-
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                              <button
-                                key={pageNum}
-                                onClick={() => loadTopicList(pageNum)}
-                                disabled={isLoadingList}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-smooth ${
-                                  pageNum === currentPage
-                                    ? 'bg-primary text-white'
-                                    : 'hover:bg-muted/50'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            ))}
+                      {/* Lazy Loading Indicator */}
+                      {isLoadingList && (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="flex items-center gap-3 text-muted-foreground">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                            <span className="text-sm font-medium">加载更多话题中...</span>
                           </div>
+                        </div>
+                      )}
 
-                          <button
-                            onClick={() => loadTopicList(currentPage + 1)}
-                            disabled={currentPage === totalPages || isLoadingList}
-                            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-smooth text-sm font-medium"
-                          >
-                            下一页
-                          </button>
-
-                          <span className="ml-4 text-sm text-muted-foreground">
-                            共 {total} 个话题
-                          </span>
+                      {/* No More Data */}
+                      {!hasMore && topicList.length > 0 && (
+                        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <span>━━━━</span>
+                            <span>已加载全部 {total} 个话题</span>
+                            <span>━━━━</span>
+                          </div>
                         </div>
                       )}
                     </>
