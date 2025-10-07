@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
+import Header from '@/components/Header';
 
 interface Message {
   id: string;
@@ -45,16 +47,41 @@ export default function ConversationChatPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [conversationEnded, setConversationEnded] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(true);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // 可以添加一个toast提示
+    } catch (err) {
+      console.error('复制失败:', err);
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // 加载对话历史
+  // 保存对话结束状态到localStorage
+  useEffect(() => {
+    if (params.id && conversationEnded) {
+      localStorage.setItem(`conversation_${params.id}_ended`, 'true');
+    }
+  }, [conversationEnded, params.id]);
+
+  // 保存助手面板状态到localStorage
+  useEffect(() => {
+    if (params.id) {
+      localStorage.setItem(`conversation_${params.id}_showAssistant`, showAssistant.toString());
+    }
+  }, [showAssistant, params.id]);
+
+  // 加载对话历史和状态
   useEffect(() => {
     const loadConversation = async () => {
       try {
@@ -78,6 +105,18 @@ export default function ConversationChatPage() {
 
     if (params.id) {
       loadConversation();
+
+      // 恢复对话结束状态
+      const savedEndedState = localStorage.getItem(`conversation_${params.id}_ended`);
+      if (savedEndedState === 'true') {
+        setConversationEnded(true);
+      }
+
+      // 恢复助手面板显示状态
+      const savedAssistantState = localStorage.getItem(`conversation_${params.id}_showAssistant`);
+      if (savedAssistantState !== null) {
+        setShowAssistant(savedAssistantState === 'true');
+      }
     }
   }, [params.id]);
 
@@ -277,7 +316,45 @@ export default function ConversationChatPage() {
 
   // 生成总结
   const generateSummary = async () => {
+    // 检查是否已有总结
+    const hasSummary = messages.some(msg =>
+      msg.role === 'assistant' && msg.content.includes('📊 对话总结')
+    );
+
+    if (hasSummary) {
+      const userChoice = confirm(
+        '您已经生成过总结了。\n\n' +
+        '• 点击"确定"继续追问\n' +
+        '• 点击"取消"查看之前的总结'
+      );
+
+      if (!userChoice) {
+        // 用户选择查看总结，滚动到总结位置
+        const summaryElement = document.querySelector('[data-summary-message]');
+        summaryElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      } else {
+        // 用户选择继续追问，重置对话状态
+        setConversationEnded(false);
+        localStorage.removeItem(`conversation_${params.id}_ended`);
+        return;
+      }
+    }
+
     setLoadingSummary(true);
+
+    // 添加AI总结消息占位符
+    const summaryMessageId = `summary-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: summaryMessageId,
+        role: 'assistant' as const,
+        content: '📊 正在生成对话总结...\n\n',
+        timestamp: new Date(),
+      },
+    ]);
+
     try {
       const response = await fetch(`/api/conversations/${params.id}/summary`, {
         method: 'POST',
@@ -285,13 +362,87 @@ export default function ConversationChatPage() {
         body: JSON.stringify({ rounds: dialogueHistory })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
-        setShowSummary(true);
+      if (!response.ok) {
+        throw new Error('生成总结失败');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('无法读取响应流');
+      }
+
+      let summaryContent = '📊 对话总结\n\n';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === 'chunk' && data.content) {
+              summaryContent += data.content;
+              // 实时更新消息内容
+              setMessages((prev) => {
+                const updated = [...prev];
+                const index = updated.findIndex(msg => msg.id === summaryMessageId);
+                if (index !== -1) {
+                  updated[index] = {
+                    ...updated[index],
+                    content: summaryContent
+                  };
+                }
+                return updated;
+              });
+            } else if (data.type === 'complete') {
+              // 保存总结消息到数据库
+              try {
+                await fetch(`/api/conversations/${params.id}/messages`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    role: 'assistant',
+                    content: summaryContent
+                  })
+                });
+              } catch (saveError) {
+                console.error('保存总结消息失败:', saveError);
+              }
+
+              // 标记对话已结束
+              setConversationEnded(true);
+            } else if (data.type === 'error') {
+              throw new Error(data.error || '生成总结失败');
+            }
+          } catch (parseError) {
+            console.warn('解析响应行失败:', line, parseError);
+          }
+        }
       }
     } catch (error) {
       console.error('生成总结失败:', error);
+      // 更新消息显示错误
+      setMessages((prev) => {
+        const updated = [...prev];
+        const index = updated.findIndex(msg => msg.id === summaryMessageId);
+        if (index !== -1) {
+          updated[index] = {
+            ...updated[index],
+            content: '❌ 生成总结失败，请稍后重试'
+          };
+        }
+        return updated;
+      });
     } finally {
       setLoadingSummary(false);
     }
@@ -326,48 +477,65 @@ export default function ConversationChatPage() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex-shrink-0">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/conversations"
-              className="text-gray-600 hover:text-blue-600 transition"
-            >
-              ← 返回
-            </Link>
-            <div>
-              <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Cogito AI
+      {/* Header with Back Button and Title */}
+      <div className="flex-shrink-0">
+        <Header />
+        {conversationTitle && (
+          <div className="border-b bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm px-4 py-2">
+            <div className="container mx-auto flex items-center gap-3">
+              <Link
+                href="/conversations"
+                className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1 text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                返回对话列表
               </Link>
-              {conversationTitle && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {conversationTitle}
-                </p>
-              )}
+              <span className="text-gray-400">|</span>
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">
+                {conversationTitle}
+              </p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/auth/signin"
-              className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition"
-            >
-              登录
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
-            >
-              注册
-            </Link>
-          </div>
-        </div>
-      </header>
+        )}
+      </div>
 
       {/* Messages Area - Two Column Layout */}
       <main className="flex-1 overflow-hidden flex">
         {/* Left: Chat Area - Independent Scrolling */}
         <div className="flex-1 flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
+          {/* Toggle Assistant Panel Button */}
+          {messages.length > 0 && (
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+              {conversationEnded && (
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  对话已结束
+                </span>
+              )}
+              <button
+                onClick={() => setShowAssistant(!showAssistant)}
+                className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition font-medium shadow-sm ml-auto"
+              >
+                {showAssistant ? (
+                  <>
+                    <span>隐藏助手</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                    <span>显示助手</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto">
             <div className="container mx-auto px-4 py-6 max-w-3xl">
           {messages.length === 0 && !isLoading ? (
@@ -438,12 +606,27 @@ export default function ConversationChatPage() {
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-6 py-4 ${
+                    className={`max-w-[80%] rounded-2xl px-6 py-4 relative group ${
                       message.role === 'user'
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-md'
                     }`}
+                    {...(message.content.includes('📊 对话总结') ? { 'data-summary-message': true } : {})}
                   >
+                    {/* 复制按钮 */}
+                    <button
+                      onClick={() => copyToClipboard(message.content)}
+                      className={`absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${
+                        message.role === 'user'
+                          ? 'hover:bg-white/20 text-white/80 hover:text-white'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                      title="复制消息"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
                         {message.role === 'user' ? (
@@ -460,9 +643,13 @@ export default function ConversationChatPage() {
                         <p className="text-sm font-medium mb-1">
                           {message.role === 'user' ? '你' : 'AI导师'}
                         </p>
-                        <div className="prose prose-sm max-w-none">
-                          <p className="whitespace-pre-wrap">{message.content}</p>
-                        </div>
+                        {message.role === 'assistant' ? (
+                          <MarkdownRenderer content={message.content} className="text-sm" />
+                        ) : (
+                          <div className="prose prose-sm max-w-none">
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                          </div>
+                        )}
                         <p className="text-xs mt-2 opacity-70">
                           {message.timestamp.toLocaleTimeString('zh-CN', {
                             hour: '2-digit',
@@ -506,6 +693,7 @@ export default function ConversationChatPage() {
         </div>
 
         {/* Right: Assistant Panel - Independent Scrolling */}
+        {showAssistant && (
         <div className="w-96 bg-white dark:bg-gray-800 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
@@ -655,6 +843,7 @@ export default function ConversationChatPage() {
             )}
           </div>
         </div>
+        )}
       </main>
 
       {/* Input Area */}
@@ -665,17 +854,17 @@ export default function ConversationChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="输入你的回答或新问题... (Shift+Enter换行, Enter发送)"
+              placeholder={conversationEnded ? "对话已结束" : "输入你的回答或新问题... (Shift+Enter换行, Enter发送)"}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
               rows={2}
-              disabled={isLoading}
+              disabled={isLoading || conversationEnded}
             />
             <button
               onClick={handleSendMessage}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || conversationEnded}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              {isLoading ? '思考中...' : '发送'}
+              {isLoading ? '思考中...' : conversationEnded ? '已结束' : '发送'}
             </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">

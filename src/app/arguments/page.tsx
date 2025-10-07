@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Header from '@/components/Header';
 
 interface ArgumentAnalysis {
   mainClaim: string;
@@ -25,6 +26,8 @@ export default function ArgumentsPage() {
   const [progressMessage, setProgressMessage] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
   const [revealedDimensions, setRevealedDimensions] = useState<string[]>([]);
+  const [streamingContent, setStreamingContent] = useState(''); // AI流式输出内容
+  const [analysisId, setAnalysisId] = useState<string | null>(null); // 保存后的ID
 
   const handleAnalyze = async () => {
     if ((!inputText.trim() && inputType === 'text') || (!inputUrl.trim() && inputType === 'url')) {
@@ -38,6 +41,8 @@ export default function ArgumentsPage() {
     setRevealedDimensions([]);
     setProgressMessage('');
     setProgressPercent(0);
+    setStreamingContent(''); // 清空流式内容
+    setAnalysisId(null); // 清空ID
 
     try {
       const response = await fetch('/api/arguments/analyze-stream', {
@@ -85,6 +90,14 @@ export default function ArgumentsPage() {
                 }
                 break;
 
+              case 'stream':
+                // 流式输出AI分析内容
+                setStreamingContent(prev => prev + data.content);
+                if (data.progress !== undefined) {
+                  setProgressPercent(data.progress);
+                }
+                break;
+
               case 'dimension':
                 // 逐步显示维度
                 partialAnalysis[data.dimension] = data.data;
@@ -98,6 +111,26 @@ export default function ArgumentsPage() {
                 setAnalysis(data.analysis);
                 setProgressMessage('✅ 分析完成！');
                 setProgressPercent(100);
+
+                // 保存分析结果到数据库
+                try {
+                  const saveResponse = await fetch('/api/arguments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      inputText: inputType === 'text' ? inputText.trim() : inputUrl.trim(),
+                      analysis: data.analysis
+                    })
+                  });
+
+                  if (saveResponse.ok) {
+                    const saved = await saveResponse.json();
+                    setAnalysisId(saved.id);
+                    console.log('分析结果已保存，ID:', saved.id);
+                  }
+                } catch (saveError) {
+                  console.error('保存失败:', saveError);
+                }
                 break;
 
               case 'error':
@@ -118,41 +151,7 @@ export default function ArgumentsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Cogito AI
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex gap-4">
-              <Link href="/conversations" className="text-gray-600 hover:text-blue-600">
-                对话
-              </Link>
-              <Link href="/arguments" className="text-blue-600 font-medium">
-                解构
-              </Link>
-              <Link href="/perspectives" className="text-gray-600 hover:text-blue-600">
-                视角
-              </Link>
-            </nav>
-            <div className="flex gap-3">
-              <Link
-                href="/auth/signin"
-                className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition"
-              >
-                登录
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
-              >
-                注册
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -274,6 +273,19 @@ export default function ArgumentsPage() {
                     {progressPercent}%
                   </span>
                 </div>
+
+                {/* Streaming AI Content - Real-time display */}
+                {streamingContent && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">AI 实时分析输出</span>
+                    </div>
+                    <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">
+                      {streamingContent}
+                    </pre>
+                  </div>
+                )}
               </div>
             )}
           </div>

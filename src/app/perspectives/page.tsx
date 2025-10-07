@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePerspectivesPersistence } from '@/lib/hooks/usePerspectivesPersistence';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import Header from '@/components/Header';
 
 interface Perspective {
   roleId: string;
@@ -225,6 +226,27 @@ export default function PerspectivesPage() {
                 setGeneratingRole(null);
                 partialResult.generatedAt = data.generatedAt;
                 setResult({ ...partialResult });
+
+                // 保存分析结果到数据库
+                try {
+                  const saveResponse = await fetch('/api/perspectives/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      topic: partialResult.issue,
+                      perspectives: partialResult.perspectives
+                    })
+                  });
+
+                  if (saveResponse.ok) {
+                    const saved = await saveResponse.json();
+                    console.log('[Perspectives] 分析结果已保存，ID:', saved.id);
+                    // 可以在这里添加一个状态来存储 sessionId，用于后续查看
+                  }
+                } catch (saveError) {
+                  console.error('[Perspectives] 保存失败:', saveError);
+                  // 不影响主流程，静默失败
+                }
                 break;
 
               case 'error':
@@ -509,41 +531,7 @@ export default function PerspectivesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="border-b bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Cogito AI
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex gap-4">
-              <Link href="/conversations" className="text-gray-600 hover:text-blue-600">
-                对话
-              </Link>
-              <Link href="/arguments" className="text-gray-600 hover:text-blue-600">
-                解构
-              </Link>
-              <Link href="/perspectives" className="text-blue-600 font-medium">
-                视角
-              </Link>
-            </nav>
-            <div className="flex gap-3">
-              <Link
-                href="/auth/signin"
-                className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition"
-              >
-                登录
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition font-medium text-sm"
-              >
-                注册
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">

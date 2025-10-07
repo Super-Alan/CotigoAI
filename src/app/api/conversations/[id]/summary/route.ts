@@ -56,20 +56,102 @@ ${dialogueText}
 
 直接返回总结文本，无需JSON格式。`;
 
-    const response = await aiRouter.chat(
-      [{ role: 'user', content: prompt }],
-      {
-        stream: false,
-        temperature: 0.7,
-        maxTokens: 1500
+    // 创建流式响应
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // 发送初始化消息
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: 'init',
+                message: '开始生成总结...'
+              }) + '\n'
+            )
+          );
+
+          const response = await aiRouter.chat(
+            [{ role: 'user', content: prompt }],
+            {
+              stream: true,
+              temperature: 0.7,
+              maxTokens: 1500
+            }
+          );
+
+          let fullText = '';
+
+          if (typeof response === 'string') {
+            // 非流式响应
+            fullText = response;
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({
+                  type: 'chunk',
+                  content: response
+                }) + '\n'
+              )
+            );
+          } else {
+            // 流式响应
+            const reader = response.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              fullText += chunk;
+
+              // 发送数据块
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: 'chunk',
+                    content: chunk
+                  }) + '\n'
+                )
+              );
+            }
+          }
+
+          // 发送完成信号
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: 'complete',
+                fullText
+              }) + '\n'
+            )
+          );
+
+          controller.close();
+        } catch (error) {
+          console.error('生成总结失败:', error);
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: 'error',
+                error: '生成总结时发生错误'
+              }) + '\n'
+            )
+          );
+          controller.close();
+        }
       }
-    );
+    });
 
-    const summary = typeof response === 'string' ? response : '';
-
-    return NextResponse.json({ summary });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      }
+    });
   } catch (error) {
-    console.error('生成总结失败:', error);
+    console.error('总结API错误:', error);
     return NextResponse.json(
       { error: '生成总结时发生错误' },
       { status: 500 }

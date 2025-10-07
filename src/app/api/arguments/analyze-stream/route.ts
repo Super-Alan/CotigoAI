@@ -142,9 +142,19 @@ export async function POST(req: NextRequest) {
           let fullText = '';
           let progress = 30;
 
-          // 处理流式响应
+          // 处理流式响应 - 实时流式输出AI分析内容
           if (typeof aiResponse === 'string') {
             fullText = aiResponse;
+            // 非流式响应，一次性发送
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({
+                  type: 'stream',
+                  content: aiResponse,
+                  progress: 90
+                }) + '\n'
+              )
+            );
           } else {
             const reader = aiResponse.getReader();
             const decoder = new TextDecoder();
@@ -156,16 +166,13 @@ export async function POST(req: NextRequest) {
               const chunk = decoder.decode(value, { stream: true });
               fullText += chunk;
 
-              // 更新进度
-              progress = Math.min(90, progress + 5);
+              // 实时发送AI生成的内容块
               controller.enqueue(
                 encoder.encode(
                   JSON.stringify({
-                    type: 'progress',
-                    stage: 'analyzing',
-                    message: '正在生成分析结果...',
-                    progress,
-                    partialText: chunk
+                    type: 'stream',
+                    content: chunk,
+                    progress: Math.min(90, 30 + (fullText.length / 50))
                   }) + '\n'
                 )
               );
