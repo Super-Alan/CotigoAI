@@ -82,13 +82,15 @@ export function buildUserPrompt(params: TopicGenerationRequest): string {
 ${params.avoidTopics && params.avoidTopics.length > 0 ? `- 需要避免的话题：${params.avoidTopics.join(', ')}` : ''}
 
 **重要提醒：**
-1. 严格按照上述提示词中定义的 JSON Schema 格式输出
-2. 确保 JSON 格式完全正确，可被直接解析
-3. 不要添加任何 markdown 标记（如 \`\`\`json）或解释性文字
-4. 直接输出 JSON 对象，以 { 开头，以 } 结尾
-5. guidingQuestions 数组中，level 字段应该是字符串 "beginner" | "intermediate" | "advanced"，而不是数字
+1. 必须生成 ${params.count} 个话题，以 JSON 数组格式输出
+2. 严格按照上述提示词中定义的 JSON Schema 格式输出
+3. 确保 JSON 格式完全正确，可被直接解析
+4. 不要添加任何 markdown 标记（如 \`\`\`json）或解释性文字
+5. 直接输出 JSON 数组，以 [ 开头，以 ] 结尾
+6. guidingQuestions 数组中，level 字段应该是字符串 "beginner" | "intermediate" | "advanced"，而不是数字
 
-**输出示例格式：**
+**输出示例格式（数组）：**
+[
 {
   "topic": "完整话题描述...",
   "category": "类别名称",
@@ -125,9 +127,15 @@ ${params.avoidTopics && params.avoidTopics.length > 0 ? `- 需要避免的话题
     "成果3",
     "成果4"
   ]
+},
+{
+  "topic": "第二个话题...",
+  "category": "...",
+  ...
 }
+]
 
-现在请开始生成，直接输出 JSON 对象：`;
+现在请开始生成，直接输出包含 ${params.count} 个话题的 JSON 数组：`;
 
   return prompt;
 }
@@ -213,10 +221,22 @@ export async function generateTopicsWithLLM(
       throw new Error(`Failed to parse LLM response as JSON: ${parseError}`);
     }
 
-    // 处理可能的单个对象返回（根据新的提示词，现在返回单个对象而不是数组）
-    const topicsArray: GeneratedTopic[] = Array.isArray(parsedData) ? parsedData : [parsedData];
+    // 处理返回数据：应该是数组格式
+    let topicsArray: GeneratedTopic[];
+
+    if (Array.isArray(parsedData)) {
+      topicsArray = parsedData;
+    } else {
+      // 如果 LLM 返回单个对象（不符合要求），记录警告并包装成数组
+      console.warn('[LLM] 警告：LLM 返回了单个对象而不是数组，已自动修正');
+      topicsArray = [parsedData];
+    }
 
     console.log('[LLM] 成功解析话题数量:', topicsArray.length);
+
+    if (topicsArray.length === 0) {
+      console.warn('[LLM] 警告：生成的话题数量为 0');
+    }
 
     // 添加ID和时间戳
     return topicsArray.map((topic) => ({

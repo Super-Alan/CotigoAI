@@ -192,7 +192,7 @@ export default function ConversationsPageV2() {
         body: JSON.stringify({
           dimension: selectedDimension,
           difficulty: selectedDifficulty,
-          count: 6,
+          count: 3,
         }),
       });
 
