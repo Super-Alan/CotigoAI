@@ -389,16 +389,36 @@ export class SpeechRecognitionService {
   async stopRecording(): Promise<string | null> {
     try {
       if (!this.recording) {
+        console.warn('[Speech] No recording object to stop');
         return null;
       }
 
       this.recordingState = 'processing';
       console.log('[Speech] Stopping recording...');
 
-      // 1. 停止录音
-      await this.recording.stopAndUnloadAsync();
-      const uri = this.recording.getURI();
-      console.log('[Speech] Recording stopped, URI:', uri);
+      // 检查录音状态
+      let uri: string | null = null;
+      try {
+        const status = await this.recording.getStatusAsync();
+        console.log('[Speech] Recording status:', { isRecording: status.isRecording, isDoneRecording: status.isDoneRecording });
+
+        // 只有在录音中时才停止
+        if (status.isRecording) {
+          await this.recording.stopAndUnloadAsync();
+          uri = this.recording.getURI();
+          console.log('[Speech] Recording stopped, URI:', uri);
+        } else {
+          console.warn('[Speech] Recording not active, cannot stop');
+          this.recording = null;
+          this.recordingState = 'idle';
+          return null;
+        }
+      } catch (error) {
+        console.error('[Speech] Failed to get recording status or stop:', error);
+        this.recording = null;
+        this.recordingState = 'idle';
+        return null;
+      }
 
       // 2. 读取音频文件
       if (uri) {
