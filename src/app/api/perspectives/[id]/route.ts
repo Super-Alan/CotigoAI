@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -8,15 +7,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
-    const perspectiveSession = await prisma.perspectiveSession.findUnique({
+    const perspectiveSession = await prisma.perspectiveSession.findFirst({
       where: {
         id: params.id,
+        userId: auth.userId,
       },
       include: {
         perspectives: {
@@ -33,11 +33,6 @@ export async function GET(
 
     if (!perspectiveSession) {
       return NextResponse.json({ error: '未找到该视角会话' }, { status: 404 });
-    }
-
-    // Verify ownership
-    if (perspectiveSession.userId !== session.user.id) {
-      return NextResponse.json({ error: '无权访问' }, { status: 403 });
     }
 
     console.log('[Perspectives GET] 读取会话:', {

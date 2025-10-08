@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/perspectives - 获取用户的视角会话列表
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: '未登录' } },
-        { status: 401 }
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
       );
     }
 
     const sessions = await prisma.perspectiveSession.findMany({
-      where: { userId: session.user.id },
+      where: { userId: auth.userId },
       include: {
         perspectives: {
           select: {
@@ -71,25 +71,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = await getServerSession(authOptions);
-
-    // 用户必须登录
-    if (!session?.user?.id) {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: '请先登录'
-          }
+          error: { code: 'UNAUTHORIZED', message: auth.error.message }
         },
-        { status: 401 }
+        { status: auth.error.status }
       );
     }
 
     const perspectiveSession = await prisma.perspectiveSession.create({
       data: {
-        userId: session.user.id,
+        userId: auth.userId,
         topic,
       },
     });

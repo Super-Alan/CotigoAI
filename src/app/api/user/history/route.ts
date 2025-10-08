@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
-    const userId = session.user.id;
+    const userId = auth.userId;
 
     // 并行获取最近的对话、解构、视角记录（每种取5条）
     const [conversations, argumentAnalyses, perspectives] = await Promise.all([

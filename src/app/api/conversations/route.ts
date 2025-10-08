@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations - 获取用户的所有对话列表
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: '未登录' } },
-        { status: 401 }
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
       );
     }
 
     const conversations = await prisma.conversation.findMany({
-      where: { userId: session.user.id },
+      where: { userId: auth.userId },
       include: {
         messages: {
           select: {
@@ -50,15 +50,21 @@ export async function GET(req: NextRequest) {
 // POST /api/conversations - 创建新对话
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
+      );
+    }
 
     const body = await req.json();
     const { title, topic } = body;
 
-    // 如果用户未登录,创建匿名对话(仅用于演示)
     const conversation = await prisma.conversation.create({
       data: {
-        userId: session?.user?.id || null,
+        userId: auth.userId,
         title: title || topic?.substring(0, 50) || '新对话',
         topic: topic || null,
       },

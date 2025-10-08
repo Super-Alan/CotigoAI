@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helper';
 import { aiRouter } from '@/lib/ai/router';
 
 interface DialogueRound {
@@ -13,6 +14,12 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
+    }
+
     const body = await req.json();
     const { question, conversationHistory } = body;
 

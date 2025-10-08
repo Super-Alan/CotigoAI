@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations/[id] - 获取单个对话及其消息
@@ -7,8 +8,20 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: params.id },
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
+      );
+    }
+
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: params.id,
+        userId: auth.userId,
+      },
       include: {
         messages: {
           select: {

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/topics/random - 随机获取话题
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
     const { searchParams } = new URL(req.url);
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     // 构建查询条件
     const where: any = {
-      userId: session.user.id,
+      userId: auth.userId,
     };
 
     if (dimension) {

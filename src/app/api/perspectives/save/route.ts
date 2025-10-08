@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // POST /api/perspectives/save - 保存完整的视角分析结果
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
     const body = await req.json();
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     // 创建会话并保存所有视角
     const perspectiveSession = await prisma.perspectiveSession.create({
       data: {
-        userId: session.user.id,
+        userId: auth.userId,
         topic: topic,
         perspectives: {
           create: perspectives.map((p: any) => ({

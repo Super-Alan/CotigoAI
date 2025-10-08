@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/arguments - 获取用户的历史解构记录
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: '未登录' } },
-        { status: 401 }
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
       );
     }
 
     const analyses = await prisma.argumentAnalysis.findMany({
-      where: { userId: session.user.id },
+      where: { userId: auth.userId },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -45,9 +45,10 @@ export async function GET(req: NextRequest) {
 // POST /api/arguments - 保存解构分析结果
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
     const body = await req.json();
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     // 保存到数据库
     const savedAnalysis = await prisma.argumentAnalysis.create({
       data: {
-        userId: session.user.id,
+        userId: auth.userId,
         inputText: inputText,
         analysis: analysis,
       },

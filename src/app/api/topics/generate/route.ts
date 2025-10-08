@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 import {
   buildSystemPrompt,
@@ -11,9 +10,10 @@ import { TopicGenerationRequest } from '@/types/topic';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 });
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error.message }, { status: auth.error.status });
     }
 
     const body: TopicGenerationRequest = await req.json();
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('[Topics Generate] 请求参数:', {
-      userId: session.user.id,
+      userId: auth.userId,
       ...body,
     });
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       // 检查是否已存在相同话题（根据 topic 内容判断）
       const existingTopic = await prisma.generatedConversationTopic.findFirst({
         where: {
-          userId: session.user.id,
+          userId: auth.userId,
           topic: topic.topic,
         },
       });
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         // 保存新话题
         const saved = await prisma.generatedConversationTopic.create({
           data: {
-            userId: session.user.id,
+            userId: auth.userId,
             topic: topic.topic,
             category: topic.category,
             context: topic.context,

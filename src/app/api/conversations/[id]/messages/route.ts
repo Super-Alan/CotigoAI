@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 import { aiRouter } from '@/lib/ai/router';
 import { SOCRATIC_SYSTEM_PROMPT } from '@/lib/prompts';
@@ -9,18 +8,19 @@ import { ChatMessage } from '@/types';
 // GET /api/conversations/[id]/messages - 获取对话历史
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: '未登录' } },
-        { status: 401 }
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
       );
     }
 
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: params.id,
-        userId: session.user.id,
+        userId: auth.userId,
       },
       include: {
         messages: {
@@ -55,7 +55,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 // POST /api/conversations/[id]/messages - 发送新消息 (流式响应)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
+      );
+    }
 
     const body = await req.json();
     const { message, content, metadata } = body;
@@ -71,10 +78,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       );
     }
 
-    // 获取对话(允许匿名访问用于演示)
-    const conversation = await prisma.conversation.findUnique({
+    // 获取对话并验证所有权
+    const conversation = await prisma.conversation.findFirst({
       where: {
         id: params.id,
+        userId: auth.userId,
       },
       include: {
         messages: {
