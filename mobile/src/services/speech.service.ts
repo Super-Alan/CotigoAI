@@ -199,8 +199,8 @@ export class SpeechRecognitionService {
         console.log('[Speech] Task started');
         this.taskStarted = true;
         this.emitEvent({ type: 'task-started' });
-        // 任务启动后开始发送音频流
-        this.startSendingAudioStream();
+        // 注意：不在这里启动发送，因为音频数据还没准备好
+        // 音频数据会在 stopRecording() 中准备并发送
         break;
 
       case 'result-generated':
@@ -246,7 +246,14 @@ export class SpeechRecognitionService {
    * 发送音频流数据
    */
   private startSendingAudioStream() {
+    if (this.sendingInterval) {
+      clearInterval(this.sendingInterval);
+    }
+
+    console.log('[Speech] Starting to send audio chunks, total:', this.audioChunks.length);
+
     // 每 100ms 发送一个音频块
+    let sentCount = 0;
     this.sendingInterval = setInterval(() => {
       if (this.audioChunks.length > 0) {
         const chunk = this.audioChunks.shift();
@@ -254,6 +261,15 @@ export class SpeechRecognitionService {
           // 将 base64 转换为二进制并发送
           const binaryData = this.base64ToArrayBuffer(chunk);
           this.ws.send(binaryData);
+          sentCount++;
+          console.log(`[Speech] Sent chunk ${sentCount}, remaining: ${this.audioChunks.length}`);
+        }
+      } else {
+        // 所有音频块已发送完毕
+        if (this.sendingInterval) {
+          clearInterval(this.sendingInterval);
+          this.sendingInterval = null;
+          console.log('[Speech] All audio chunks sent');
         }
       }
     }, 100);
