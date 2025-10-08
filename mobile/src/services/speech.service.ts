@@ -103,13 +103,18 @@ export class SpeechRecognitionService {
         this.taskId = this.generateTaskId();
         console.log('[Speech] Task ID:', this.taskId);
 
-        // 创建 WebSocket 连接，使用 Authorization header
-        this.ws = new WebSocket(this.config.wsUrl!, {
-          headers: {
-            Authorization: `bearer ${this.config.apiKey}`,
-            'X-DashScope-DataInspection': 'enable',
-          },
-        } as any);
+        // 创建 WebSocket 连接
+        // React Native WebSocket 构造函数: new WebSocket(url, protocols, options)
+        // 阿里云要求在 Authorization header 中传递 token
+        this.ws = new WebSocket(
+          this.config.wsUrl!,
+          undefined,
+          {
+            headers: {
+              Authorization: `bearer ${this.config.apiKey}`,
+            },
+          }
+        );
 
         this.ws.onopen = () => {
           console.log('[Speech] WebSocket connected');
