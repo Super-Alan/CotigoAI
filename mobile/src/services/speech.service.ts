@@ -8,7 +8,7 @@
  * - 阿里云 DashScope: Paraformer 实时语音识别
  */
 
-import { AudioRecorder, RecordingStatus } from 'expo-audio';
+import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 
 // 阿里云 DashScope 配置
@@ -35,7 +35,7 @@ export type RecordingState = 'idle' | 'connecting' | 'recording' | 'processing' 
 
 export class SpeechRecognitionService {
   private ws: WebSocket | null = null;
-  private recorder: AudioRecorder | null = null;
+  private recorder: any | null = null; // AudioRecorder from expo-audio
   private config: DashScopeConfig;
   private taskId: string = '';
   private taskStarted = false;
@@ -48,7 +48,7 @@ export class SpeechRecognitionService {
       wsUrl: 'wss://dashscope.aliyuncs.com/api-ws/v1/inference/',
       model: 'paraformer-realtime-v2',
       sampleRate: 16000,
-      format: 'pcm', // 流式使用 PCM 格式
+      format: 'wav', // 使用 WAV 格式（expo-av 生成WAV）
       ...config,
     };
   }
@@ -217,10 +217,18 @@ export class SpeechRecognitionService {
       this.recordingState = 'connecting';
 
       // 1. 请求麦克风权限
-      const permission = await AudioRecorder.requestPermissionsAsync();
-      if (!permission.granted) {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
         throw new Error('Audio permission denied');
       }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
 
       // 2. 连接 WebSocket
       await this.connectWebSocket();
@@ -228,20 +236,21 @@ export class SpeechRecognitionService {
       // 等待 task-started
       await this.waitForTaskStarted();
 
-      // 3. 创建录音器
-      this.recorder = new AudioRecorder({
+      // 3. 创建并开始录音
+      this.recorder = new Audio.Recording();
+      await this.recorder.prepareToRecordAsync({
         android: {
-          extension: '.pcm',
-          outputFormat: 0, // PCM
-          audioEncoder: 0,
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
           sampleRate: this.config.sampleRate || 16000,
           numberOfChannels: 1,
           bitRate: 128000,
         },
         ios: {
-          extension: '.pcm',
-          outputFormat: 0, // LINEARPCM
-          audioQuality: 127,
+          extension: '.wav',
+          outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
           sampleRate: this.config.sampleRate || 16000,
           numberOfChannels: 1,
           bitRate: 128000,
@@ -252,7 +261,7 @@ export class SpeechRecognitionService {
       });
 
       // 4. 开始录音
-      await this.recorder.record();
+      await this.recorder.startAsync();
       this.recordingState = 'recording';
       console.log('[Speech] Recording started - streaming mode');
 
