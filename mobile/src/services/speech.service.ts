@@ -293,6 +293,19 @@ export class SpeechRecognitionService {
    */
   async startRecording(onEvent: (event: RecognitionEvent) => void): Promise<void> {
     try {
+      // 清理旧的录音对象
+      if (this.recording) {
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording) {
+            await this.recording.stopAndUnloadAsync();
+          }
+        } catch (error) {
+          console.warn('[Speech] Failed to cleanup old recording:', error);
+        }
+        this.recording = null;
+      }
+
       // 清理旧的连接和状态
       this.cleanup();
 
