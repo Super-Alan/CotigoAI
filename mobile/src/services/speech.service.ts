@@ -277,6 +277,9 @@ export class SpeechRecognitionService {
    */
   async startRecording(onEvent: (event: RecognitionEvent) => void): Promise<void> {
     try {
+      // 清理旧的连接和状态
+      this.cleanup();
+
       this.onEventCallback = onEvent;
       this.recordingState = 'connecting';
       this.audioChunks = [];
