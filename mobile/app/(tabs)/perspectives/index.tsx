@@ -220,7 +220,7 @@ export default function PerspectivesScreen() {
                 numberOfLines={4}
                 value={issue}
                 onChangeText={setIssue}
-                placeholder="例如: 人工智能是否应该被允许参与司法判决？"
+                placeholder="输入议题 例如: 人工智能是否应该被允许参与司法判决？"
                 placeholderTextColor="#94A3B8"
                 style={styles.textArea}
                 editable={!isGenerating}

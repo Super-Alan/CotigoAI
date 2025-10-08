@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePerspectiveAnalysis } from '@/lib/ai/perspectiveGenerator';
+import jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
+
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-secret-key';
 
 interface PerspectiveRequest {
   issue: string;
@@ -63,9 +67,38 @@ const roleDefinitions: Record<string, RoleDefinition> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // 支持双重认证：Web 端 session 和移动端 Bearer token
+    let userId: string | null = null;
 
-    if (!session?.user) {
+    // 1. 尝试 Web 端 session 认证
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      userId = session.user.id;
+    }
+
+    // 2. 如果 session 认证失败，尝试 Bearer token 认证（移动端）
+    if (!userId) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+          // 验证用户存在
+          const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { id: true }
+          });
+          if (user) {
+            userId = user.id;
+          }
+        } catch (err) {
+          // Token 无效，继续尝试其他认证方式
+        }
+      }
+    }
+
+    // 3. 如果两种认证都失败，返回 401
+    if (!userId) {
       const encoder = new TextEncoder();
       return new Response(
         encoder.encode(JSON.stringify({ error: '未授权访问' })),

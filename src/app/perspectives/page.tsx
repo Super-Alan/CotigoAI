@@ -548,16 +548,6 @@ export default function PerspectivesPage() {
 
           {!result ? (
             <>
-              {/* Feature Description */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
-                <h2 className="text-2xl font-bold mb-4">如何使用？</h2>
-                <div className="space-y-3 text-gray-600 dark:text-gray-400">
-                  <p>1️⃣ 输入你关心的社会议题或争议话题</p>
-                  <p>2️⃣ 选择2-6个不同背景的角色立场</p>
-                  <p>3️⃣ AI将模拟每个角色的思维方式,生成独特观点</p>
-                  <p>4️⃣ 你可以继续与每个角色深入对话</p>
-                </div>
-              </div>
 
               {/* Issue Input */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
@@ -572,7 +562,7 @@ export default function PerspectivesPage() {
                       rows={4}
                       value={issue}
                       onChange={(e) => setIssue(e.target.value)}
-                      placeholder="例如: 人工智能是否应该被允许参与司法判决？"
+                      placeholder="输入议题例如: 人工智能是否应该被允许参与司法判决？"
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       disabled={isLoading}
                     />
