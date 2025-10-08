@@ -50,7 +50,7 @@ export class SpeechRecognitionService {
       wsUrl: 'wss://dashscope.aliyuncs.com/api-ws/v1/inference/',
       model: 'paraformer-realtime-v2',
       sampleRate: 16000,
-      format: 'pcm',
+      format: 'wav', // 使用 wav 格式，因为 expo-av 录制的是 WAV 文件
       ...config,
     };
   }
@@ -413,6 +413,10 @@ export class SpeechRecognitionService {
 
         // 等待所有音频块发送完成
         await this.waitForAudioSent();
+
+        // 等待服务器处理音频（给服务器一点时间处理）
+        console.log('[Speech] Waiting for server to process audio...');
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // 3. 发送 finish-task 指令
         this.sendFinishTask();
