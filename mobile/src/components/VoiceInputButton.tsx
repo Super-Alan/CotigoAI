@@ -32,7 +32,9 @@ interface VoiceInputButtonProps {
 
 export function VoiceInputButton({ apiKey, onResult, disabled }: VoiceInputButtonProps) {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
-  const [recognizedText, setRecognizedText] = useState('');
+  const [recognizedText, setRecognizedText] = useState(''); // 累积的识别文本
+  const [tempText, setTempText] = useState(''); // 临时文本（中间结果）
+  const [finalText, setFinalText] = useState(''); // 确认文本（最终结果）
   const [isCancelling, setIsCancelling] = useState(false);
 
   const speechService = useRef<SpeechRecognitionService | null>(null);
@@ -77,25 +79,43 @@ export function VoiceInputButton({ apiKey, onResult, disabled }: VoiceInputButto
 
   // 处理识别事件
   const handleRecognitionEvent = (event: RecognitionEvent) => {
-    console.log('[VoiceInput] Event:', event.type, event.text);
+    console.log('[VoiceInput] Event:', event.type, event.text, 'isFinal:', event.isFinal);
 
     switch (event.type) {
       case 'task-started':
         setRecordingState('recording');
+        setTempText('');
+        setFinalText('');
+        setRecognizedText('');
         break;
 
       case 'result-generated':
         if (event.text) {
-          setRecognizedText(event.text);
+          if (event.isFinal) {
+            // 最终结果：累加到确认文本
+            setFinalText(prev => prev + event.text);
+            setTempText(''); // 清空临时文本
+            console.log('[VoiceInput] Final result:', event.text);
+          } else {
+            // 中间结果：显示在临时文本
+            setTempText(event.text);
+            console.log('[VoiceInput] Temp result:', event.text);
+          }
+          // 更新总文本用于最后返回
+          setRecognizedText(finalText + (event.isFinal ? event.text : '') + (event.isFinal ? '' : tempText));
         }
         break;
 
       case 'task-finished':
         setRecordingState('idle');
-        if (recognizedText) {
-          onResult(recognizedText);
-          setRecognizedText('');
+        const fullText = finalText + tempText;
+        if (fullText) {
+          onResult(fullText);
         }
+        // 清空状态
+        setTempText('');
+        setFinalText('');
+        setRecognizedText('');
         break;
 
       case 'task-failed':
@@ -203,14 +223,14 @@ export function VoiceInputButton({ apiKey, onResult, disabled }: VoiceInputButto
     })
   ).current;
 
-  // 状态文本
-  const getStatusText = () => {
-    if (isCancelling) return '松开取消';
+  // 状态提示
+  const getStatusHint = () => {
+    if (isCancelling) return '';
     switch (recordingState) {
       case 'connecting':
         return '连接中...';
       case 'recording':
-        return recognizedText || '正在聆听...';
+        return (finalText || tempText) ? '' : '正在聆听...';
       case 'processing':
         return '处理中...';
       case 'error':
@@ -249,11 +269,25 @@ export function VoiceInputButton({ apiKey, onResult, disabled }: VoiceInputButto
                   <View style={styles.waveBar} />
                 </Animated.View>
 
-                {/* 状态文本 */}
-                <Text style={styles.statusText}>{getStatusText()}</Text>
+                {/* 实时识别文本显示 */}
+                {(finalText || tempText) ? (
+                  <View style={styles.textContainer}>
+                    {/* 确认文本（黑色） */}
+                    {finalText && (
+                      <Text style={styles.finalText}>{finalText}</Text>
+                    )}
+                    {/* 临时文本（灰色） */}
+                    {tempText && (
+                      <Text style={styles.tempText}>{tempText}</Text>
+                    )}
+                  </View>
+                ) : (
+                  /* 状态提示 */
+                  <Text style={styles.statusText}>{getStatusHint()}</Text>
+                )}
 
-                {/* 提示文本 */}
-                {recordingState === 'recording' && !recognizedText && (
+                {/* 底部提示 */}
+                {recordingState === 'recording' && (
                   <Text style={styles.hintText}>上滑取消</Text>
                 )}
               </>
@@ -360,6 +394,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.7)',
     fontFamily: 'SF Pro Text',
+  },
+  textContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    maxWidth: SCREEN_WIDTH * 0.7,
+  },
+  finalText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF', // 黑色（确认文本）
+    fontFamily: 'SF Pro Text',
+    lineHeight: 24,
+  },
+  tempText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.5)', // 灰色（临时文本）
+    fontFamily: 'SF Pro Text',
+    lineHeight: 24,
+    fontStyle: 'italic',
   },
   buttonWrapper: {
     alignItems: 'center',
