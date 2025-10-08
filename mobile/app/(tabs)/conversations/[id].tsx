@@ -18,6 +18,8 @@ import {
 } from '@/src/hooks/useConversations';
 import { MessageBubble } from '@/src/components/MessageBubble';
 import { Button } from '@/src/components/Button';
+import { VoiceInputButton } from '@/src/components/VoiceInputButton';
+import { VoiceInputModal } from '@/src/components/VoiceInputModal';
 import { tokenManager } from '@/src/services/api';
 import { API_CONFIG } from '@/src/constants/api';
 
@@ -40,9 +42,16 @@ export default function ConversationDetailScreen() {
   const [lastFailedMessage, setLastFailedMessage] = useState<string>('');
   const [pendingUserMessage, setPendingUserMessage] = useState<string>(''); // 临时显示用户消息
 
+  // 语音输入相关状态
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [voiceRecognizedText, setVoiceRecognizedText] = useState('');
+
   // Prevent duplicate suggestion generation
   const suggestionsGeneratedRef = useRef(false);
   const lastMessageIdRef = useRef<string | null>(null);
+
+  // 阿里云 API Key (从环境变量或配置获取)
+  const DASHSCOPE_API_KEY = process.env.EXPO_PUBLIC_DASHSCOPE_API_KEY || '';
 
   // Extract suggestions array from response
   const suggestions = suggestionsData?.suggestions || suggestionsData || [];
@@ -258,6 +267,25 @@ export default function ConversationDetailScreen() {
   const handleGenerateSummary = () => {
     if (!id) return;
     generateSummary(id);
+  };
+
+  // 语音识别完成回调
+  const handleVoiceResult = (text: string) => {
+    setVoiceRecognizedText(text);
+    setShowVoiceModal(true);
+  };
+
+  // 确认发送语音识别的文本
+  const handleVoiceConfirm = async (text: string) => {
+    setShowVoiceModal(false);
+    setVoiceRecognizedText('');
+    await sendMessageToAI(text);
+  };
+
+  // 取消语音输入
+  const handleVoiceCancel = () => {
+    setShowVoiceModal(false);
+    setVoiceRecognizedText('');
   };
 
   if (isLoading) {
@@ -492,6 +520,16 @@ export default function ConversationDetailScreen() {
         {/* Input Area */}
         <View className="bg-white border-t border-gray-200 px-4 py-3">
           <View className="flex-row items-end gap-2">
+            {/* 语音输入按钮 */}
+            {!input.trim() && DASHSCOPE_API_KEY && (
+              <VoiceInputButton
+                apiKey={DASHSCOPE_API_KEY}
+                onResult={handleVoiceResult}
+                disabled={isSending}
+              />
+            )}
+
+            {/* 文本输入框 */}
             <TextInput
               multiline
               value={input}
@@ -499,6 +537,8 @@ export default function ConversationDetailScreen() {
               placeholder="输入你的回答或新问题..."
               className="flex-1 bg-gray-50 rounded-xl px-4 py-3 max-h-24"
             />
+
+            {/* 发送按钮 */}
             <TouchableOpacity
               onPress={handleSend}
               disabled={!input.trim() || isSending}
@@ -512,6 +552,14 @@ export default function ConversationDetailScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* 语音识别结果确认对话框 */}
+        <VoiceInputModal
+          visible={showVoiceModal}
+          recognizedText={voiceRecognizedText}
+          onConfirm={handleVoiceConfirm}
+          onCancel={handleVoiceCancel}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
