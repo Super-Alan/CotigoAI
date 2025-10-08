@@ -371,7 +371,7 @@ export class SpeechRecognitionService {
       // 2. 读取音频文件
       if (uri) {
         const audioData = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
 
         // 将音频数据分块（每块约 0.1 秒的数据）
