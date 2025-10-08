@@ -15,6 +15,9 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Token 刷新锁 - 防止并发刷新
+let refreshTokenPromise: Promise<string> | null = null;
+
 // Token 管理
 export const tokenManager = {
   async getToken(): Promise<string | null> {
@@ -38,6 +41,7 @@ export const tokenManager = {
     try {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      refreshTokenPromise = null; // 重置刷新锁
     } catch (error) {
       console.error('Failed to remove token:', error);
     }
@@ -75,7 +79,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器 - 处理错误和 token 刷新
+// 响应拦截器 - 处理错误和 token 刷新（带锁机制）
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -86,25 +90,51 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await tokenManager.getRefreshToken();
-        if (refreshToken) {
-          const response = await axios.post(
-            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`,
-            { refreshToken }
-          );
-
-          const { token } = response.data;
-          await tokenManager.setToken(token);
-
-          // 重试原始请求
+        // 如果已经有刷新操作在进行，等待它完成
+        if (refreshTokenPromise) {
+          const newToken = await refreshTokenPromise;
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
           }
           return apiClient(originalRequest);
         }
+
+        // 创建新的刷新 Promise
+        refreshTokenPromise = (async () => {
+          try {
+            const refreshToken = await tokenManager.getRefreshToken();
+            if (!refreshToken) {
+              throw new Error('No refresh token available');
+            }
+
+            const response = await axios.post(
+              `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH}`,
+              { refreshToken }
+            );
+
+            const { token } = response.data;
+            await tokenManager.setToken(token);
+            return token;
+          } catch (refreshError) {
+            // Refresh token 也失效了，清除所有 token
+            await tokenManager.removeToken();
+            throw refreshError;
+          } finally {
+            // 清除刷新锁
+            refreshTokenPromise = null;
+          }
+        })();
+
+        const newToken = await refreshTokenPromise;
+
+        // 重试原始请求
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh token 也失效了，清除所有 token
-        await tokenManager.removeToken();
+        // 清除刷新锁（如果还存在）
+        refreshTokenPromise = null;
         // 这里可以触发导航到登录页面
         return Promise.reject(refreshError);
       }

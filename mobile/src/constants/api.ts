@@ -39,13 +39,12 @@ export const API_CONFIG = {
 
     // 多棱镜视角
     PERSPECTIVES: {
-      CREATE: '/perspectives',
+      GENERATE_STREAM: '/perspectives/generate-stream',
+      CHAT: '/perspectives/chat',
+      SYNTHESIZE_STREAM: '/perspectives/synthesize-stream',
+      SAVE: '/perspectives/save',
       LIST: '/perspectives',
       GET: (id: string) => `/perspectives/${id}`,
-      GENERATE: (id: string) => `/perspectives/${id}/generate`,
-      CHAT: (id: string) => `/perspectives/${id}/chat`,
-      SYNTHESIZE: '/perspectives/synthesize',
-      SAVE: '/perspectives/save',
     },
 
     // 话题生成

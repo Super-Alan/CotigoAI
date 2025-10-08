@@ -1,302 +1,411 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  usePerspectiveSession,
-  useGeneratePerspectives,
-  useChatWithPerspective,
-  useSynthesizePerspectives,
-} from '@/src/hooks/usePerspectives';
-import { Button } from '@/src/components/Button';
-import type { Perspective } from '@/src/types/perspective';
+import { perspectiveService } from '@/src/services/perspective.service';
+import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
+import type { PerspectiveSession } from '@/src/types/perspective';
 
-export default function PerspectiveSessionScreen() {
+export default function PerspectiveDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const scrollViewRef = useRef<ScrollView>(null);
 
-  const { data: session, isLoading } = usePerspectiveSession(id);
-  const { mutate: generatePerspectives, isPending: isGenerating } =
-    useGeneratePerspectives();
-  const { mutate: chatWithPerspective, isPending: isChatting } =
-    useChatWithPerspective();
-  const { mutate: synthesize, isPending: isSynthesizing } = useSynthesizePerspectives();
-
-  const [selectedPerspective, setSelectedPerspective] = useState<Perspective | null>(
-    null
-  );
-  const [input, setInput] = useState('');
-  const [showSynthesis, setShowSynthesis] = useState(false);
+  const [session, setSession] = useState<PerspectiveSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // 如果会话没有视角，自动生成
-    if (session && (!session.perspectives || session.perspectives.length === 0)) {
-      generatePerspectives({ sessionId: id });
+    if (id) {
+      loadSession();
     }
-  }, [session]);
+  }, [id]);
 
-  useEffect(() => {
-    // 自动滚动到底部
-    if (selectedPerspective?.messages && selectedPerspective.messages.length > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+  const loadSession = async () => {
+    try {
+      setLoading(true);
+      const data = await perspectiveService.getSession(id);
+      setSession(data);
+    } catch (err) {
+      console.error('[Perspective Detail] Load error:', err);
+      setError('加载失败，请稍后重试');
+    } finally {
+      setLoading(false);
     }
-  }, [selectedPerspective?.messages]);
-
-  const handleSendMessage = () => {
-    if (!input.trim() || !selectedPerspective) return;
-
-    const message = input.trim();
-    setInput('');
-
-    chatWithPerspective({
-      sessionId: id,
-      perspectiveId: selectedPerspective.id,
-      content: message,
-    });
   };
 
-  const handleSynthesize = () => {
-    synthesize(
-      { sessionId: id },
-      {
-        onSuccess: () => {
-          setShowSynthesis(true);
-          Alert.alert('成功', '视角综合完成');
-        },
-        onError: () => {
-          Alert.alert('错误', '综合失败，请稍后重试');
-        },
-      }
-    );
-  };
-
-  if (isLoading) {
+  // Loading state
+  if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
-
-  if (!session) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-        <Text className="text-gray-500">会话不存在</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#0EA5E9" />
+          <Text
+            style={{
+              marginTop: 16,
+              fontSize: 16,
+              color: '#64748B',
+              fontFamily: 'SF Pro Text',
+              letterSpacing: -0.4,
+            }}
+          >
+            加载中...
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-        keyboardVerticalOffset={0}
-      >
+  // Error state
+  if (error || !session) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
         {/* Header */}
-        <View className="bg-white border-b border-gray-200 px-4 py-3">
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <Text className="text-blue-600 text-2xl">←</Text>
+        <View
+          style={{
+            backgroundColor: 'white',
+            borderBottomWidth: 1,
+            borderBottomColor: '#E2E8F0',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+              <Text style={{ fontSize: 28, color: '#0EA5E9' }}>←</Text>
             </TouchableOpacity>
-            <View className="flex-1">
-              <Text className="font-semibold text-gray-900" numberOfLines={1}>
-                {session.topic}
-              </Text>
-              <Text className="text-xs text-gray-500">
-                {session.perspectives?.length || 0} 个视角
-              </Text>
-            </View>
-            {session.perspectives && session.perspectives.length > 0 && (
-              <Button
-                title={isSynthesizing ? '综合中' : '综合视角'}
-                onPress={handleSynthesize}
-                loading={isSynthesizing}
-                variant="secondary"
-                size="sm"
-              />
-            )}
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'SF Pro Display',
+                fontWeight: '600',
+                color: '#0F172A',
+                letterSpacing: -0.5,
+              }}
+            >
+              视角详情
+            </Text>
           </View>
         </View>
 
-        {/* 生成中提示 */}
-        {isGenerating && (
-          <View className="p-4 bg-blue-50 border-b border-blue-100">
-            <View className="flex-row items-center">
-              <ActivityIndicator size="small" color="#3B82F6" />
-              <Text className="ml-2 text-blue-900">正在生成多视角分析...</Text>
-            </View>
-          </View>
-        )}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Text style={{ fontSize: 64, marginBottom: 16 }}>⚠️</Text>
+          <Text
+            style={{
+              fontSize: 20,
+              fontFamily: 'SF Pro Display',
+              fontWeight: '600',
+              color: '#0F172A',
+              marginBottom: 8,
+              textAlign: 'center',
+              letterSpacing: -0.6,
+            }}
+          >
+            {error || '未找到视角分析数据'}
+          </Text>
+          <Text
+            style={{
+              fontSize: 15,
+              fontFamily: 'SF Pro Text',
+              color: '#64748B',
+              marginBottom: 24,
+              textAlign: 'center',
+              letterSpacing: -0.3,
+            }}
+          >
+            请返回重试或选择其他分析
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/perspectives')}
+            style={{
+              backgroundColor: '#0EA5E9',
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 12,
+              shadowColor: '#0EA5E9',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'SF Pro Text',
+                fontWeight: '600',
+                color: 'white',
+                letterSpacing: -0.4,
+              }}
+            >
+              返回多棱镜页面
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-        {/* 综合结果 */}
-        {showSynthesis && session.synthesis && (
-          <View className="m-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-4 shadow-sm">
-            <View className="flex-row items-center mb-3">
-              <Text className="text-lg font-bold text-gray-900">🔮 综合分析</Text>
-              <TouchableOpacity
-                onPress={() => setShowSynthesis(false)}
-                className="ml-auto"
-              >
-                <Text className="text-gray-500 text-xl">×</Text>
-              </TouchableOpacity>
-            </View>
-            <Text className="text-gray-900">{session.synthesis}</Text>
+  // Main content
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      {/* Header */}
+      <View
+        style={{
+          backgroundColor: 'white',
+          borderBottomWidth: 1,
+          borderBottomColor: '#E2E8F0',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+            <Text style={{ fontSize: 28, color: '#0EA5E9' }}>←</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 18,
+                fontFamily: 'SF Pro Display',
+                fontWeight: '600',
+                color: '#0F172A',
+                letterSpacing: -0.5,
+              }}
+            >
+              {session.topic}
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: 'SF Pro Text',
+                color: '#64748B',
+                marginTop: 2,
+                letterSpacing: -0.2,
+              }}
+            >
+              {session.perspectives.length} 个视角 • {new Date(session.createdAt).toLocaleDateString('zh-CN')}
+            </Text>
           </View>
-        )}
+        </View>
+      </View>
 
-        {/* 视角卡片列表 */}
-        {!selectedPerspective && session.perspectives && session.perspectives.length > 0 && (
-          <ScrollView className="flex-1 p-4">
-            <Text className="text-lg font-semibold mb-3">选择一个视角对话</Text>
-            {session.perspectives.map((perspective) => (
-              <TouchableOpacity
-                key={perspective.id}
-                onPress={() => setSelectedPerspective(perspective)}
-                className="bg-white rounded-2xl p-4 mb-3 shadow-sm"
-              >
-                <View className="flex-row items-center mb-2">
-                  <Text className="text-2xl mr-2">{perspective.icon}</Text>
-                  <Text className="text-lg font-semibold text-gray-900 flex-1">
-                    {perspective.name}
+      {/* Content */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Topic Section */}
+        <View
+          style={{
+            backgroundColor: 'white',
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 20,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ fontSize: 28, marginRight: 8 }}>🎯</Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'SF Pro Display',
+                fontWeight: '600',
+                color: '#0F172A',
+                letterSpacing: -0.5,
+              }}
+            >
+              分析议题
+            </Text>
+          </View>
+          <Text
+            style={{
+              fontSize: 16,
+              fontFamily: 'SF Pro Text',
+              color: '#334155',
+              lineHeight: 26,
+              letterSpacing: -0.3,
+            }}
+          >
+            {session.topic}
+          </Text>
+          <View
+            style={{
+              marginTop: 12,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: '#F1F5F9',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: 'SF Pro Text',
+                color: '#94A3B8',
+                letterSpacing: -0.2,
+              }}
+            >
+              分析时间：{new Date(session.createdAt).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
+        </View>
+
+        {/* Perspectives Section */}
+        <View style={{ marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 32, marginRight: 8 }}>🔮</Text>
+            <Text
+              style={{
+                fontSize: 20,
+                fontFamily: 'SF Pro Display',
+                fontWeight: '700',
+                color: '#0F172A',
+                letterSpacing: -0.6,
+              }}
+            >
+              多角度视角分析
+            </Text>
+          </View>
+
+          {session.perspectives.map((perspective, idx) => (
+            <View
+              key={perspective.id}
+              style={{
+                backgroundColor: 'white',
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 16,
+                borderLeftWidth: 4,
+                borderLeftColor: '#0EA5E9',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              {/* Perspective Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 40, marginRight: 12 }}>
+                  {perspective.roleConfig.roleIcon}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontFamily: 'SF Pro Display',
+                      fontWeight: '600',
+                      color: '#0F172A',
+                      marginBottom: 4,
+                      letterSpacing: -0.6,
+                    }}
+                  >
+                    {perspective.roleName}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontFamily: 'SF Pro Text',
+                      color: '#94A3B8',
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    视角 {idx + 1} / {session.perspectives.length}
                   </Text>
                 </View>
-                <Text className="text-gray-700 mb-2">{perspective.description}</Text>
-                <Text className="text-sm text-gray-500 italic">
-                  "{perspective.stance}"
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
+              </View>
 
-        {/* 对话界面 */}
-        {selectedPerspective && (
-          <>
-            {/* 视角信息栏 */}
-            <View className="bg-white border-b border-gray-200 px-4 py-2">
-              <TouchableOpacity
-                onPress={() => setSelectedPerspective(null)}
-                className="flex-row items-center"
+              {/* Perspective Content with Tech Blue Background */}
+              <View
+                style={{
+                  backgroundColor: '#F0F9FF',
+                  borderRadius: 12,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: '#E0F2FE',
+                }}
               >
-                <Text className="text-blue-600 mr-2">←</Text>
-                <Text className="text-xl mr-2">{selectedPerspective.icon}</Text>
-                <Text className="font-semibold text-gray-900">
-                  {selectedPerspective.name}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* 消息列表 */}
-            <ScrollView
-              ref={scrollViewRef}
-              className="flex-1"
-              contentContainerClassName="p-4"
-            >
-              {/* 视角介绍 */}
-              <View className="bg-purple-50 rounded-2xl p-4 mb-4">
-                <Text className="text-gray-900 mb-2">
-                  {selectedPerspective.description}
-                </Text>
-                <Text className="text-sm text-purple-700 italic">
-                  立场: {selectedPerspective.stance}
-                </Text>
+                <MarkdownRenderer content={perspective.viewpoint} />
               </View>
 
-              {/* 对话消息 */}
-              {selectedPerspective.messages && selectedPerspective.messages.length > 0 ? (
-                selectedPerspective.messages.map((message) => (
-                  <View
-                    key={message.id}
-                    className={`mb-3 ${
-                      message.role === 'user' ? 'items-end' : 'items-start'
-                    }`}
-                  >
-                    <View
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-blue-600'
-                          : 'bg-white shadow-sm'
-                      }`}
-                    >
-                      <Text
-                        className={
-                          message.role === 'user' ? 'text-white' : 'text-gray-900'
-                        }
-                      >
-                        {message.content}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <View className="items-center py-12">
-                  <Text className="text-4xl mb-2">💬</Text>
-                  <Text className="text-gray-500">开始与这个视角对话</Text>
-                </View>
-              )}
-
-              {isChatting && (
-                <View className="items-start">
-                  <View className="bg-white rounded-2xl px-4 py-3 shadow-sm">
-                    <View className="flex-row items-center">
-                      <ActivityIndicator size="small" color="#3B82F6" />
-                      <Text className="ml-2 text-gray-500">思考中...</Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
-
-            {/* 输入区 */}
-            <View className="bg-white border-t border-gray-200 px-4 py-3">
-              <View className="flex-row items-end gap-2">
-                <TextInput
-                  multiline
-                  value={input}
-                  onChangeText={setInput}
-                  placeholder="输入你的问题..."
-                  className="flex-1 bg-gray-50 rounded-xl px-4 py-3 max-h-24"
-                />
-                <TouchableOpacity
-                  onPress={handleSendMessage}
-                  disabled={!input.trim() || isChatting}
-                  className={`w-12 h-12 rounded-xl items-center justify-center ${
-                    input.trim() && !isChatting ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
+              {/* Timestamp */}
+              <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: 'SF Pro Text',
+                    color: '#94A3B8',
+                    letterSpacing: -0.2,
+                  }}
                 >
-                  <Text className="text-white text-xl">↑</Text>
-                </TouchableOpacity>
+                  生成于：{new Date(perspective.createdAt).toLocaleString('zh-CN', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
               </View>
             </View>
-          </>
-        )}
+          ))}
+        </View>
 
-        {/* 空状态 */}
-        {!selectedPerspective &&
-          (!session.perspectives || session.perspectives.length === 0) &&
-          !isGenerating && (
-            <View className="flex-1 items-center justify-center p-8">
-              <Text className="text-4xl mb-2">🔮</Text>
-              <Text className="text-gray-500 text-center">
-                正在为你生成多个视角...
-              </Text>
-            </View>
-          )}
-      </KeyboardAvoidingView>
+        {/* Bottom Action */}
+        <View style={{ alignItems: 'center', marginTop: 16, marginBottom: 32 }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/perspectives')}
+            style={{
+              backgroundColor: '#0EA5E9',
+              paddingHorizontal: 32,
+              paddingVertical: 14,
+              borderRadius: 12,
+              shadowColor: '#0EA5E9',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'SF Pro Text',
+                fontWeight: '600',
+                color: 'white',
+                letterSpacing: -0.4,
+              }}
+            >
+              返回多棱镜页面
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

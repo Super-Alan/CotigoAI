@@ -1,7 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useArgument } from '@/src/hooks/useArguments';
+import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
 
 export default function ArgumentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -10,191 +12,332 @@ export default function ArgumentDetailScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View className="flex-1 items-center justify-center" style={styles.background}>
+        <ActivityIndicator size="large" color="#0EA5E9" />
       </View>
     );
   }
 
   if (!analysis) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-        <Text className="text-gray-500">分析不存在</Text>
+      <SafeAreaView className="flex-1 items-center justify-center" style={styles.background}>
+        <Text style={styles.errorText}>分析不存在</Text>
       </SafeAreaView>
     );
   }
 
-  // 获取证据强度信息
-  const getEvidenceStrengthInfo = (strength: string) => {
-    switch (strength) {
-      case 'strong':
-        return { color: 'bg-green-100 text-green-700', label: '强' };
-      case 'moderate':
-        return { color: 'bg-blue-100 text-blue-700', label: '中' };
-      case 'weak':
-        return { color: 'bg-orange-100 text-orange-700', label: '弱' };
-      default:
-        return { color: 'bg-gray-100 text-gray-700', label: '未知' };
-    }
-  };
-
-  // 获取谬误严重程度信息
-  const getSeverityInfo = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return { color: 'bg-red-100 text-red-700', label: '严重' };
-      case 'major':
-        return { color: 'bg-orange-100 text-orange-700', label: '较重' };
-      case 'minor':
-        return { color: 'bg-yellow-100 text-yellow-700', label: '轻微' };
-      default:
-        return { color: 'bg-gray-100 text-gray-700', label: '未知' };
-    }
-  };
-
-  // 获取整体强度信息
-  const getOverallStrengthInfo = (score: number) => {
-    if (score >= 8) return { color: 'bg-green-500', label: '强', textColor: 'text-green-700' };
-    if (score >= 5) return { color: 'bg-blue-500', label: '中', textColor: 'text-blue-700' };
-    return { color: 'bg-orange-500', label: '弱', textColor: 'text-orange-700' };
-  };
-
-  const overallStrengthInfo = getOverallStrengthInfo(analysis.overallStrength);
-
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-white border-b border-gray-200 px-4 py-3 flex-row items-center">
+    <SafeAreaView className="flex-1" style={styles.background}>
+      {/* Header - Tech Blue 导航栏 */}
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Text className="text-blue-600 text-2xl">←</Text>
+          <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <View className="flex-1">
-          <Text className="font-semibold text-gray-900">论点分析详情</Text>
+          <Text style={styles.headerTitle}>论点分析详情</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="p-4">
-        {/* 主张 */}
-        <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-          <Text className="text-sm font-semibold text-gray-500 mb-2">主要主张</Text>
-          <Text className="text-base text-gray-900">{analysis.mainClaim}</Text>
-        </View>
-
-        {/* 整体强度评分 */}
-        <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-          <Text className="text-sm font-semibold text-gray-500 mb-3">论证强度</Text>
-          <View className="flex-row items-center">
-            <View className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-              <View
-                className={`h-full ${overallStrengthInfo.color}`}
-                style={{ width: `${analysis.overallStrength * 10}%` }}
-              />
-            </View>
-            <Text className={`ml-3 text-lg font-bold ${overallStrengthInfo.textColor}`}>
-              {analysis.overallStrength}/10
-            </Text>
+        {/* Input Text Section - Tech Blue 卡片 */}
+        <View style={styles.card} className="mb-6">
+          <View className="flex-row items-center mb-3">
+            <Text style={styles.sectionIcon}>📝</Text>
+            <Text style={styles.sectionTitle}>输入文本</Text>
           </View>
-          <Text className={`text-center mt-2 font-semibold ${overallStrengthInfo.textColor}`}>
-            {overallStrengthInfo.label}
+          <Text style={styles.inputText}>{analysis.inputText}</Text>
+          <Text style={styles.timestamp}>
+            分析时间：{new Date(analysis.createdAt).toLocaleString('zh-CN')}
           </Text>
         </View>
 
-        {/* 前提 */}
+        {/* Main Claim - 核心论点 */}
+        <View style={styles.card} className="mb-6">
+          <View className="flex-row items-center mb-3">
+            <Text style={styles.sectionIcon}>🎯</Text>
+            <Text style={styles.sectionTitle}>核心论点</Text>
+          </View>
+          <View style={[styles.dimensionCard, styles.mainClaimCard]}>
+            <MarkdownRenderer content={analysis.mainClaim || '无法识别核心论点'} />
+          </View>
+        </View>
+
+        {/* Premises - 支撑前提 */}
         {analysis.premises && analysis.premises.length > 0 && (
-          <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-            <Text className="text-sm font-semibold text-gray-500 mb-3">前提条件</Text>
-            {analysis.premises.map((premise, index) => (
-              <View key={premise.id} className="mb-3 last:mb-0">
-                <View className="flex-row items-start">
-                  <View
-                    className={`px-2 py-1 rounded mr-2 ${
-                      premise.type === 'explicit' ? 'bg-blue-100' : 'bg-purple-100'
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-semibold ${
-                        premise.type === 'explicit' ? 'text-blue-700' : 'text-purple-700'
-                      }`}
-                    >
-                      {premise.type === 'explicit' ? '显性' : '隐性'}
-                    </Text>
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>📋</Text>
+              <Text style={styles.sectionTitle}>支撑前提</Text>
+            </View>
+            <View className="space-y-3">
+              {analysis.premises.map((premise, idx) => (
+                <View key={idx} style={styles.listItemCard} className="mb-3">
+                  <View className="flex-row">
+                    <Text style={styles.listNumber}>{idx + 1}.</Text>
+                    <View className="flex-1">
+                      <MarkdownRenderer content={premise} />
+                    </View>
                   </View>
-                  <Text className="flex-1 text-gray-900">{premise.statement}</Text>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         )}
 
-        {/* 证据 */}
+        {/* Evidence - 证据支撑 */}
         {analysis.evidence && analysis.evidence.length > 0 && (
-          <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-            <Text className="text-sm font-semibold text-gray-500 mb-3">支持证据</Text>
-            {analysis.evidence.map((evidence, index) => {
-              const strengthInfo = getEvidenceStrengthInfo(evidence.strength);
-              return (
-                <View key={evidence.id} className="mb-4 last:mb-0">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-xs text-gray-500">证据 {index + 1}</Text>
-                    <View className={`px-2 py-1 rounded ${strengthInfo.color.split(' ')[0]}`}>
-                      <Text className={`text-xs font-semibold ${strengthInfo.color.split(' ')[1]}`}>
-                        {strengthInfo.label}
-                      </Text>
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>📊</Text>
+              <Text style={styles.sectionTitle}>证据支撑</Text>
+            </View>
+            <View className="space-y-3">
+              {analysis.evidence.map((ev, idx) => (
+                <View key={idx} style={[styles.dimensionCard, styles.evidenceCard]} className="mb-3">
+                  <View className="flex-row">
+                    <Text style={styles.evidenceNumber}>{idx + 1}.</Text>
+                    <View className="flex-1">
+                      <MarkdownRenderer content={ev} />
                     </View>
                   </View>
-                  <Text className="text-gray-900 mb-1">{evidence.description}</Text>
-                  <Text className="text-sm text-gray-600">{evidence.source}</Text>
                 </View>
-              );
-            })}
+              ))}
+            </View>
           </View>
         )}
 
-        {/* 逻辑谬误 */}
-        {analysis.fallacies && analysis.fallacies.length > 0 && (
-          <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-            <Text className="text-sm font-semibold text-gray-500 mb-3">逻辑谬误</Text>
-            {analysis.fallacies.map((fallacy, index) => {
-              const severityInfo = getSeverityInfo(fallacy.severity);
-              return (
-                <View key={fallacy.id} className="mb-4 last:mb-0 border-l-4 border-red-500 pl-3">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <Text className="font-semibold text-gray-900">{fallacy.type}</Text>
-                    <View className={`px-2 py-1 rounded ${severityInfo.color.split(' ')[0]}`}>
-                      <Text className={`text-xs font-semibold ${severityInfo.color.split(' ')[1]}`}>
-                        {severityInfo.label}
-                      </Text>
+        {/* Assumptions - 隐含假设 */}
+        {analysis.assumptions && analysis.assumptions.length > 0 && (
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>🔍</Text>
+              <Text style={styles.sectionTitle}>隐含假设</Text>
+            </View>
+            <View className="space-y-3">
+              {analysis.assumptions.map((assumption, idx) => (
+                <View key={idx} style={[styles.dimensionCard, styles.assumptionCard]} className="mb-3">
+                  <View className="flex-row">
+                    <Text style={styles.assumptionNumber}>{idx + 1}.</Text>
+                    <View className="flex-1">
+                      <MarkdownRenderer content={assumption} />
                     </View>
                   </View>
-                  <Text className="text-gray-900 mb-1">{fallacy.description}</Text>
-                  <Text className="text-sm text-gray-600">{fallacy.explanation}</Text>
                 </View>
-              );
-            })}
+              ))}
+            </View>
           </View>
         )}
 
-        {/* 反驳论点 */}
-        {analysis.counterArguments && analysis.counterArguments.length > 0 && (
-          <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
-            <Text className="text-sm font-semibold text-gray-500 mb-3">可能的反驳论点</Text>
-            {analysis.counterArguments.map((counter, index) => (
-              <View key={counter.id} className="mb-4 last:mb-0">
-                <Text className="text-xs text-gray-500 mb-1">反驳 {index + 1}</Text>
-                <Text className="text-gray-900 mb-1 font-medium">{counter.argument}</Text>
-                <Text className="text-sm text-gray-600">{counter.reasoning}</Text>
-              </View>
-            ))}
+        {/* Logical Structure - 逻辑结构 */}
+        {analysis.logicalStructure && (
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>🧩</Text>
+              <Text style={styles.sectionTitle}>逻辑结构</Text>
+            </View>
+            <View style={[styles.dimensionCard, styles.logicalCard]}>
+              <MarkdownRenderer content={analysis.logicalStructure} />
+            </View>
           </View>
         )}
 
-        {/* 分析时间 */}
-        <View className="items-center mt-2">
-          <Text className="text-xs text-gray-400">
-            分析时间: {new Date(analysis.createdAt).toLocaleString('zh-CN')}
-          </Text>
-        </View>
+        {/* Potential Fallacies - 潜在谬误 */}
+        {analysis.potentialFallacies && analysis.potentialFallacies.length > 0 && (
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>⚠️</Text>
+              <Text style={styles.sectionTitle}>潜在谬误</Text>
+            </View>
+            <View className="space-y-3">
+              {analysis.potentialFallacies.map((fallacy, idx) => (
+                <View key={idx} style={[styles.dimensionCard, styles.fallacyCard]} className="mb-3">
+                  <View className="flex-row">
+                    <Text style={styles.fallacyNumber}>{idx + 1}.</Text>
+                    <View className="flex-1">
+                      <MarkdownRenderer content={fallacy} />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Strength Assessment - 综合评估 */}
+        {analysis.strengthAssessment && (
+          <View style={styles.card} className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Text style={styles.sectionIcon}>✨</Text>
+              <Text style={styles.sectionTitle}>综合评估</Text>
+            </View>
+            <View style={[styles.dimensionCard, styles.assessmentCard]}>
+              <MarkdownRenderer content={analysis.strengthAssessment} />
+            </View>
+          </View>
+        )}
+
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={() => router.push('/arguments')}
+          style={styles.backToListButton}
+          className="mt-4 mb-8"
+        >
+          <Text style={styles.backToListText}>返回解构页面</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  background: {
+    backgroundColor: '#F0F9FF', // Light blue background - tech blue theme
+  },
+  header: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(14, 165, 233, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  backButton: {
+    fontSize: 24,
+    color: '#0EA5E9',
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#0C4A6E',
+    letterSpacing: -0.408,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  errorText: {
+    fontSize: 15,
+    color: '#64748B',
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.1)',
+  },
+  sectionIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0C4A6E',
+    letterSpacing: -0.408,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  inputText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#334155',
+    marginBottom: 12,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#64748B',
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  dimensionCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+  },
+  mainClaimCard: {
+    backgroundColor: 'rgba(59, 130, 246, 0.08)', // Blue gradient
+    borderLeftColor: '#3B82F6',
+  },
+  listItemCard: {
+    backgroundColor: 'rgba(148, 163, 184, 0.08)',
+    padding: 12,
+    borderRadius: 10,
+  },
+  listNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#8B5CF6',
+    marginRight: 8,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  evidenceCard: {
+    backgroundColor: 'rgba(14, 165, 233, 0.08)',
+    borderLeftColor: '#0EA5E9',
+  },
+  evidenceNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0EA5E9',
+    marginRight: 8,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  assumptionCard: {
+    backgroundColor: 'rgba(251, 191, 36, 0.08)',
+    borderLeftColor: '#F59E0B',
+  },
+  assumptionNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#F59E0B',
+    marginRight: 8,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  logicalCard: {
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    borderLeftColor: '#6366F1',
+  },
+  fallacyCard: {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderLeftColor: '#EF4444',
+  },
+  fallacyNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#EF4444',
+    marginRight: 8,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+  assessmentCard: {
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderLeftColor: '#8B5CF6',
+  },
+  backToListButton: {
+    backgroundColor: '#0EA5E9',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  backToListText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: -0.408,
+    fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text',
+  },
+});

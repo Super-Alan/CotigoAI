@@ -8,12 +8,13 @@ import type {
 
 export const topicService = {
   /**
-   * 生成话题
+   * 生成话题 - 可能耗时数分钟，设置5分钟超时
    */
   async generateTopics(data: TopicGenerationRequest): Promise<GeneratedTopic[]> {
     const response = await api.post<TopicGenerationResponse>(
       API_CONFIG.ENDPOINTS.TOPICS.GENERATE,
-      data
+      data,
+      { timeout: 300000 } // 5分钟超时
     );
     return response.topics;
   },
