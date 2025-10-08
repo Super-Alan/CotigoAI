@@ -484,7 +484,19 @@ export class SpeechRecognitionService {
   async cancelRecording(): Promise<void> {
     try {
       if (this.recording) {
-        await this.recording.stopAndUnloadAsync();
+        try {
+          // 检查录音状态，只有在录音中时才停止
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording) {
+            await this.recording.stopAndUnloadAsync();
+          } else if (status.canRecord) {
+            // 如果已准备但未开始录音，直接卸载
+            await this.recording.stopAndUnloadAsync();
+          }
+        } catch (error) {
+          // 如果获取状态失败，尝试直接设置为null
+          console.warn('[Speech] Failed to stop recording, forcing cleanup:', error);
+        }
         this.recording = null;
       }
 
@@ -493,6 +505,10 @@ export class SpeechRecognitionService {
       console.log('[Speech] Recording cancelled');
     } catch (error) {
       console.error('[Speech] Failed to cancel recording:', error);
+      // 即使出错也要清理状态
+      this.recording = null;
+      this.cleanup();
+      this.recordingState = 'idle';
     }
   }
 
