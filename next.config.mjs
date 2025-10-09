@@ -10,6 +10,17 @@ const nextConfig = {
   images: {
     domains: [],
   },
+  // 忽略 mobile 目录
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/mobile/**', '**/node_modules/**']
+    };
+    return config;
+  },
+  // 排除 mobile 目录
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  transpilePackages: [],
 };
 
 export default nextConfig;
