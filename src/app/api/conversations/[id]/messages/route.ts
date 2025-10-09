@@ -65,10 +65,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const body = await req.json();
-    const { message, content, metadata } = body;
-    const userMessage = message || content;
+    const { message, content, metadata, role } = body;
+    const messageContent = message || content;
 
-    if (!userMessage || typeof userMessage !== 'string') {
+    if (!messageContent || typeof messageContent !== 'string') {
       return NextResponse.json(
         {
           success: false,
@@ -77,6 +77,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         { status: 400 }
       );
     }
+
+    // 验证role参数，默认为'user'
+    const messageRole = role && (role === 'user' || role === 'assistant') ? role : 'user';
 
     // 获取对话并验证所有权
     const conversation = await prisma.conversation.findFirst({
@@ -99,17 +102,34 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       );
     }
 
-    // 保存用户消息
+    // 保存消息（支持用户消息和助手消息）
     await prisma.message.create({
       data: {
         conversationId: params.id,
-        role: 'user',
-        content: userMessage,
+        role: messageRole,
+        content: messageContent,
         metadata,
       },
     });
 
-    // 构建AI对话上下文
+    // 如果是助手消息（如总结消息），直接返回成功，不需要生成AI响应
+    if (messageRole === 'assistant') {
+      // 更新对话的updatedAt时间戳
+      await prisma.conversation.update({
+        where: { id: params.id },
+        data: { updatedAt: new Date() },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          role: messageRole,
+          content: messageContent,
+        },
+      });
+    }
+
+    // 构建AI对话上下文（仅对用户消息）
     const messages: ChatMessage[] = [
       {
         role: 'system',
@@ -121,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       })),
       {
         role: 'user',
-        content: userMessage,
+        content: messageContent,
       },
     ];
 

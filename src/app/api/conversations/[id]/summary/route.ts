@@ -87,10 +87,10 @@ ${dialogueText}
             fullText = response;
             controller.enqueue(
               encoder.encode(
-                JSON.stringify({
+                'data: ' + JSON.stringify({
                   type: 'chunk',
                   content: response
-                }) + '\n'
+                }) + '\n\n'
               )
             );
           } else {

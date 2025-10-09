@@ -3,7 +3,7 @@ export const API_CONFIG = {
   // 开发环境使用本地服务器，生产环境使用实际域名
   // 注意：移动设备需要使用电脑的局域网 IP，不能用 localhost
   BASE_URL: __DEV__
-    ? 'http://192.168.31.224:3011/api'
+    ? 'http://192.168.31.118:3011/api'
     : 'https://your-production-domain.com/api',
 
   TIMEOUT: 30000, // 30 秒超时

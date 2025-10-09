@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -37,6 +38,9 @@ export default function ConversationDetailScreen() {
   const [input, setInput] = useState('');
   const [showAssistant, setShowAssistant] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  
+  // 动画相关
+  const slideAnim = useRef(new Animated.Value(0)).current;
   const [streamingMessage, setStreamingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [lastFailedMessage, setLastFailedMessage] = useState<string>('');
@@ -46,6 +50,18 @@ export default function ConversationDetailScreen() {
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [voiceRecognizedText, setVoiceRecognizedText] = useState('');
 
+  // 对话轮次与历史记录
+  const [currentRound, setCurrentRound] = useState(0);
+  const [dialogueHistory, setDialogueHistory] = useState<Array<{
+    round: number;
+    userMessage: string;
+    aiQuestion: string;
+    timestamp: Date;
+  }>>([]);
+  const [conversationEnded, setConversationEnded] = useState(false);
+
+  // 总结相关状态（已移除，现在总结直接输出到对话框）
+
   // Prevent duplicate suggestion generation
   const suggestionsGeneratedRef = useRef(false);
   const lastMessageIdRef = useRef<string | null>(null);
@@ -54,7 +70,31 @@ export default function ConversationDetailScreen() {
   const DASHSCOPE_API_KEY = process.env.EXPO_PUBLIC_DASHSCOPE_API_KEY || '';
 
   // Extract suggestions array from response
-  const suggestions = suggestionsData?.suggestions || suggestionsData || [];
+  const suggestions = (suggestionsData as any)?.suggestions || suggestionsData || [];
+
+  // 监听状态变化
+  useEffect(() => {
+    // 状态变化处理逻辑
+  }, [currentRound, conversationEnded, suggestions, suggestionsData, isLoadingSuggestions, showAssistant]);
+
+  // 专门监听 showAssistant 状态变化并处理动画
+  useEffect(() => {
+    if (showAssistant) {
+      // 显示动画
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // 隐藏动画
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showAssistant, slideAnim]);
 
   useEffect(() => {
     // 自动滚动到底部
@@ -68,7 +108,7 @@ export default function ConversationDetailScreen() {
     }
   }, [conversation?.messages, streamingMessage]);
 
-  // 监听AI回复完成，自动生成建议答案（参考Web端）- 防止重复调用
+  // 监听AI回复完成，自动生成建议答案并更新轮次（参考Web端）- 防止重复调用
   useEffect(() => {
     const lastMessage = conversation?.messages?.[conversation.messages.length - 1];
 
@@ -84,18 +124,40 @@ export default function ConversationDetailScreen() {
       suggestionsGeneratedRef.current = true;
 
       // 获取对话历史
-      const conversationHistory = conversation.messages.map((msg) => ({
+      const conversationHistory = (conversation.messages || []).map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
+
+      // 更新轮次和对话历史记录（参考Web端逻辑）
+      const userMessages = (conversation.messages || []).filter(m => m.role === 'user');
+      const newRound = Math.ceil(userMessages.length / 1);
+
+      if (newRound !== currentRound) {
+        setCurrentRound(newRound);
+
+        // 更新对话历史
+        const lastUserMsg = userMessages[userMessages.length - 1];
+        if (lastUserMsg) {
+          setDialogueHistory(prev => [...prev, {
+            round: newRound,
+            userMessage: lastUserMsg.content,
+            aiQuestion: lastMessage.content,
+            timestamp: new Date()
+          }]);
+        }
+      }
 
       getSuggestions({
         conversationId: id,
         question: lastMessage.content,
         conversationHistory,
       });
+
+      // 触发建议生成
+
     }
-  }, [conversation?.messages, isSending, streamingMessage]);
+  }, [conversation?.messages, isSending, streamingMessage, currentRound]);
 
   // 重置建议生成标记当用户发送新消息时
   useEffect(() => {
@@ -124,7 +186,8 @@ export default function ConversationDetailScreen() {
       try {
         decodedTopic = decodeURIComponent(topic);
       } catch (error) {
-        console.warn('[Auto-Start] Failed to decode topic, using raw value:', error);
+        console.error('Failed to decode topic:', error, { topic });
+        // 解码失败时使用原始值
       }
       const initialMessage = `我想和你探讨这个话题: ${decodedTopic}`;
 
@@ -133,7 +196,8 @@ export default function ConversationDetailScreen() {
 
       // 直接触发发送消息
       sendMessageToAI(initialMessage).catch((error) => {
-        console.error('[Auto-Start] Failed to send message:', error);
+        console.error('Failed to send initial message:', error, { initialMessage, id });
+        // 处理发送失败
       });
     }
   }, [isNew, topic, conversation, id]);
@@ -197,7 +261,7 @@ export default function ConversationDetailScreen() {
                       }, 100);
                       setIsSending(false);
                     }).catch((refetchError) => {
-                      console.error('Failed to refetch conversation:', refetchError);
+                      console.error('Failed to refetch conversation after message sent:', refetchError, { id });
                       setError('消息发送成功，但刷新失败。请手动刷新页面。');
                       setPendingUserMessage(''); // 失败时立即清除
                       setIsSending(false);
@@ -206,7 +270,8 @@ export default function ConversationDetailScreen() {
                     throw new Error(data.message || 'AI响应错误');
                   }
                 } catch (parseError) {
-                  console.error('SSE parse error:', parseError, 'Line:', line);
+                  console.error('Failed to parse SSE data:', parseError, { line, newText });
+                  // 解析错误处理
                 }
               }
             }
@@ -216,6 +281,7 @@ export default function ConversationDetailScreen() {
 
       xhr.onerror = () => {
         clearTimeout(timeoutId);
+        console.error('Network error in sendMessageToAI:', { message, id, url });
         setError('网络连接失败，请检查网络');
         setLastFailedMessage(message);
         setStreamingMessage('');
@@ -230,7 +296,7 @@ export default function ConversationDetailScreen() {
 
     } catch (error) {
       clearTimeout(timeoutId);
-      console.error('Send message error:', error);
+      console.error('Error in sendMessageToAI:', error, { message, id });
       const errorMessage = error instanceof Error ? error.message : '发送消息失败';
       setError(errorMessage);
       setLastFailedMessage(message);
@@ -264,257 +330,627 @@ export default function ConversationDetailScreen() {
     setShowAssistant(false);
   };
 
-  const handleGenerateSummary = () => {
+  const handleGenerateSummary = async () => {
     if (!id) return;
-    generateSummary(id);
+
+    // 检查是否已有总结消息
+    const hasSummary = conversation?.messages?.some(msg =>
+      msg.role === 'assistant' && msg.content.includes('📊 对话总结')
+    );
+
+    if (hasSummary) {
+      // 如果已有总结，关闭抽屉并滚动到总结位置
+      setShowAssistant(false);
+      // 延迟滚动以确保抽屉关闭动画完成
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 300);
+      return;
+    }
+
+    // 关闭智能助手抽屉
+    setShowAssistant(false);
+
+    // 设置生成状态并清除错误
+    setIsSending(true);
+    setError(null);
+    
+    // 临时显示占位符消息
+    setStreamingMessage('📊 正在生成对话总结...\n\n');
+
+    let xhr: XMLHttpRequest | null = null;
+
+    // 30秒超时控制
+    const timeoutId = setTimeout(() => {
+      setStreamingMessage('❌ 生成总结超时，请稍后重试');
+      setIsSending(false);
+      if (xhr) {
+        xhr.abort();
+      }
+      // 显示错误消息一段时间后清除
+      setTimeout(() => {
+        setStreamingMessage('');
+      }, 3000);
+    }, 30000);
+
+    try {
+      const token = await tokenManager.getToken();
+      const url = `${API_CONFIG.BASE_URL}/conversations/${id}/summary`;
+
+      // 使用 XMLHttpRequest 进行 SSE 连接（React Native兼容）
+      xhr = new XMLHttpRequest();
+
+      let previousLength = 0;
+      let summaryContent = '📊 对话总结\n\n';
+      let jsonBuffer = ''; // 用于累积不完整的JSON数据
+
+      xhr.onreadystatechange = () => {
+        if (xhr?.readyState === 3 || xhr?.readyState === 4) {
+          // 接收到部分数据或全部数据
+          const currentText = xhr.responseText || '';
+          const newText = currentText.substring(previousLength);
+          previousLength = currentText.length;
+
+          if (newText) {
+            // 将新数据添加到缓冲区
+            jsonBuffer += newText;
+            
+            // 尝试解析缓冲区中的JSON对象
+            let processedLength = 0;
+            const lines = jsonBuffer.split('\n');
+            
+            // 处理除最后一行外的所有行（最后一行可能不完整）
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+              if (line) {
+                try {
+                  const data = JSON.parse(line);
+                  processedLength += lines[i].length + 1; // +1 for newline
+
+                  if (data.type === 'chunk' && data.content) {
+                    summaryContent += data.content;
+                    // 实时更新流式消息内容
+                    setStreamingMessage(summaryContent);
+                  } else if (data.type === 'complete') {
+                    clearTimeout(timeoutId);
+
+                    // 保存总结消息到数据库
+                    fetch(`${API_CONFIG.BASE_URL}/conversations/${id}/messages`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        role: 'assistant',
+                        content: summaryContent
+                      })
+                    }).then(() => {
+                      // 标记对话已结束
+                      setConversationEnded(true);
+                      
+                      // 刷新对话以获取保存的消息
+                      refetch().then((refetchResult) => {
+                        setStreamingMessage('');
+                        setIsSending(false);
+                        
+                        // 滚动到底部显示新消息
+                        setTimeout(() => {
+                          scrollViewRef.current?.scrollToEnd({ animated: true });
+                        }, 100);
+                      }).catch((refetchError) => {
+                        console.error('Failed to refetch conversation after summary saved:', refetchError, { id });
+                        setStreamingMessage('');
+                        setIsSending(false);
+                      });
+                    }).catch((saveError) => {
+                      console.error('Failed to save summary message:', saveError, { id, summaryContent });
+                      // 即使保存失败，也显示总结内容
+                      setConversationEnded(true);
+                      setIsSending(false);
+                      setTimeout(() => {
+                        setStreamingMessage('');
+                      }, 100);
+                    });
+                  } else if (data.type === 'error') {
+                    clearTimeout(timeoutId);
+                    throw new Error(data.error || '生成总结失败');
+                  }
+                } catch (parseError) {
+                  console.error('Failed to parse JSON in handleGenerateSummary:', parseError, { line, jsonBuffer });
+                  // JSON解析失败，可能是不完整的数据，继续等待更多数据
+                  break; // 跳出循环，等待更多数据
+                }
+              }
+            }
+            
+            // 移除已处理的数据，保留未处理的部分
+            if (processedLength > 0) {
+              jsonBuffer = jsonBuffer.substring(processedLength);
+            }
+            
+            // 如果是最后一行且不为空，尝试解析（可能是完整的JSON）
+            const lastLine = lines[lines.length - 1].trim();
+            if (lastLine && xhr?.readyState === 4) { // 只在请求完成时处理最后一行
+              try {
+                const data = JSON.parse(lastLine);
+                
+                if (data.type === 'chunk' && data.content) {
+                  summaryContent += data.content;
+                  setStreamingMessage(summaryContent);
+                } else if (data.type === 'complete') {
+                  clearTimeout(timeoutId);
+                  
+                  // 保存总结消息到数据库
+                  fetch(`${API_CONFIG.BASE_URL}/conversations/${id}/messages`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      role: 'assistant',
+                      content: summaryContent
+                    })
+                  }).then(() => {
+                    setConversationEnded(true);
+                    
+                    // 刷新对话以获取保存的消息
+                    refetch().then(() => {
+                      setStreamingMessage('');
+                      setIsSending(false);
+                      
+                      // 滚动到底部显示新消息
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 100);
+                    }).catch((refetchError) => {
+                      console.error('Failed to refetch conversation after summary saved (second instance):', refetchError, { id });
+                      setStreamingMessage('');
+                      setIsSending(false);
+                    });
+                  }).catch((saveError) => {
+                    console.error('Failed to save summary message (second instance):', saveError, { id, summaryContent });
+                    // 即使保存失败，也显示总结内容
+                    setConversationEnded(true);
+                    setIsSending(false);
+                    setTimeout(() => {
+                      setStreamingMessage('');
+                    }, 100);
+                  });
+                } else if (data.type === 'error') {
+                  clearTimeout(timeoutId);
+                  throw new Error(data.error || '生成总结失败');
+                }
+              } catch (parseError) {
+                console.error('Failed to parse last line in handleGenerateSummary:', parseError, { lastLine });
+                // 最后一行解析失败，忽略
+              }
+            }
+          }
+        }
+      };
+
+      xhr.onerror = () => {
+        clearTimeout(timeoutId);
+        console.error('Network error in handleGenerateSummary:', { id, url });
+        setStreamingMessage('❌ 网络连接失败，请稍后重试');
+        setIsSending(false);
+        // 显示错误消息一段时间后清除
+        setTimeout(() => {
+          setStreamingMessage('');
+        }, 3000);
+      };
+
+      xhr.open('POST', url);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.send(JSON.stringify({
+        rounds: dialogueHistory
+      }));
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error('Error in handleGenerateSummary:', error, { id, dialogueHistory });
+      setStreamingMessage('❌ 生成总结失败，请稍后重试');
+      setIsSending(false);
+      
+      if (xhr) {
+        xhr.abort();
+      }
+      
+      // 显示错误消息一段时间后清除
+      setTimeout(() => {
+        setStreamingMessage('');
+      }, 3000);
+    }
   };
 
-  // 语音识别完成回调
-  const handleVoiceResult = (text: string) => {
-    setVoiceRecognizedText(text);
+  const handleContinueAsking = () => {
+    setConversationEnded(false);
+    setShowAssistant(false);
+  };
+
+  // 语音输入处理
+  const handleVoiceInput = () => {
     setShowVoiceModal(true);
   };
 
-  // 确认发送语音识别的文本
-  const handleVoiceConfirm = async (text: string) => {
+  const handleVoiceResult = (text: string) => {
+    setVoiceRecognizedText(text);
+    setInput(text);
     setShowVoiceModal(false);
-    setVoiceRecognizedText('');
-    await sendMessageToAI(text);
   };
 
-  // 取消语音输入
   const handleVoiceCancel = () => {
     setShowVoiceModal(false);
-    setVoiceRecognizedText('');
   };
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
+  // 渲染消息列表
+  const renderMessages = () => {
+    const allMessages = [...(conversation?.messages || [])];
 
-  if (!conversation) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-        <Text className="text-gray-500">对话不存在</Text>
-      </SafeAreaView>
-    );
-  }
+    // 如果有待发送的用户消息，添加到列表中
+    if (pendingUserMessage) {
+      allMessages.push({
+        id: 'pending-user',
+        role: 'user' as const,
+        content: pendingUserMessage,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    // 如果有流式消息，添加到列表中
+    if (streamingMessage) {
+      allMessages.push({
+        id: 'streaming',
+        role: 'assistant' as const,
+        content: streamingMessage,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    return allMessages.map((message) => (
+      <MessageBubble
+        key={message.id}
+        message={{
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          timestamp: new Date(message.createdAt),
+        }}
+        isStreaming={message.id === 'streaming'}
+      />
+    ));
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
       <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         {/* Header */}
-        <View className="bg-white border-b border-gray-200 px-4 py-3 flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-blue-600 text-2xl">←</Text>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          backgroundColor: 'white',
+          borderBottomWidth: 1,
+          borderBottomColor: '#e2e8f0',
+        }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              padding: 8,
+              marginRight: 8,
+            }}
+          >
+            <Text style={{ fontSize: 18, color: '#64748b' }}>←</Text>
           </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="font-semibold text-gray-900" numberOfLines={1}>
-              {conversation.title}
-            </Text>
-            {conversation.topic && (
-              <Text className="text-xs text-gray-500" numberOfLines={1}>
-                {conversation.topic}
-              </Text>
-            )}
-          </View>
+          <Text style={{
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#1e293b',
+            flex: 1,
+          }} numberOfLines={1}>
+            {conversation?.topic || '对话'}
+          </Text>
         </View>
 
         {/* Messages */}
         <ScrollView
           ref={scrollViewRef}
-          className="flex-1"
-          contentContainerClassName="py-4"
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
         >
-          {conversation.messages && conversation.messages.length > 0 ? (
-            conversation.messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))
-          ) : (
-            <View className="flex-1 items-center justify-center py-12">
-              <Text className="text-4xl mb-2">💭</Text>
-              <Text className="text-gray-500">开始你的思考之旅</Text>
-              <Text className="text-gray-400 text-sm mt-1 text-center px-8">
-                AI 会通过连续的开放式问题引导你深入思考
+          {isLoading ? (
+            <View style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingVertical: 40,
+            }}>
+              <ActivityIndicator size="large" color="#3b82f6" />
+              <Text style={{
+                marginTop: 12,
+                color: '#64748b',
+                fontSize: 16,
+              }}>
+                加载对话中...
               </Text>
             </View>
-          )}
-
-          {/* Pending user message (临时显示 - 只在消息还未保存到数据库时显示) */}
-          {pendingUserMessage && !conversation.messages.some(m => m.role === 'user' && m.content === pendingUserMessage) && (
-            <View className="px-4 mb-4 flex-row justify-end">
-              <View className="bg-blue-600 rounded-2xl px-4 py-3 max-w-[80%]">
-                <Text className="text-white text-base">{pendingUserMessage}</Text>
-                <Text className="text-blue-100 text-xs mt-1">发送中...</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Streaming message */}
-          {streamingMessage && (
-            <View className="px-4 mb-4">
-              <View className="bg-white dark:bg-gray-800 shadow-md rounded-2xl px-4 py-3 max-w-[80%]">
-                <View className="flex-row items-center mb-1">
-                  <Text className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    AI 导师
+          ) : (
+            <>
+              {renderMessages()}
+              {error && (
+                <View style={{
+                  backgroundColor: '#fef2f2',
+                  borderColor: '#fecaca',
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 8,
+                }}>
+                  <Text style={{ color: '#dc2626', fontSize: 14 }}>
+                    {error}
                   </Text>
+                  {lastFailedMessage && (
+                    <TouchableOpacity
+                      onPress={handleRetry}
+                      style={{
+                        marginTop: 8,
+                        backgroundColor: '#dc2626',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 4,
+                        alignSelf: 'flex-start',
+                      }}
+                    >
+                      <Text style={{ color: 'white', fontSize: 12 }}>
+                        重试
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <Text className="text-base text-gray-900 dark:text-gray-100">
-                  {streamingMessage}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {isSending && !streamingMessage && (
-            <View className="px-4">
-              <View className="bg-white rounded-2xl px-4 py-3 shadow-sm max-w-[80%]">
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="#3B82F6" />
-                  <Text className="ml-2 text-gray-500">AI 正在思考...</Text>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Error message with retry */}
-          {error && (
-            <View className="px-4 mb-4">
-              <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                <View className="flex-row items-start">
-                  <Text className="text-red-600 text-base mr-2">⚠️</Text>
-                  <View className="flex-1">
-                    <Text className="text-red-800 text-sm font-medium mb-1">发送失败</Text>
-                    <Text className="text-red-600 text-sm mb-2">{error}</Text>
-                    <View className="flex-row gap-3">
-                      {lastFailedMessage && (
-                        <TouchableOpacity
-                          onPress={handleRetry}
-                          className="bg-blue-600 px-4 py-2 rounded-lg"
-                          disabled={isSending}
-                        >
-                          <Text className="text-white text-sm font-medium">
-                            {isSending ? '重试中...' : '重试'}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                      <TouchableOpacity
-                        onPress={() => setError(null)}
-                        className="bg-gray-200 px-4 py-2 rounded-lg"
-                      >
-                        <Text className="text-gray-700 text-sm font-medium">关闭</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
+              )}
+            </>
           )}
         </ScrollView>
 
-        {/* 智能助手浮动按钮 */}
-        {conversation.messages && conversation.messages.length > 0 && !showAssistant && (
-          <TouchableOpacity
-            onPress={() => setShowAssistant(true)}
-            className="absolute bottom-24 right-4 w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full shadow-xl items-center justify-center"
-            style={{ elevation: 5 }}
-          >
-            {suggestions && suggestions.length > 0 && (
-              <View className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full items-center justify-center">
-                <Text className="text-white text-xs font-bold">
-                  {suggestions.length}
-                </Text>
-              </View>
-            )}
-            <Text className="text-2xl">💡</Text>
-          </TouchableOpacity>
-        )}
-
         {/* 智能助手抽屉 */}
         {showAssistant && (
-          <View className="absolute inset-0 bg-black/50">
-            <TouchableOpacity
-              className="flex-1"
-              onPress={() => setShowAssistant(false)}
-            />
-            <View className="bg-white rounded-t-3xl max-h-[75vh]">
-              {/* 抽屉把手 */}
-              <View className="items-center pt-3 pb-2">
-                <View className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          <Animated.View
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 10,
+              transform: [{
+                translateY: slideAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [400, 0],
+                })
+              }],
+            }}
+          >
+            {/* 抽屉头部 */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 20,
+              paddingVertical: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: '#f1f5f9',
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>🤖</Text>
+                <Text style={{
+                  fontSize: 18,
+                  fontWeight: '600',
+                  color: '#1e293b',
+                }}>
+                  智能助手
+                </Text>
               </View>
-
-              {/* 内容 */}
-              <View className="px-4 pb-8">
-                <Text className="text-lg font-bold mb-4">💡 智能助手</Text>
-
-                {isLoadingSuggestions ? (
-                  <View className="py-12 items-center">
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                    <Text className="text-gray-500 mt-4">正在生成建议...</Text>
-                  </View>
-                ) : suggestions && suggestions.length > 0 ? (
-                  <ScrollView className="max-h-96">
-                    {suggestions.map((suggestion: any, index: number) => {
-                      // 兼容API返回格式: text/content, difficulty/level
-                      const content = suggestion.text || suggestion.content;
-                      const difficulty = suggestion.difficulty || (index === 0 ? 'simple' : index === 1 ? 'moderate' : 'deep');
-
-                      const difficultyConfig: Record<string, { bg: string; text: string; label: string; icon: string }> = {
-                        simple: { bg: 'bg-green-100', text: 'text-green-700', label: '入门', icon: '🌱' },
-                        moderate: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: '进阶', icon: '🌿' },
-                        deep: { bg: 'bg-purple-100', text: 'text-purple-700', label: '深度', icon: '🌳' },
-                      };
-
-                      const config = difficultyConfig[difficulty] || difficultyConfig.simple;
-
-                      return (
-                        <TouchableOpacity
-                          key={suggestion.id || index}
-                          onPress={() => handleUseSuggestion(content)}
-                          className="bg-gray-50 rounded-xl p-4 mb-3"
-                        >
-                          <View className="flex-row items-center mb-2">
-                            <View className={`px-2 py-1 rounded ${config.bg}`}>
-                              <Text className={`text-xs font-semibold ${config.text}`}>
-                                {config.icon} {config.label}
-                              </Text>
-                            </View>
-                          </View>
-                          <Text className="text-gray-900">{content}</Text>
-                          {suggestion.intent && (
-                            <Text className="text-xs text-gray-500 mt-2">💡 {suggestion.intent}</Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                ) : (
-                  <Text className="text-gray-500 text-center py-8">
-                    暂无建议答案
-                  </Text>
-                )}
-
-                {/* 生成总结按钮 */}
-                {conversation.messages && conversation.messages.length >= 5 && (
-                  <Button
-                    title={isGeneratingSummary ? '生成中...' : '生成思维总结'}
-                    onPress={handleGenerateSummary}
-                    loading={isGeneratingSummary}
-                    variant="secondary"
-                    className="mt-4"
-                  />
-                )}
-              </View>
+              <TouchableOpacity
+                onPress={() => setShowAssistant(false)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: '#f8fafc',
+                }}
+              >
+                <Text style={{ fontSize: 16, color: '#64748b' }}>✕</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+
+            {/* 抽屉内容 */}
+            <ScrollView
+              style={{ maxHeight: 300 }}
+              contentContainerStyle={{ padding: 20 }}
+            >
+              {/* 对话已总结状态 */}
+              {conversationEnded && (
+                <View style={{
+                  backgroundColor: '#f0f9ff',
+                  borderColor: '#0ea5e9',
+                  borderWidth: 2,
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 16,
+                  alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 20, marginBottom: 8 }}>📊</Text>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: '#0c4a6e',
+                    marginBottom: 4,
+                  }}>
+                    对话已总结
+                  </Text>
+                  <Text style={{
+                    fontSize: 14,
+                    color: '#075985',
+                    textAlign: 'center',
+                    marginBottom: 12,
+                  }}>
+                    本次苏格拉底式对话已完成总结
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleContinueAsking}
+                    style={{
+                      backgroundColor: '#0ea5e9',
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text style={{
+                      color: 'white',
+                      fontSize: 14,
+                      fontWeight: '500',
+                    }}>
+                      继续追问
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* 结束对话选项 - 只在轮次>=5且对话未结束时显示 */}
+              {!conversationEnded && currentRound >= 5 && (
+                <View style={{
+                  backgroundColor: '#fef3c7',
+                  borderColor: '#f59e0b',
+                  borderWidth: 2,
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 16,
+                }}>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: '#92400e',
+                    marginBottom: 8,
+                  }}>
+                    💭 对话进展
+                  </Text>
+                  <Text style={{
+                    fontSize: 14,
+                    color: '#a16207',
+                    marginBottom: 12,
+                  }}>
+                    已进行 {currentRound} 轮对话，您可以选择：
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={handleGenerateSummary}
+                      disabled={isGeneratingSummary}
+                      style={{
+                        flex: 1,
+                        backgroundColor: isGeneratingSummary ? '#d1d5db' : '#f59e0b',
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{
+                        color: isGeneratingSummary ? '#6b7280' : 'white',
+                        fontSize: 14,
+                        fontWeight: '500',
+                      }}>
+                        {isGeneratingSummary ? '生成中...' : '结束并总结'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setShowAssistant(false)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: '#6b7280',
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{
+                        color: 'white',
+                        fontSize: 14,
+                        fontWeight: '500',
+                      }}>
+                        继续对话
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* 建议答案 */}
+              {!conversationEnded && suggestions.length > 0 && (
+                <View>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: 12,
+                  }}>
+                    💡 参考思路
+                  </Text>
+                  {suggestions.map((suggestion: any, index: number) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handleUseSuggestion(suggestion.text || suggestion)}
+                      style={{
+                        backgroundColor: '#f8fafc',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        padding: 12,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: 14,
+                        color: '#475569',
+                        lineHeight: 20,
+                      }}>
+                        {suggestion.text || suggestion}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* 加载状态 */}
+              {isLoadingSuggestions && (
+                <View style={{
+                  alignItems: 'center',
+                  paddingVertical: 20,
+                }}>
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                  <Text style={{
+                    marginTop: 8,
+                    fontSize: 14,
+                    color: '#64748b',
+                  }}>
+                    正在生成建议...
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </Animated.View>
         )}
 
         {/* Input Area */}
@@ -534,21 +970,28 @@ export default function ConversationDetailScreen() {
               multiline
               value={input}
               onChangeText={setInput}
-              placeholder="输入你的回答或新问题..."
-              className="flex-1 bg-gray-50 rounded-xl px-4 py-3 max-h-24"
+              placeholder={conversationEnded ? "对话已结束" : "输入你的回答或新问题..."}
+              editable={!conversationEnded}
+              className={`flex-1 rounded-xl px-4 py-3 max-h-24 ${
+                conversationEnded ? 'bg-gray-200 text-gray-500' : 'bg-gray-50'
+              }`}
             />
 
             {/* 发送按钮 */}
             <TouchableOpacity
               onPress={handleSend}
-              disabled={!input.trim() || isSending}
+              disabled={conversationEnded || !input.trim() || isSending}
               className={`w-12 h-12 rounded-xl items-center justify-center ${
-                input.trim() && !isSending
+                conversationEnded
+                  ? 'bg-gray-300'
+                  : input.trim() && !isSending
                   ? 'bg-blue-600'
                   : 'bg-gray-300'
               }`}
             >
-              <Text className="text-white text-xl">↑</Text>
+              <Text className="text-white text-xl">
+                {conversationEnded ? '✓' : '↑'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

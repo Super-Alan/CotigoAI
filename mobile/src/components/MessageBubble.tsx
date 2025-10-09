@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { Message } from '@/types/conversation';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface MessageBubbleProps {
   message: Message;
@@ -42,14 +43,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </View>
 
         {/* 消息内容 - SF Pro 字体样式 */}
-        <Text
-          style={[
-            styles.messageContent,
-            { color: isUser ? '#FFFFFF' : '#0C4A6E' },
-          ]}
-        >
-          {message.content}
-        </Text>
+        {!isUser && message.content.includes('📊 对话总结') ? (
+          <View style={{ color: '#0C4A6E' }}>
+            <MarkdownRenderer content={message.content} />
+          </View>
+        ) : (
+          <Text
+            style={[
+              styles.messageContent,
+              { color: isUser ? '#FFFFFF' : '#0C4A6E' },
+            ]}
+          >
+            {message.content}
+          </Text>
+        )}
 
         {/* 时间戳 - Tech Blue 样式 */}
         <Text

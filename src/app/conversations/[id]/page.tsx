@@ -62,7 +62,7 @@ export default function ConversationChatPage() {
       await navigator.clipboard.writeText(text);
       // 可以添加一个toast提示
     } catch (err) {
-      console.error('复制失败:', err);
+      // 复制失败处理
     }
   };
 
@@ -102,7 +102,7 @@ export default function ConversationChatPage() {
           );
         }
       } catch (error) {
-        console.error('Failed to load conversation:', error);
+        // 加载对话失败处理
       }
     };
 
@@ -240,13 +240,12 @@ export default function ConversationChatPage() {
                 break;
               }
             } catch (e) {
-              console.warn('Failed to parse SSE data:', data, e);
+              // 解析失败处理
             }
           }
         }
       }
     } catch (error) {
-      console.error('Error sending message:', error);
       setMessages((prev) => [
         ...prev,
         {
@@ -306,7 +305,7 @@ export default function ConversationChatPage() {
         setSuggestedAnswers(data.suggestions || []);
       }
     } catch (error) {
-      console.error('生成建议答案失败:', error);
+      // 生成建议答案失败处理
     } finally {
       setLoadingSuggestions(false);
     }
@@ -419,7 +418,7 @@ export default function ConversationChatPage() {
                   })
                 });
               } catch (saveError) {
-                console.error('保存总结消息失败:', saveError);
+                // 保存总结消息失败处理
               }
 
               // 标记对话已结束
@@ -428,12 +427,11 @@ export default function ConversationChatPage() {
               throw new Error(data.error || '生成总结失败');
             }
           } catch (parseError) {
-            console.warn('解析响应行失败:', line, parseError);
+            // 解析响应行失败处理
           }
         }
       }
     } catch (error) {
-      console.error('生成总结失败:', error);
       // 更新消息显示错误
       setMessages((prev) => {
         const updated = [...prev];
