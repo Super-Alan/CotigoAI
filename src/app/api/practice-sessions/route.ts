@@ -304,7 +304,7 @@ ${topics.length > 0 ? `重点关注以下主题：${topics.join(', ')}` : ''}
 
     const response = await aiRouter.chat(
       [{ role: 'user', content: prompt }],
-      { model: 'qwen-plus', stream: false }
+      { model: 'qwen3-max', stream: false }
     );
 
     if (!response || typeof response !== 'string') {
@@ -365,7 +365,7 @@ ${topics.length > 0 ? `重点关注以下主题：${topics.join(', ')}` : ''}
 
     const response = await aiRouter.chat(
       [{ role: 'user', content: prompt }],
-      { model: 'qwen-plus', stream: false }
+      { model: 'qwen3-max', stream: false }
     );
 
     if (!response || typeof response !== 'string') {
