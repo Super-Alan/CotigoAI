@@ -24,10 +24,20 @@ import {
 } from 'lucide-react'
 import { CriticalThinkingQuestion, PracticeEvaluation } from '@/types'
 import CaseAnalysisDisplay from './CaseAnalysisDisplay'
+import ConceptActivationCard from './ConceptActivationCard'
 import { CaseAnalysisResult } from '@/lib/prompts/case-analysis-prompts'
+import { LearningContent } from '@/lib/knowledge/learning-content-data'
 
 interface PracticeSessionProps {
   thinkingTypeId: string
+}
+
+interface ThinkingType {
+  id: string
+  name: string
+  description: string
+  icon: string
+  learningContent: LearningContent | null
 }
 
 const thinkingTypeNames = {
@@ -57,19 +67,39 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
   const [caseAnalysis, setCaseAnalysis] = useState<CaseAnalysisResult | null>(null)
   const [loadingCaseAnalysis, setLoadingCaseAnalysis] = useState(false)
   const [activeTab, setActiveTab] = useState<string>('theory') // theory | case-analysis | practice
+  const [thinkingType, setThinkingType] = useState<ThinkingType | null>(null)
+  const [loadingThinkingType, setLoadingThinkingType] = useState(true)
 
   const typeName = thinkingTypeNames[thinkingTypeId as keyof typeof thinkingTypeNames] || '批判性思维'
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
     }
 
+    loadThinkingType()
     loadQuestion()
   }, [thinkingTypeId, session, status, router])
+
+  const loadThinkingType = async () => {
+    try {
+      setLoadingThinkingType(true)
+      const response = await fetch(`/api/thinking-types/${thinkingTypeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setThinkingType(data.data)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load thinking type:', error)
+    } finally {
+      setLoadingThinkingType(false)
+    }
+  }
 
   const loadQuestion = async () => {
     if (!session) return
@@ -189,6 +219,15 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
     loadQuestion()
   }
 
+  const handleProceedToCaseStudy = () => {
+    setActiveTab('case-analysis')
+  }
+
+  const handleSkipToPractice = () => {
+    setActiveTab('practice')
+    setCurrentStep(1) // Skip to guiding questions step
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center">
@@ -279,38 +318,38 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
                   </TabsList>
 
                   {/* 理论学习 Tab */}
-                  <TabsContent value="theory" className="mt-6 space-y-6">
-                    {/* Question */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <MessageSquare className="h-5 w-5 mr-2" />
-                          练习题目
-                        </CardTitle>
-                        {currentQuestion.tags && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {(currentQuestion.tags as string[]).map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
+                  <TabsContent value="theory" className="mt-6">
+                    {loadingThinkingType ? (
+                      <Card>
+                        <CardContent className="py-12">
+                          <div className="text-center">
+                            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+                            <p className="text-gray-600">正在加载学习内容...</p>
                           </div>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="prose max-w-none">
-                          <p className="text-gray-700 leading-relaxed mb-4">
-                            {(currentQuestion as any).question}
-                          </p>
-                          {currentQuestion.context && (
-                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                              <h4 className="font-medium text-blue-900 mb-2">背景信息：</h4>
-                              <p className="text-blue-800">{currentQuestion.context}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    ) : thinkingType?.learningContent ? (
+                      <ConceptActivationCard
+                        thinkingTypeName={typeName}
+                        learningContent={thinkingType.learningContent}
+                        onProceedToCaseStudy={handleProceedToCaseStudy}
+                        onSkipToPractice={handleSkipToPractice}
+                      />
+                    ) : (
+                      <Card>
+                        <CardContent className="py-12">
+                          <div className="text-center">
+                            <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                              学习内容暂未配置
+                            </h3>
+                            <p className="text-gray-600">
+                              该思维维度的学习内容正在准备中
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </TabsContent>
 
                   {/* 实例分析 Tab */}
