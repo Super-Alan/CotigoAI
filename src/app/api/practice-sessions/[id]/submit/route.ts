@@ -321,8 +321,9 @@ async function checkAndUnlockAchievements(
             data: {
               name: achievementName,
               description,
-              icon: 'trophy',
-              category: 'learning'
+              badgeIcon: 'trophy',
+              category: 'learning',
+              criteria: {}
             }
           });
         }
@@ -341,7 +342,7 @@ async function checkAndUnlockAchievements(
             data: {
               userId,
               achievementId: achievement.id,
-              unlockedAt: new Date()
+              earnedAt: new Date()
             }
           });
         }
