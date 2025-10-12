@@ -302,18 +302,17 @@ ${topics.length > 0 ? `重点关注以下主题：${topics.join(', ')}` : ''}
 ]
 `;
 
-    const response = await aiRouter.chat({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'qwen-plus'
-    });
+    const response = await aiRouter.chat(
+      [{ role: 'user', content: prompt }],
+      { model: 'qwen-plus', stream: false }
+    );
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
+    if (!response || typeof response !== 'string') {
       throw new Error('AI生成失败');
     }
 
     // 解析JSON响应
-    const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const cleanedContent = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const questions = JSON.parse(cleanedContent);
 
     return questions;
@@ -364,18 +363,17 @@ ${topics.length > 0 ? `重点关注以下主题：${topics.join(', ')}` : ''}
 ]
 `;
 
-    const response = await aiRouter.chat({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'qwen-plus'
-    });
+    const response = await aiRouter.chat(
+      [{ role: 'user', content: prompt }],
+      { model: 'qwen-plus', stream: false }
+    );
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
+    if (!response || typeof response !== 'string') {
       throw new Error('AI生成失败');
     }
 
     // 解析JSON响应
-    const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const cleanedContent = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const questions = JSON.parse(cleanedContent);
 
     return questions;
