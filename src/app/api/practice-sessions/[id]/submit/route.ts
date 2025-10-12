@@ -33,8 +33,11 @@ export async function POST(
         userId
       },
       include: {
-        questions: true,
-        thinkingType: true
+        question: {
+          include: {
+            thinkingType: true
+          }
+        }
       }
     });
 
@@ -88,66 +91,40 @@ async function submitCriticalThinkingSession(
   duration: number,
   userId: string
 ) {
-  let correctAnswers = 0;
-  const results = [];
+  // CriticalThinkingPracticeSession 只有一个问题
+  const question = session.question;
+  const thinkingTypeId = question.thinkingTypeId;
 
-  // 处理每个答案
-  for (const answer of answers) {
-    const question = session.questions.find((q: any) => q.id === answer.questionId);
-    if (!question) continue;
-
-    const isCorrect = question.correctAnswer === answer.selectedOption;
-    if (isCorrect) correctAnswers++;
-
-    // 保存用户答案
-    await prisma.userAnswer.create({
-      data: {
-        userId,
-        questionId: question.id,
-        answer: answer.selectedOption.toString(),
-        isCorrect,
-        submittedAt: new Date()
-      }
-    });
-
-    results.push({
-      questionId: question.id,
-      question: question.question,
-      selectedOption: answer.selectedOption,
-      correctAnswer: question.correctAnswer,
-      isCorrect,
-      explanation: question.explanation
-    });
+  // 获取第一个答案（应该只有一个）
+  const answer = answers[0];
+  if (!answer) {
+    throw new Error('缺少答案数据');
   }
 
-  // 计算分数
-  const score = Math.round((correctAnswers / session.questions.length) * 100);
+  // 注意：CriticalThinkingPracticeSession 是主观题，不是选择题
+  // score 和 aiFeedback 应该由评估 API 提供
+  const score = session.score || 0;
 
-  // 更新练习会话
+  // 更新练习会话（已经在创建时设置了 answers）
   await prisma.criticalThinkingPracticeSession.update({
     where: { id: session.id },
     data: {
-      score,
-      correctAnswers,
-      duration,
+      timeSpent: duration,
       completedAt: new Date()
     }
   });
 
-  // 更新用户的思维类型进度
-  const experienceGained = correctAnswers * 10 + (score >= 80 ? 20 : 0);
-  
   // 获取当前进度以计算新的平均分
   const currentProgress = await prisma.criticalThinkingProgress.findUnique({
     where: {
       userId_thinkingTypeId: {
         userId,
-        thinkingTypeId: session.thinkingTypeId
+        thinkingTypeId
       }
     }
   });
 
-  const newQuestionsCompleted = (currentProgress?.questionsCompleted || 0) + session.questions.length;
+  const newQuestionsCompleted = (currentProgress?.questionsCompleted || 0) + 1;
   const newAverageScore = currentProgress
     ? (currentProgress.averageScore * currentProgress.questionsCompleted + score) / newQuestionsCompleted
     : score;
@@ -157,7 +134,7 @@ async function submitCriticalThinkingSession(
     where: {
       userId_thinkingTypeId: {
         userId,
-        thinkingTypeId: session.thinkingTypeId
+        thinkingTypeId
       }
     },
     update: {
@@ -168,16 +145,16 @@ async function submitCriticalThinkingSession(
     },
     create: {
       userId,
-      thinkingTypeId: session.thinkingTypeId,
-      questionsCompleted: session.questions.length,
+      thinkingTypeId,
+      questionsCompleted: 1,
       averageScore: score,
-      progressPercentage: Math.min(100, session.questions.length * 5),
+      progressPercentage: 5,
       lastUpdated: new Date()
     }
   });
 
   // 检查是否解锁成就
-  await checkAndUnlockAchievements(userId, session.thinkingTypeId, score, correctAnswers);
+  await checkAndUnlockAchievements(userId, thinkingTypeId, score, score >= 60 ? 1 : 0);
 
   // 更新每日连续学习记录
   await updateDailyStreak(userId);
@@ -186,12 +163,15 @@ async function submitCriticalThinkingSession(
     success: true,
     results: {
       score,
-      correctAnswers,
-      totalQuestions: session.questions.length,
-      experienceGained,
+      totalQuestions: 1,
       duration,
-      questions: results,
-      thinkingType: session.thinkingType
+      question: {
+        questionId: question.id,
+        topic: question.topic,
+        score: session.score,
+        feedback: session.aiFeedback
+      },
+      thinkingType: question.thinkingType
     }
   });
 }
