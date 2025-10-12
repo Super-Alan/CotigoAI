@@ -359,51 +359,66 @@ async function updateDailyStreak(userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const streak = await prisma.dailyStreak.findUnique({
-      where: { userId }
+    // 查找今天的记录
+    const todayStreak = await prisma.dailyStreak.findUnique({
+      where: {
+        userId_practiceDate: {
+          userId,
+          practiceDate: today
+        }
+      }
     });
 
-    if (!streak) {
-      // 创建新的连续记录
-      await prisma.dailyStreak.create({
-        data: {
-          userId,
-          currentStreak: 1,
-          longestStreak: 1,
-          lastActiveDate: today
-        }
-      });
-    } else {
-      const lastActiveDate = new Date(streak.lastActiveDate);
-      lastActiveDate.setHours(0, 0, 0, 0);
-      
-      const daysDiff = Math.floor((today.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (daysDiff === 0) {
-        // 今天已经学习过了，不需要更新
-        return;
-      } else if (daysDiff === 1) {
-        // 连续学习
-        const newStreak = streak.currentStreak + 1;
+    if (todayStreak) {
+      // 今天已经有记录了，标记为完成
+      if (!todayStreak.completed) {
         await prisma.dailyStreak.update({
-          where: { userId },
+          where: {
+            userId_practiceDate: {
+              userId,
+              practiceDate: today
+            }
+          },
           data: {
-            currentStreak: newStreak,
-            longestStreak: Math.max(streak.longestStreak, newStreak),
-            lastActiveDate: today
-          }
-        });
-      } else {
-        // 中断了连续学习
-        await prisma.dailyStreak.update({
-          where: { userId },
-          data: {
-            currentStreak: 1,
-            lastActiveDate: today
+            completed: true
           }
         });
       }
+      return;
     }
+
+    // 查找最近的记录以计算连续天数
+    const recentStreaks = await prisma.dailyStreak.findMany({
+      where: { userId },
+      orderBy: { practiceDate: 'desc' },
+      take: 1
+    });
+
+    let streakCount = 1;
+    if (recentStreaks.length > 0) {
+      const lastStreak = recentStreaks[0];
+      const lastDate = new Date(lastStreak.practiceDate);
+      lastDate.setHours(0, 0, 0, 0);
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+
+      // 如果最后一次练习是昨天，则连续天数+1
+      if (lastDate.getTime() === yesterday.getTime()) {
+        streakCount = lastStreak.streakCount + 1;
+      }
+    }
+
+    // 创建今天的记录
+    await prisma.dailyStreak.create({
+      data: {
+        userId,
+        practiceDate: today,
+        completed: true,
+        streakCount
+      }
+    });
   } catch (error) {
     console.error('更新每日连续记录失败:', error);
   }
