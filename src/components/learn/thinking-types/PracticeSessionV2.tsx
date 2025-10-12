@@ -23,11 +23,21 @@ import {
 } from 'lucide-react'
 import { CriticalThinkingQuestion, PracticeEvaluation } from '@/types'
 import CaseAnalysisDisplay from './CaseAnalysisDisplay'
+import ConceptActivationCard from './ConceptActivationCard'
 import ReflectionSummary from './ReflectionSummary'
 import { CaseAnalysisResult } from '@/lib/prompts/case-analysis-prompts'
+import { LearningContent } from '@/lib/knowledge/learning-content-data'
 
 interface PracticeSessionProps {
   thinkingTypeId: string
+}
+
+interface ThinkingType {
+  id: string
+  name: string
+  description: string
+  icon: string
+  learningContent: LearningContent | null
 }
 
 // 7步线性流程
@@ -67,6 +77,9 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
   const [startTime, setStartTime] = useState<Date | null>(null)
 
   // Step-specific state
+  const [thinkingType, setThinkingType] = useState<ThinkingType | null>(null)
+  const [loadingThinkingType, setLoadingThinkingType] = useState(true)
+  const [showConceptActivation, setShowConceptActivation] = useState(true)
   const [caseAnalysis, setCaseAnalysis] = useState<CaseAnalysisResult | null>(null)
   const [loadingCaseAnalysis, setLoadingCaseAnalysis] = useState(false)
   const [intelligentGuided, setIntelligentGuided] = useState<any>(null)
@@ -122,8 +135,26 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       return
     }
 
+    loadThinkingType()
     loadQuestion()
   }, [thinkingTypeId, session, status, router])
+
+  const loadThinkingType = async () => {
+    try {
+      setLoadingThinkingType(true)
+      const response = await fetch(`/api/thinking-types/${thinkingTypeId}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setThinkingType(data.data)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load thinking type:', error)
+    } finally {
+      setLoadingThinkingType(false)
+    }
+  }
 
   const loadQuestion = async () => {
     if (!session) return
@@ -441,46 +472,79 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             {/* Step 1: 案例学习 */}
             {flowStep === 'case' && (
               <div className="space-y-6">
-                <Card className="border-2 border-blue-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <BookOpen className="h-6 w-6 mr-2 text-blue-600" />
-                      Step 1: 案例学习
-                    </CardTitle>
-                    <CardDescription>
-                      通过真实案例理解【{typeName}】在实际场景中的应用
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingCaseAnalysis ? (
-                      <div className="py-12 text-center">
-                        <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                        <p className="text-gray-600">AI正在生成专业的案例分析...</p>
-                      </div>
-                    ) : caseAnalysis ? (
-                      <CaseAnalysisDisplay caseAnalysis={caseAnalysis} />
-                    ) : (
-                      <div className="py-12 text-center">
-                        <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">案例分析暂未生成</h3>
-                        <Button
-                          onClick={() => currentQuestion?.id && loadCaseAnalysis(currentQuestion.id)}
-                          disabled={!currentQuestion?.id}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          生成案例分析
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {showConceptActivation && thinkingType?.learningContent ? (
+                  // 概念激活阶段
+                  <Card className="border-2 border-purple-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-xl">
+                        <Lightbulb className="h-6 w-6 mr-2 text-purple-600" />
+                        Step 1: 概念学习
+                      </CardTitle>
+                      <CardDescription>
+                        理解【{typeName}】的核心概念和方法论
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingThinkingType ? (
+                        <div className="py-12 text-center">
+                          <RefreshCw className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
+                          <p className="text-gray-600">正在加载学习内容...</p>
+                        </div>
+                      ) : (
+                        <ConceptActivationCard
+                          thinkingTypeName={typeName}
+                          learningContent={thinkingType.learningContent}
+                          onProceedToCaseStudy={() => setShowConceptActivation(false)}
+                          onSkipToPractice={() => proceedToNextStep('problem')}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  // 案例分析阶段
+                  <>
+                    <Card className="border-2 border-blue-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-xl">
+                          <BookOpen className="h-6 w-6 mr-2 text-blue-600" />
+                          Step 1: 案例学习
+                        </CardTitle>
+                        <CardDescription>
+                          通过真实案例理解【{typeName}】在实际场景中的应用
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {loadingCaseAnalysis ? (
+                          <div className="py-12 text-center">
+                            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+                            <p className="text-gray-600">AI正在生成专业的案例分析...</p>
+                          </div>
+                        ) : caseAnalysis ? (
+                          <CaseAnalysisDisplay caseAnalysis={caseAnalysis} />
+                        ) : (
+                          <div className="py-12 text-center">
+                            <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">案例分析暂未生成</h3>
+                            <Button
+                              onClick={() => currentQuestion?.id && loadCaseAnalysis(currentQuestion.id)}
+                              disabled={!currentQuestion?.id}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              生成案例分析
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                <div className="flex justify-end">
-                  <Button onClick={() => proceedToNextStep('problem')} size="lg">
-                    学习完毕，查看练习题目
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
+                    <div className="flex justify-end">
+                      <Button onClick={() => proceedToNextStep('problem')} size="lg">
+                        学习完毕，查看练习题目
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
