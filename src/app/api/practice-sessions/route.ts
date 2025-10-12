@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const total = await prisma.practiceSession.count({ where });
 
     // 如果指定了思维类型，也获取相关的批判性思维练习
-    let criticalThinkingSessions = [];
+    let criticalThinkingSessions: any[] = [];
     if (thinkingTypeId) {
       criticalThinkingSessions = await prisma.criticalThinkingPracticeSession.findMany({
         where: {
