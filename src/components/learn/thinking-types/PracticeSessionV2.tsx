@@ -78,6 +78,42 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
 
   const typeName = thinkingTypeNames[thinkingTypeId as keyof typeof thinkingTypeNames] || '批判性思维'
 
+  // 从 localStorage 恢复状态
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const savedState = localStorage.getItem(`practice-session-${thinkingTypeId}`)
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState)
+        if (parsed.flowStep) setFlowStep(parsed.flowStep)
+        if (parsed.userAnswer) setUserAnswer(parsed.userAnswer)
+        if (parsed.intelligentGuided) setIntelligentGuided(parsed.intelligentGuided)
+        if (parsed.evaluation) setEvaluation(parsed.evaluation)
+        if (parsed.reflection) setReflection(parsed.reflection)
+        if (parsed.caseAnalysis) setCaseAnalysis(parsed.caseAnalysis)
+      } catch (e) {
+        console.error('Failed to restore session state:', e)
+      }
+    }
+  }, [thinkingTypeId])
+
+  // 保存状态到 localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined' || !currentQuestion) return
+
+    const stateToSave = {
+      flowStep,
+      userAnswer,
+      intelligentGuided,
+      evaluation,
+      reflection,
+      caseAnalysis,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(`practice-session-${thinkingTypeId}`, JSON.stringify(stateToSave))
+  }, [flowStep, userAnswer, intelligentGuided, evaluation, reflection, caseAnalysis, thinkingTypeId, currentQuestion])
+
   useEffect(() => {
     if (status === 'loading') return
 
@@ -98,6 +134,13 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       setUserAnswer('')
       setEvaluation(null)
       setReflection(null)
+      setCaseAnalysis(null)
+      setIntelligentGuided(null)
+
+      // 清除localStorage中的旧状态
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`practice-session-${thinkingTypeId}`)
+      }
 
       // 尝试从数据库获取现有题目
       const response = await fetch(`/api/thinking-types/${thinkingTypeId}/questions?limit=1`)
@@ -272,6 +315,29 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
     setFlowStep(nextStep)
   }
 
+  const handleStepClick = (stepKey: string) => {
+    const step = stepKey as FlowStep
+    const stepConfig = STEP_CONFIG[step]
+
+    // 检查是否可以跳转到该步骤
+    // 规则：只能跳转到已完成的步骤或当前步骤的下一步
+    const currentIndex = STEP_CONFIG[flowStep].index
+    const targetIndex = stepConfig.index
+
+    // 允许跳转到：
+    // 1. 已完成的步骤（targetIndex < currentIndex）
+    // 2. 当前步骤（targetIndex === currentIndex）
+    // 3. 下一步（targetIndex === currentIndex + 1）
+    if (targetIndex <= currentIndex + 1) {
+      // 如果跳转到"引导思考"步骤，且还没有加载引导问题，则加载
+      if (step === 'guided' && !intelligentGuided && !loadingGuidedQuestions) {
+        loadIntelligentGuidedQuestions()
+      }
+
+      setFlowStep(step)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center">
@@ -325,17 +391,24 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             {Object.entries(STEP_CONFIG).map(([key, config], idx) => {
               const isActive = key === flowStep
               const isCompleted = config.index < currentStepConfig.index
+              const isClickable = config.index <= currentStepConfig.index + 1
               const StepIcon = config.icon
 
               return (
                 <div key={key} className="flex items-center flex-shrink-0">
-                  <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
-                    isActive
-                      ? 'bg-blue-100 border-2 border-blue-500'
-                      : isCompleted
-                        ? 'bg-green-50 border-2 border-green-300'
-                        : 'bg-gray-50 border-2 border-gray-200'
-                  }`}>
+                  <button
+                    onClick={() => handleStepClick(key)}
+                    disabled={!isClickable}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-blue-100 border-2 border-blue-500'
+                        : isCompleted
+                          ? 'bg-green-50 border-2 border-green-300 hover:bg-green-100 cursor-pointer'
+                          : isClickable
+                            ? 'bg-gray-50 border-2 border-gray-200 hover:bg-gray-100 cursor-pointer'
+                            : 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
+                    }`}
+                  >
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
                       isActive
                         ? 'bg-blue-600 text-white'
@@ -350,7 +423,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                     }`}>
                       {config.title}
                     </span>
-                  </div>
+                  </button>
                   {idx < Object.keys(STEP_CONFIG).length - 1 && (
                     <div className={`w-8 h-1 mx-1 ${
                       isCompleted ? 'bg-green-400' : 'bg-gray-200'
