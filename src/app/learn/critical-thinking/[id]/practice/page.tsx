@@ -1,4 +1,4 @@
-import PracticeSession from '@/components/learn/thinking-types/PracticeSession'
+import PracticeSessionV2 from '@/components/learn/thinking-types/PracticeSessionV2'
 
 interface PracticePageProps {
   params: {
@@ -7,5 +7,5 @@ interface PracticePageProps {
 }
 
 export default function PracticePage({ params }: PracticePageProps) {
-  return <PracticeSession thinkingTypeId={params.id} />
+  return <PracticeSessionV2 thinkingTypeId={params.id} />
 }

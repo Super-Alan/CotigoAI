@@ -517,9 +517,10 @@ model CriticalThinkingQuestion {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  thinkingType     ThinkingType                    @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
-  guidingQuestions CriticalThinkingGuidingQuestion[]
-  practiceSessions CriticalThinkingPracticeSession[]
+  thinkingType              ThinkingType                      @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  guidingQuestions          CriticalThinkingGuidingQuestion[]
+  practiceSessions          CriticalThinkingPracticeSession[]
+  intelligentGuidedCache    IntelligentGuidedQuestionCache?   // AI生成的智能引导缓存
 
   @@index([thinkingTypeId])
   @@index([difficulty])
@@ -572,6 +573,7 @@ model CriticalThinkingPracticeSession {
   score             Int?     // 0-100
   aiFeedback        String?  @db.Text
   evaluationDetails Json?    // 评估详情
+  reflection        Json?    // 反思总结 { learned: string, nextSteps: string, questions?: string }
   timeSpent         Int      // 答题用时（秒）
   completedAt       DateTime @default(now())
 
@@ -583,4 +585,32 @@ model CriticalThinkingPracticeSession {
   @@index([completedAt])
   @@index([score])
   @@map("critical_thinking_practice_sessions")
+}
+
+// AI生成的智能引导问题缓存
+// 用于存储和复用AI为特定题目生成的个性化引导问题
+model IntelligentGuidedQuestionCache {
+  id                  String   @id @default(cuid())
+  questionId          String   // 关联的题目ID
+  thinkingType        String   // 思维维度 (causal_analysis | premise_challenge | etc)
+  difficulty          String   // 难度等级 (beginner | intermediate | advanced)
+  guidedQuestions     Json     // AI生成的引导问题数组 [{ question, purpose, thinkingDirection, keywords }]
+  thinkingPath        String   @db.Text // 思维路径描述
+  expectedInsights    String[] // 期望获得的洞察
+  generatedBy         String   @default("ai") // 生成方式: ai | manual | preset
+  usageCount          Int      @default(0) // 使用次数统计
+  qualityRating       Float?   // 质量评分 (0-5)，可由用户反馈或系统评估
+  isActive            Boolean  @default(true) // 是否启用
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  lastUsedAt          DateTime? // 最后使用时间
+
+  question CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId]) // 每个题目只有一个智能引导缓存
+  @@index([thinkingType, difficulty])
+  @@index([usageCount])
+  @@index([qualityRating])
+  @@index([createdAt])
+  @@map("intelligent_guided_question_cache")
 }
