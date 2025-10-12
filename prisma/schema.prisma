@@ -38,6 +38,7 @@ model User {
   criticalThinkingProgress        CriticalThinkingProgress[]
   criticalThinkingPracticeSessions CriticalThinkingPracticeSession[]
   suggestedAnswerSets             ConversationSuggestedAnswerSet[]
+  knowledgePointMastery           KnowledgePointMastery[]
 
   @@map("users")
 }
@@ -613,4 +614,28 @@ model IntelligentGuidedQuestionCache {
   @@index([qualityRating])
   @@index([createdAt])
   @@map("intelligent_guided_question_cache")
+}
+
+// ============ 知识点掌握度追踪系统 ============
+
+// 知识点掌握度追踪
+// 用于追踪用户对每个思维维度下各个核心概念的掌握情况
+model KnowledgePointMastery {
+  id             String   @id @default(cuid())
+  userId         String
+  thinkingTypeId String   // 思维维度ID (causal_analysis | premise_challenge | etc)
+  conceptKey     String   // 概念标识符 (correlation_vs_causation | confounding_factors | etc)
+  masteryLevel   Float    @default(0.0) // 掌握度 (0-1)
+  lastPracticed  DateTime @default(now()) // 最后练习时间
+  practiceCount  Int      @default(0) // 练习次数
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, thinkingTypeId, conceptKey])
+  @@index([userId, lastPracticed])
+  @@index([userId, masteryLevel])
+  @@index([thinkingTypeId, conceptKey])
+  @@map("knowledge_point_mastery")
 }

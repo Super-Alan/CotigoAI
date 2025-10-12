@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { updateKnowledgeMastery } from '@/lib/knowledge/mastery-calculator';
 
 /**
  * POST /api/critical-thinking/practice-sessions
@@ -119,6 +120,20 @@ export async function POST(request: NextRequest) {
         lastUpdated: new Date()
       }
     });
+
+    // 🔥 更新知识点掌握度（Sprint 3新增）
+    try {
+      await updateKnowledgeMastery(
+        userId,
+        thinkingTypeId,
+        questionId,
+        score || 0
+      );
+      console.log(`✅ 知识点掌握度已更新 (userId: ${userId}, score: ${score})`);
+    } catch (error) {
+      console.error('更新知识点掌握度失败:', error);
+      // 不阻断主流程，记录错误即可
+    }
 
     // 检查并解锁成就
     await checkAndUnlockAchievements(userId, thinkingTypeId, score || 0);
