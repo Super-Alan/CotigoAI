@@ -90,6 +90,19 @@ interface Achievement {
   unlockedAt: Date | null
 }
 
+interface KnowledgeMasterySummary {
+  thinkingTypeId: string
+  thinkingTypeName: string
+  overallMastery: number
+  concepts: {
+    conceptKey: string
+    conceptName: string
+    masteryLevel: number
+    practiceCount: number
+    lastPracticed: string | null
+  }[]
+}
+
 const thinkingTypeIcons = {
   causal_analysis: Search,
   premise_challenge: HelpCircle,
@@ -114,6 +127,7 @@ export default function ProgressDashboard() {
   const [dailyStreak, setDailyStreak] = useState<DailyStreak | null>(null)
   const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgress[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [knowledgeMastery, setKnowledgeMastery] = useState<KnowledgeMasterySummary[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -127,7 +141,8 @@ export default function ProgressDashboard() {
         fetchUserProgress(),
         fetchDailyStreak(),
         fetchWeeklyProgress(),
-        fetchAchievements()
+        fetchAchievements(),
+        fetchKnowledgeMastery()
       ])
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
@@ -227,6 +242,20 @@ export default function ProgressDashboard() {
     setAchievements(mockAchievements)
   }
 
+  const fetchKnowledgeMastery = async () => {
+    try {
+      const response = await fetch('/api/knowledge-mastery/summary')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setKnowledgeMastery(data.data)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch knowledge mastery:', error)
+    }
+  }
+
   const getProgressPercentage = (progress: UserProgress) => {
     if (progress.totalQuestions === 0) return 0
     return Math.round((progress.correctAnswers / progress.totalQuestions) * 100)
@@ -252,6 +281,14 @@ export default function ProgressDashboard() {
         color: COLORS[index % COLORS.length]
       }
     })
+  }
+
+  const getKnowledgeMasteryRadarData = () => {
+    return knowledgeMastery.map(km => ({
+      dimension: km.thinkingTypeName,
+      mastery: km.overallMastery,
+      fullMark: 100
+    }))
   }
 
   const totalQuestions = userProgress.reduce((sum, p) => sum + p.correctAnswers, 0)
@@ -402,9 +439,9 @@ export default function ProgressDashboard() {
                   <RadarChart data={getRadarData()}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="dimension" className="text-sm" />
-                    <PolarRadiusAxis 
-                      angle={90} 
-                      domain={[0, 100]} 
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 100]}
                       className="text-xs"
                     />
                     <Radar
@@ -470,6 +507,81 @@ export default function ProgressDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Knowledge Mastery Radar Chart */}
+        {knowledgeMastery.length > 0 && (
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+                  知识点掌握度雷达图
+                </CardTitle>
+                <CardDescription>
+                  基于实际练习表现的知识点掌握情况
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Radar Chart */}
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={getKnowledgeMasteryRadarData()}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="dimension" className="text-sm" />
+                        <PolarRadiusAxis
+                          angle={90}
+                          domain={[0, 100]}
+                          className="text-xs"
+                        />
+                        <Radar
+                          name="掌握度"
+                          dataKey="mastery"
+                          stroke="#8B5CF6"
+                          fill="#8B5CF6"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Concept Details List */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900 mb-4">各维度掌握度详情</h4>
+                    {knowledgeMastery.map((km) => {
+                      const color = thinkingTypeColors[km.thinkingTypeId as keyof typeof thinkingTypeColors] || '#8B5CF6'
+                      return (
+                        <div key={km.thinkingTypeId} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700">
+                              {km.thinkingTypeName}
+                            </span>
+                            <span className="text-sm font-bold" style={{ color }}>
+                              {km.overallMastery}%
+                            </span>
+                          </div>
+                          <Progress value={km.overallMastery} className="h-2" />
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {km.concepts.slice(0, 3).map((concept) => (
+                              <Badge
+                                key={concept.conceptKey}
+                                variant={concept.masteryLevel >= 80 ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {concept.conceptName}: {concept.masteryLevel}%
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Detailed Progress by Dimension */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">

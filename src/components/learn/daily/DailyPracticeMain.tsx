@@ -25,7 +25,10 @@ import {
   ArrowLeft,
   Zap,
   Lightbulb,
-  Users
+  Users,
+  Sparkles,
+  Rocket,
+  RefreshCw
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -36,6 +39,15 @@ interface DailyStatus {
   weeklyCompletion: number
   userLevel: string
   achievements: number
+}
+
+interface SmartRecommendation {
+  thinkingTypeId: string
+  thinkingTypeName: string
+  reason: string
+  priority: 'high' | 'medium' | 'low'
+  targetConcepts: string[]
+  score: number
 }
 
 interface Achievement {
@@ -128,6 +140,8 @@ export default function DailyPracticeMain() {
   const router = useRouter()
   const [dailyStatus, setDailyStatus] = useState<DailyStatus | null>(null)
   const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([])
+  const [recommendation, setRecommendation] = useState<SmartRecommendation | null>(null)
+  const [loadingRecommendation, setLoadingRecommendation] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -139,13 +153,14 @@ export default function DailyPracticeMain() {
     }
 
     fetchDailyStatus()
+    fetchSmartRecommendation()
   }, [session, status, router])
 
   const fetchDailyStatus = async () => {
     try {
       const response = await fetch('/api/daily-practice/status')
       if (!response.ok) throw new Error('获取状态失败')
-      
+
       const data = await response.json()
       setDailyStatus(data)
     } catch (error) {
@@ -154,6 +169,28 @@ export default function DailyPracticeMain() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchSmartRecommendation = async () => {
+    try {
+      setLoadingRecommendation(true)
+      const response = await fetch('/api/recommendation/smart')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.recommendation) {
+          setRecommendation(data.data.recommendation)
+        }
+      }
+    } catch (error) {
+      console.error('获取智能推荐失败:', error)
+    } finally {
+      setLoadingRecommendation(false)
+    }
+  }
+
+  const refreshRecommendation = () => {
+    fetchSmartRecommendation()
+    toast.success('正在重新生成推荐...')
   }
 
   const startPractice = (sessionType: string, difficulty: string = 'intermediate') => {
@@ -277,6 +314,70 @@ export default function DailyPracticeMain() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Smart Recommendation */}
+        {recommendation && !loadingRecommendation && (
+          <Card className="mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <span>今日智能推荐</span>
+                  <Badge
+                    variant={recommendation.priority === 'high' ? 'destructive' : 'default'}
+                    className="ml-2"
+                  >
+                    {recommendation.priority === 'high'
+                      ? '重点推荐'
+                      : recommendation.priority === 'medium'
+                      ? 'AI推荐'
+                      : '建议练习'}
+                  </Badge>
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshRecommendation}
+                  disabled={loadingRecommendation}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingRecommendation ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    {recommendation.thinkingTypeName}
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">{recommendation.reason}</p>
+                </div>
+
+                {recommendation.targetConcepts.length > 0 && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">本次练习重点：</span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {recommendation.targetConcepts.map((concept) => (
+                        <Badge key={concept} variant="outline" className="text-xs">
+                          {concept}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  size="lg"
+                  onClick={() => startPractice(recommendation.thinkingTypeId)}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  <Rocket className="mr-2 h-5 w-5" />
+                  开始智能推荐练习
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Today's Status */}
         <Card className="mb-8">
