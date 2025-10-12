@@ -69,6 +69,8 @@ const criticalThinkingQuestions = [
     difficulty: 'beginner',
     topic: '为什么现在的年轻人越来越不愿意结婚？',
     context: '近年来，中国的结婚率持续下降，离婚率上升。2022年全国结婚登记数量为683.3万对，创下1986年以来的新低。同时，初婚年龄不断推迟，一线城市平均初婚年龄已超过30岁。',
+    question: '为什么现在的年轻人越来越不愿意结婚？这一现象背后有哪些深层原因？',
+    tags: ['社会现象', '婚姻观念', '社会学', '人口问题'],
     thinkingFramework: {
       coreChallenge: '如何从多个维度分析复杂社会现象的成因，避免单一归因的思维陷阱？',
       commonPitfalls: ['单一因果归因', '忽视结构性因素', '过度个人化解释'],
@@ -85,6 +87,8 @@ const criticalThinkingQuestions = [
     difficulty: 'intermediate',
     topic: '人工智能是否会加剧社会不平等？',
     context: 'AI技术快速发展，在提高效率的同时也引发担忧。一方面，AI可能替代大量工作岗位；另一方面，掌握AI技术的企业和个人可能获得更大优势。同时，AI的发展需要大量数据和计算资源，这些资源往往集中在少数大公司手中。',
+    question: '人工智能技术的发展是否会加剧社会不平等？请从多个维度分析其潜在影响。',
+    tags: ['人工智能', '社会不平等', '技术伦理', '经济影响'],
     thinkingFramework: {
       coreChallenge: '如何平衡技术进步带来的机遇与挑战，理性评估其社会影响？',
       commonPitfalls: ['技术决定论', '忽视政策调节作用', '过度乐观或悲观'],
@@ -102,6 +106,8 @@ const criticalThinkingQuestions = [
     difficulty: 'beginner',
     topic: '\"读书无用论\"是否有道理？',
     context: '近年来，一些人提出"读书无用论"，认为大学毕业生就业困难，收入不如一些没有高学历的人。他们举例说，某些网红、主播收入远超博士生，一些技术工人的薪资也比大学生高。',
+    question: '"读书无用论"是否有道理？这个论证的前提假设是什么？',
+    tags: ['教育价值', '前提质疑', '社会现象', '逻辑思维'],
     thinkingFramework: {
       coreChallenge: '如何识别和质疑论证中的隐含前提，避免被表面现象误导？',
       commonPitfalls: ['接受未经验证的前提', '忽视样本偏差', '混淆相关与因果'],
@@ -118,6 +124,8 @@ const criticalThinkingQuestions = [
     difficulty: 'intermediate',
     topic: '网络调查显示90%的人支持某政策，这个结果可信吗？',
     context: '某网站发布调查称，90%的网民支持延长产假政策。调查通过网站弹窗进行，共收集到50万份回复。媒体广泛报道了这一结果，称"民意明确支持延长产假"。',
+    question: '网络调查显示90%的人支持某政策，这个结果可信吗？调查方法有什么问题？',
+    tags: ['方法论', '数据分析', '抽样偏差', '媒体批判'],
     thinkingFramework: {
       coreChallenge: '如何批判性地评估调查研究的方法论，识别可能的偏差和局限？',
       commonPitfalls: ['盲信数据权威', '忽视抽样偏差', '混淆网络民意与真实民意'],
@@ -135,6 +143,8 @@ const criticalThinkingQuestions = [
     difficulty: 'beginner',
     topic: '\"他连自己的孩子都教育不好，怎么能当教育部长？\"这个论证有问题吗？',
     context: '在某次网络讨论中，有人批评新任教育部长，理由是"他的孩子学习成绩不好，说明他连自己的孩子都教育不好，怎么能管理全国的教育事业？"这个观点得到了很多人的赞同。',
+    question: '"他连自己的孩子都教育不好，怎么能当教育部长？"这个论证有什么逻辑问题？',
+    tags: ['逻辑谬误', '人身攻击', '论证分析', 'Ad Hominem'],
     thinkingFramework: {
       coreChallenge: '如何识别日常论证中的逻辑谬误，避免被情绪化论证误导？',
       commonPitfalls: ['接受表面合理的论证', '忽视个人与职业能力的区别', '被情绪化语言影响'],
@@ -151,6 +161,8 @@ const criticalThinkingQuestions = [
     difficulty: 'intermediate',
     topic: '\"自从使用了这个学习方法，我的成绩提高了，所以这个方法很有效\"，这个结论可靠吗？',
     context: '小明在社交媒体上分享："我之前成绩一直不好，后来用了某培训机构的学习方法，成绩从60分提高到了85分。这个方法真的很有效，推荐给大家！"这条分享获得了很多点赞和转发。',
+    question: '"自从使用了这个学习方法，我的成绩提高了，所以这个方法很有效"，这个结论可靠吗？',
+    tags: ['因果谬误', 'Post Hoc', '证据评估', '个人经验'],
     thinkingFramework: {
       coreChallenge: '如何识别因果关系推断中的逻辑问题，避免被个人经验误导？',
       commonPitfalls: ['混淆相关与因果', '忽视其他可能因素', '过度泛化个人经验'],
@@ -168,6 +180,8 @@ const criticalThinkingQuestions = [
     difficulty: 'beginner',
     topic: '你曾经坚信的某个观点后来改变了吗？是什么让你改变了想法？',
     context: '每个人在成长过程中都会遇到观点转变的时刻。可能是因为新的经历、新的信息，或者更深入的思考。这种观点的演化是思维成熟的标志，但也需要我们反思：什么样的证据足以改变我们的观点？我们如何避免固执己见，同时又不轻易摇摆？',
+    question: '你曾经坚信的某个观点后来改变了吗？是什么让你改变了想法？',
+    tags: ['观点演化', '自我反思', '元认知', '思维成长'],
     thinkingFramework: {
       coreChallenge: '如何在坚持原则与开放思维之间找到平衡，进行有效的自我反思？',
       commonPitfalls: ['固执己见', '过度摇摆', '缺乏反思深度'],
@@ -184,6 +198,8 @@ const criticalThinkingQuestions = [
     difficulty: 'intermediate',
     topic: '面对与自己观点相冲突的信息时，你通常如何处理？',
     context: '在信息爆炸的时代，我们经常遇到与自己既有观点相冲突的信息。心理学研究表明，人们倾向于寻找支持自己观点的信息（确认偏差），而忽视或排斥相反的证据。这种倾向可能导致观点极化和思维僵化。',
+    question: '面对与自己观点相冲突的信息时，你通常如何处理？如何克服确认偏差？',
+    tags: ['确认偏差', '认知偏差', '批判性思维', '信息处理'],
     thinkingFramework: {
       coreChallenge: '如何克服认知偏差，建立有效的信息处理和观点更新机制？',
       commonPitfalls: ['确认偏差', '选择性注意', '情绪化反应'],
@@ -201,6 +217,8 @@ const criticalThinkingQuestions = [
     difficulty: 'beginner',
     topic: '疫情期间的在线教育经验对未来教育发展有什么启示？',
     context: '新冠疫情期间，全球教育系统被迫转向在线模式。这次大规模的在线教育实验暴露了数字鸿沟、师生互动不足等问题，但也展现了教育技术的潜力，推动了教学方式的创新。',
+    question: '疫情期间的在线教育经验对未来教育发展有什么启示？如何进行经验迁移？',
+    tags: ['知识迁移', '在线教育', '教育创新', '经验总结'],
     thinkingFramework: {
       coreChallenge: '如何从特殊情境中提取普遍性经验，并将其迁移到常规情境中？',
       commonPitfalls: ['过度泛化特殊经验', '忽视情境差异', '缺乏系统思考'],
@@ -217,6 +235,8 @@ const criticalThinkingQuestions = [
     difficulty: 'intermediate',
     topic: '古代"科举制"对现代教育公平有什么借鉴意义？',
     context: '中国古代的科举制度实行了1300多年，被认为是世界上最早的公务员考试制度。它打破了门第出身的限制，为寒门子弟提供了上升通道，但也产生了应试教育、八股文等问题。现代社会仍在探索教育公平的实现路径。',
+    question: '古代"科举制"对现代教育公平有什么借鉴意义？如何进行历史经验的迁移？',
+    tags: ['历史借鉴', '科举制度', '教育公平', '跨时代思考'],
     thinkingFramework: {
       coreChallenge: '如何从历史经验中汲取智慧，同时避免简单的历史类比？',
       commonPitfalls: ['简单历史类比', '忽视时代差异', '理想化历史经验'],
