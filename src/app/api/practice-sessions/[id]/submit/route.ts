@@ -201,7 +201,8 @@ async function submitPracticeSession(
         questionId: question.id,
         answer: answer.selectedOption.toString(),
         isCorrect,
-        submittedAt: new Date()
+        timeSpent: answer.timeSpent || 0,
+        answeredAt: new Date()
       }
     });
 
