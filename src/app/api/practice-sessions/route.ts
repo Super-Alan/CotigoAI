@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       include: {
         questions: {
           include: {
-            userAnswers: true
+            answers: true
           }
         }
       }
@@ -51,15 +51,16 @@ export async function GET(request: NextRequest) {
       criticalThinkingSessions = await prisma.criticalThinkingPracticeSession.findMany({
         where: {
           userId,
-          thinkingTypeId
+          question: {
+            thinkingTypeId
+          }
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { completedAt: 'desc' },
         take: limit,
         include: {
-          thinkingType: true,
-          questions: {
+          question: {
             include: {
-              userAnswers: true
+              thinkingType: true
             }
           }
         }
@@ -71,36 +72,35 @@ export async function GET(request: NextRequest) {
         id: session.id,
         sessionType: session.sessionType,
         score: session.score,
-        questionsCount: session.questionsCount,
+        questionsCount: session.totalQuestions,
         correctAnswers: session.correctAnswers,
         createdAt: session.createdAt,
         duration: session.duration,
         questions: session.questions.map(q => ({
           id: q.id,
-          question: q.question,
+          question: q.content,
           options: q.options,
           correctAnswer: q.correctAnswer,
           explanation: q.explanation,
-          userAnswer: q.userAnswers[0]?.answer || null,
-          isCorrect: q.userAnswers[0]?.isCorrect || false
+          userAnswer: q.answers[0]?.answer || null,
+          isCorrect: q.answers[0]?.isCorrect || false
         }))
       })),
       criticalThinkingSessions: criticalThinkingSessions.map(session => ({
         id: session.id,
-        thinkingType: session.thinkingType,
+        thinkingType: session.question.thinkingType,
         score: session.score,
-        questionsCount: session.questionsCount,
-        correctAnswers: session.correctAnswers,
-        createdAt: session.createdAt,
-        questions: session.questions.map(q => ({
-          id: q.id,
-          question: q.question,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-          userAnswer: q.userAnswers[0]?.answer || null,
-          isCorrect: q.userAnswers[0]?.isCorrect || false
-        }))
+        questionsCount: 1,
+        completedAt: session.completedAt,
+        timeSpent: session.timeSpent,
+        question: {
+          id: session.question.id,
+          topic: session.question.topic,
+          context: session.question.context,
+          question: session.question.question,
+          answers: session.answers,
+          feedback: session.aiFeedback
+        }
       })),
       pagination: {
         page,
