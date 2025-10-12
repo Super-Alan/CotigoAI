@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         thinkingType: progress.thinkingType.name,
         typeId: progress.thinkingType.id,
         level: Math.floor(progress.questionsCompleted / 10) + 1,
-        experience: progress.questionsCompleted,
+        progressPercentage: progress.progressPercentage,
         questionsCompleted: progress.questionsCompleted,
         averageScore: progress.averageScore,
         accuracy: progress.averageScore.toFixed(1)
@@ -122,8 +122,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const { thinkingTypeId, experience, isCorrect } = await request.json();
+    const { thinkingTypeId, score } = await request.json();
     const userId = session.user.id;
+
+    if (!thinkingTypeId || score === undefined) {
+      return NextResponse.json(
+        { error: '缺少必要参数: thinkingTypeId, score' },
+        { status: 400 }
+      );
+    }
 
     // 更新或创建思维类型进度
     const existingProgress = await prisma.criticalThinkingProgress.findUnique({
@@ -136,7 +143,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingProgress) {
-      // 更新现有进度
+      // 更新现有进度 - 计算新的平均分和进度百分比
+      const newQuestionsCompleted = existingProgress.questionsCompleted + 1;
+      const newAverageScore =
+        (existingProgress.averageScore * existingProgress.questionsCompleted + score) /
+        newQuestionsCompleted;
+      const newProgressPercentage = Math.min(100, Math.floor(newQuestionsCompleted * 5)); // 每完成一题增加5%
+
       const updatedProgress = await prisma.criticalThinkingProgress.update({
         where: {
           userId_thinkingTypeId: {
@@ -145,18 +158,16 @@ export async function POST(request: NextRequest) {
           }
         },
         data: {
-          experience: existingProgress.experience + experience,
-          totalQuestions: existingProgress.totalQuestions + 1,
-          correctAnswers: isCorrect ? 
-            existingProgress.correctAnswers + 1 : 
-            existingProgress.correctAnswers,
-          level: Math.floor((existingProgress.experience + experience) / 100) + 1
+          questionsCompleted: newQuestionsCompleted,
+          averageScore: newAverageScore,
+          progressPercentage: newProgressPercentage,
+          lastUpdated: new Date()
         }
       });
 
-      return NextResponse.json({ 
-        success: true, 
-        progress: updatedProgress 
+      return NextResponse.json({
+        success: true,
+        progress: updatedProgress
       });
     } else {
       // 创建新进度记录
@@ -164,16 +175,16 @@ export async function POST(request: NextRequest) {
         data: {
           userId,
           thinkingTypeId,
-          experience,
-          totalQuestions: 1,
-          correctAnswers: isCorrect ? 1 : 0,
-          level: Math.floor(experience / 100) + 1
+          questionsCompleted: 1,
+          averageScore: score,
+          progressPercentage: 5, // 首次完成5%
+          lastUpdated: new Date()
         }
       });
 
-      return NextResponse.json({ 
-        success: true, 
-        progress: newProgress 
+      return NextResponse.json({
+        success: true,
+        progress: newProgress
       });
     }
 
