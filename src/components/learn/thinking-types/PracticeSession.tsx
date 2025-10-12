@@ -300,7 +300,7 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
                       <CardContent>
                         <div className="prose max-w-none">
                           <p className="text-gray-700 leading-relaxed mb-4">
-                            {currentQuestion.question || currentQuestion.content}
+                            {(currentQuestion as any).question}
                           </p>
                           {currentQuestion.context && (
                             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
@@ -359,7 +359,7 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
                       <CardContent>
                         <div className="prose max-w-none">
                           <p className="text-gray-700 leading-relaxed mb-4">
-                            {currentQuestion.question || currentQuestion.content}
+                            {(currentQuestion as any).question}
                           </p>
                           {currentQuestion.context && (
                             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">

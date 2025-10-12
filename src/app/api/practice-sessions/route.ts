@@ -265,9 +265,11 @@ async function generateCriticalThinkingQuestions(
   count: number,
   topics: string[]
 ) {
+  let thinkingType: any = null;
+
   try {
     // 获取思维类型信息
-    const thinkingType = await prisma.thinkingType.findUnique({
+    thinkingType = await prisma.thinkingType.findUnique({
       where: { id: thinkingTypeId }
     });
 

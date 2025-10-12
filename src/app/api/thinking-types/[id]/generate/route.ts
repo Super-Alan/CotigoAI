@@ -282,16 +282,23 @@ export async function POST(
     const fullPrompt = `${prompt}\n\n请生成一个难度为 ${difficulty} 的题目。`;
 
     // 调用AI生成题目
-    const aiResponse = await aiRouter.chat([
-      {
-        role: 'system',
-        content: fullPrompt
-      },
-      {
-        role: 'user', 
-        content: `请为${thinkingTypeId}思维类型生成一个${difficulty}难度的练习题目。`
-      }
-    ]);
+    const aiResponse = await aiRouter.chat(
+      [
+        {
+          role: 'system',
+          content: fullPrompt
+        },
+        {
+          role: 'user',
+          content: `请为${thinkingTypeId}思维类型生成一个${difficulty}难度的练习题目。`
+        }
+      ],
+      { stream: false }
+    );
+
+    if (!aiResponse || typeof aiResponse !== 'string') {
+      return NextResponse.json({ error: 'AI生成失败' }, { status: 500 });
+    }
 
     let questionData;
     try {
@@ -314,6 +321,8 @@ export async function POST(
         difficulty: questionData.difficulty || difficulty,
         topic: questionData.topic || questionData.content?.substring(0, 100) || '批判性思维练习',
         context: questionData.scenario || questionData.content || '请根据题目要求进行思考和分析',
+        question: questionData.question || questionData.content || '请分析这个批判性思维问题',
+        tags: questionData.tags || [],
         thinkingFramework: {
           content: questionData.content,
           scenario: questionData.scenario,

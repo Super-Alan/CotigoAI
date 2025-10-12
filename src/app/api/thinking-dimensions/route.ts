@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' }
     });
 
-    let userProgress = [];
-    
+    let userProgress: any[] = [];
+
     if (session?.user?.id) {
       // 如果用户已登录，获取用户进度
       userProgress = await prisma.criticalThinkingProgress.findMany({
@@ -28,15 +28,17 @@ export async function GET(request: NextRequest) {
     // 组合数据
     const dimensionsWithProgress = thinkingTypes.map(thinkingType => {
       const progress = userProgress.find(p => p.thinkingTypeId === thinkingType.id);
-      
+      const learningContent = thinkingType.learningContent as any;
+
       return {
         id: thinkingType.id,
         name: thinkingType.name,
         description: thinkingType.description,
         icon: thinkingType.icon,
-        learningFramework: thinkingType.learningFramework,
-        methods: thinkingType.methods,
-        examples: thinkingType.examples,
+        learningContent: thinkingType.learningContent,
+        learningFramework: learningContent?.framework || {},
+        methods: learningContent?.methods || [],
+        examples: learningContent?.examples || [],
         userProgress: progress ? {
           level: Math.floor(progress.questionsCompleted / 10) + 1,
           progressPercentage: progress.progressPercentage,
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest) {
     // }
 
     const {
+      id,
       name,
       description,
       icon,
@@ -86,21 +89,24 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     // 验证必填字段
-    if (!name || !description) {
+    if (!id || !name || !description) {
       return NextResponse.json(
-        { error: '名称和描述为必填字段' },
+        { error: 'id、名称和描述为必填字段' },
         { status: 400 }
       );
     }
 
     const newThinkingType = await prisma.thinkingType.create({
       data: {
+        id,
         name,
         description,
         icon: icon || 'brain',
-        learningFramework: learningFramework || {},
-        methods: methods || [],
-        examples: examples || []
+        learningContent: {
+          framework: learningFramework || {},
+          methods: methods || [],
+          examples: examples || []
+        }
       }
     });
 

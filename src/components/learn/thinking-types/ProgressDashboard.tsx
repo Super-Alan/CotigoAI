@@ -93,11 +93,19 @@ export default function ProgressDashboard() {
     )
   }
 
-  const { overallStats, abilityScores, thinkingTypeProgress } = progressData
+  const { overallProgress, abilityRadar, typeProgress, practiceStats } = progressData
+
+  // Create overallStats object for backward compatibility
+  const overallStats = {
+    averageLevel: Math.floor(overallProgress / 20) + 1, // Convert 0-100 to level 1-6
+    averageMastery: Math.round(practiceStats.correctRate),
+    totalQuestions: practiceStats.totalQuestions,
+    totalTime: practiceStats.totalTimeSpent
+  }
 
   // Prepare radar chart data
-  const radarData = abilityScores.map(score => ({
-    ability: score.name,
+  const radarData = abilityRadar.map(score => ({
+    ability: score.label,
     score: score.score,
     fullMark: 100
   }))
@@ -110,7 +118,7 @@ export default function ProgressDashboard() {
     { date: '4天前', analytical: 72, creative: 75, practical: 67, caring: 80, systematic: 74 },
     { date: '3天前', analytical: 74, creative: 77, practical: 70, caring: 82, systematic: 76 },
     { date: '2天前', analytical: 76, creative: 78, practical: 72, caring: 83, systematic: 78 },
-    { date: '今天', analytical: abilityScores[0]?.score || 0, creative: abilityScores[1]?.score || 0, practical: abilityScores[2]?.score || 0, caring: abilityScores[3]?.score || 0, systematic: abilityScores[4]?.score || 0 }
+    { date: '今天', analytical: abilityRadar[0]?.score || 0, creative: abilityRadar[1]?.score || 0, practical: abilityRadar[2]?.score || 0, caring: abilityRadar[3]?.score || 0, systematic: abilityRadar[4]?.score || 0 }
   ]
 
   const thinkingTypeNames = {
@@ -256,10 +264,10 @@ export default function ProgressDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {abilityScores.map((ability, index) => (
-                      <div key={ability.name} className="space-y-2">
+                    {abilityRadar.map((ability, index) => (
+                      <div key={ability.label} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-gray-900">{ability.name}</span>
+                          <span className="font-medium text-gray-900">{ability.label}</span>
                           <div className="flex items-center space-x-2">
                             <Badge variant={ability.score >= 80 ? 'default' : ability.score >= 60 ? 'secondary' : 'outline'}>
                               {ability.score >= 80 ? '优秀' : ability.score >= 60 ? '良好' : '待提升'}
@@ -313,19 +321,19 @@ export default function ProgressDashboard() {
           {/* Detailed Analysis Tab */}
           <TabsContent value="detailed" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {thinkingTypeProgress.map((progress) => {
-                const Icon = thinkingTypeIcons[progress.thinkingTypeId as keyof typeof thinkingTypeIcons]
-                const typeName = thinkingTypeNames[progress.thinkingTypeId as keyof typeof thinkingTypeNames]
+              {typeProgress.map((progress) => {
+                const Icon = thinkingTypeIcons[progress.type as keyof typeof thinkingTypeIcons]
+                const typeName = thinkingTypeNames[progress.type as keyof typeof thinkingTypeNames]
                 
                 return (
-                  <Card key={progress.thinkingTypeId}>
+                  <Card key={progress.type}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Icon className="h-5 w-5 mr-2" />
                         {typeName}
                       </CardTitle>
                       <CardDescription>
-                        等级 {progress.level} · 掌握度 {progress.masteryPercentage}%
+                        等级 {Math.floor(progress.questionsCompleted / 10) + 1} · 掌握度 {Math.round(progress.averageScore)}%
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -334,15 +342,15 @@ export default function ProgressDashboard() {
                         <div>
                           <div className="flex justify-between text-sm mb-2">
                             <span>等级进度</span>
-                            <span>{progress.experiencePoints} / {progress.level * 100} XP</span>
+                            <span>{progress.questionsCompleted % 10} / 10 题</span>
                           </div>
-                          <Progress value={(progress.experiencePoints / (progress.level * 100)) * 100} />
+                          <Progress value={(progress.questionsCompleted % 10) * 10} />
                         </div>
 
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <div className="font-bold text-blue-600">{progress.questionsAnswered}</div>
+                            <div className="font-bold text-blue-600">{progress.questionsCompleted}</div>
                             <div className="text-gray-600">已练习</div>
                           </div>
                           <div className="text-center p-3 bg-green-50 rounded-lg">
@@ -352,7 +360,7 @@ export default function ProgressDashboard() {
                         </div>
 
                         {/* Action Button */}
-                        <Link href={`/learn/critical-thinking/${progress.thinkingTypeId}`}>
+                        <Link href={`/learn/critical-thinking/${progress.type}`}>
                           <Button className="w-full" size="sm">
                             继续学习
                           </Button>

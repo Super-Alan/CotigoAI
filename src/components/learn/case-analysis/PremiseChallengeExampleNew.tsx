@@ -385,7 +385,25 @@ export default function PremiseChallengeExampleNew() {
               <CardTitle>前提挑战思维导图</CardTitle>
             </CardHeader>
             <CardContent>
-              <MindMapVisualization data={mindmapData} />
+              <MindMapVisualization
+                title="前提挑战思维导图"
+                rootNode={{
+                  id: 'root',
+                  label: mindmapData.central,
+                  level: 0,
+                  children: mindmapData.branches.map((branch, idx) => ({
+                    id: `branch-${idx}`,
+                    label: branch.topic,
+                    level: 1,
+                    color: `bg-${branch.color}-400 text-white`,
+                    children: branch.subtopics.map((subtopic: string, subIdx: number) => ({
+                      id: `subtopic-${idx}-${subIdx}`,
+                      label: subtopic,
+                      level: 2
+                    }))
+                  }))
+                }}
+              />
 
               <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                 {mindmapData.branches.map((branch, index) => (

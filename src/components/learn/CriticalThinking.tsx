@@ -103,19 +103,19 @@ export default function CriticalThinking({ userProgress = [] }: CriticalThinking
   }
 
   const getProgressForType = (typeId: string) => {
-    return progress.find(p => p.thinkingTypeId === typeId) || {
-      thinkingTypeId: typeId,
-      name: '',
-      score: 0,
-      level: 1
+    return progress.find(p => p.type === typeId) || {
+      type: typeId as any,
+      progress: 0,
+      questionsCompleted: 0,
+      averageScore: 0
     }
   }
 
-  const overallProgress = progress.length > 0 
-    ? Math.round(progress.reduce((sum, p) => sum + p.score, 0) / progress.length)
+  const overallProgress = progress.length > 0
+    ? Math.round(progress.reduce((sum, p) => sum + p.averageScore, 0) / progress.length)
     : 0
 
-  const totalSessions = progress.reduce((sum, p) => sum + (p.level - 1) * 10, 0)
+  const totalSessions = progress.reduce((sum, p) => sum + p.questionsCompleted, 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-orange-50">
@@ -147,7 +147,7 @@ export default function CriticalThinking({ userProgress = [] }: CriticalThinking
               </div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-1">
-                  {progress.filter(p => p.score >= 80).length}/5
+                  {progress.filter(p => p.averageScore >= 80).length}/5
                 </div>
                 <div className="text-sm text-gray-600">精通类型</div>
               </div>
@@ -183,18 +183,18 @@ export default function CriticalThinking({ userProgress = [] }: CriticalThinking
                         </CardTitle>
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <Badge variant="secondary" className="text-xs">
-                            等级 {typeProgress.level}
+                            等级 {Math.floor(typeProgress.questionsCompleted / 10) + 1}
                           </Badge>
-                          <Badge 
+                          <Badge
                             className={`text-xs ${
-                              typeProgress.score >= 80 
-                                ? 'bg-green-100 text-green-800' 
-                                : typeProgress.score >= 60 
+                              typeProgress.averageScore >= 80
+                                ? 'bg-green-100 text-green-800'
+                                : typeProgress.averageScore >= 60
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {typeProgress.score}% 掌握
+                            {Math.round(typeProgress.averageScore)}% 掌握
                           </Badge>
                         </div>
                       </div>
@@ -210,9 +210,9 @@ export default function CriticalThinking({ userProgress = [] }: CriticalThinking
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-gray-600">掌握程度</span>
-                      <span className="text-sm font-medium text-gray-900">{typeProgress.score}%</span>
+                      <span className="text-sm font-medium text-gray-900">{Math.round(typeProgress.averageScore)}%</span>
                     </div>
-                    <Progress value={typeProgress.score} className="h-2" />
+                    <Progress value={typeProgress.averageScore} className="h-2" />
                   </div>
 
                   {/* Features */}
