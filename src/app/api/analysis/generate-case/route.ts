@@ -50,22 +50,26 @@ export async function POST(request: NextRequest) {
     )
 
     // 调用AI生成案例分析
-    const response = await aiRouter.chat([
+    const aiResponse = await aiRouter.chat([
       { role: 'user', content: prompt }
     ], {
       temperature: 0.7,
-      maxTokens: 4000
+      maxTokens: 4000,
+      stream: false
     })
 
-    if (!response.success || !response.content) {
+    if (!aiResponse || typeof aiResponse !== 'string') {
       throw new Error('AI生成失败')
     }
 
     // 解析JSON响应
     let caseAnalysis
     try {
+      // 清理可能的markdown代码块标记
+      let cleanedResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+
       // 尝试从响应中提取JSON
-      const jsonMatch = response.content.match(/\{[\s\S]*\}/)
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error('未找到JSON格式的响应')
       }
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
       caseAnalysis = validateCaseAnalysis(parsedData)
     } catch (parseError) {
       console.error('JSON解析错误:', parseError)
-      console.error('AI响应内容:', response.content)
+      console.error('AI响应内容:', aiResponse)
 
       return NextResponse.json(
         {
@@ -103,9 +107,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        caseAnalysis,
-        aiModel: response.model,
-        tokensUsed: response.usage
+        caseAnalysis
       }
     })
   } catch (error) {
