@@ -138,57 +138,58 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
 
     if (thinkingTypeId) {
-      // 创建批判性思维练习会话
+      // 批判性思维练习：从现有题库中随机选择一个问题
+      const availableQuestions = await prisma.criticalThinkingQuestion.findMany({
+        where: {
+          thinkingTypeId,
+          difficulty: difficulty === 'easy' ? 'beginner' : difficulty === 'hard' ? 'advanced' : 'intermediate'
+        },
+        take: 10 // 获取10个候选
+      });
+
+      if (availableQuestions.length === 0) {
+        return NextResponse.json(
+          { error: '没有可用的批判性思维题目' },
+          { status: 404 }
+        );
+      }
+
+      // 随机选择一个问题
+      const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+
+      // 创建批判性思维练习会话（单个问题）
       const practiceSession = await prisma.criticalThinkingPracticeSession.create({
         data: {
           userId,
-          thinkingTypeId,
-          questionsCount,
-          score: 0,
-          correctAnswers: 0
+          questionId: selectedQuestion.id,
+          answers: {}, // 初始为空
+          timeSpent: 0
+        },
+        include: {
+          question: {
+            include: {
+              thinkingType: true,
+              guidingQuestions: true
+            }
+          }
         }
       });
-
-      // 生成AI题目
-      const questions = await generateCriticalThinkingQuestions(
-        thinkingTypeId,
-        difficulty,
-        questionsCount,
-        topics
-      );
-
-      // 保存题目
-      const savedQuestions = await Promise.all(
-        questions.map(async (q: any) => {
-          return await prisma.criticalThinkingQuestion.create({
-            data: {
-              practiceSessionId: practiceSession.id,
-              thinkingTypeId,
-              question: q.question,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation,
-              difficulty: q.difficulty || difficulty,
-              tags: q.tags || []
-            }
-          });
-        })
-      );
 
       return NextResponse.json({
         success: true,
         session: {
           id: practiceSession.id,
           type: 'critical_thinking',
-          thinkingTypeId,
-          questions: savedQuestions.map(q => ({
-            id: q.id,
-            question: q.question,
-            options: q.options,
-            // 不返回正确答案给前端
-            explanation: q.explanation,
-            difficulty: q.difficulty
-          }))
+          question: {
+            id: selectedQuestion.id,
+            topic: selectedQuestion.topic,
+            context: selectedQuestion.context,
+            question: selectedQuestion.question,
+            thinkingFramework: selectedQuestion.thinkingFramework,
+            expectedOutcomes: selectedQuestion.expectedOutcomes,
+            guidingQuestions: practiceSession.question.guidingQuestions
+          },
+          thinkingType: practiceSession.question.thinkingType
         }
       });
 
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId,
           sessionType: sessionType || 'general',
-          questionsCount,
+          totalQuestions: questionsCount,
           score: 0,
           correctAnswers: 0
         }
@@ -217,13 +218,13 @@ export async function POST(request: NextRequest) {
         questions.map(async (q: any) => {
           return await prisma.practiceQuestion.create({
             data: {
-              practiceSessionId: practiceSession.id,
-              question: q.question,
+              sessionId: practiceSession.id,
+              questionType: q.questionType || 'multiple_choice',
+              content: q.content || q.question, // 兼容性
               options: q.options,
               correctAnswer: q.correctAnswer,
               explanation: q.explanation,
-              difficulty: q.difficulty || difficulty,
-              category: q.category || sessionType
+              difficulty: typeof q.difficulty === 'number' ? q.difficulty : 3
             }
           });
         })
@@ -237,7 +238,8 @@ export async function POST(request: NextRequest) {
           sessionType,
           questions: savedQuestions.map(q => ({
             id: q.id,
-            question: q.question,
+            questionType: q.questionType,
+            content: q.content,
             options: q.options,
             // 不返回正确答案给前端
             explanation: q.explanation,
