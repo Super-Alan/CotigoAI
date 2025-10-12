@@ -119,3 +119,118 @@ export type UserWithSettings = {
     enableAnalytics: boolean;
   } | null;
 };
+
+// ============ 批判性思维类型 ============
+export type ThinkingTypeId = 'causal_analysis' | 'premise_challenge' | 'fallacy_detection' | 'iterative_reflection' | 'connection_transfer';
+
+export type ThinkingType = {
+  id: ThinkingTypeId;
+  name: string;
+  description: string;
+  icon: string;
+  learningContent: {
+    framework: string;
+    methods: string[];
+    examples?: any[];
+  };
+  createdAt: Date;
+};
+
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export type CriticalThinkingQuestion = {
+  id: string;
+  thinkingTypeId: ThinkingTypeId;
+  difficulty: DifficultyLevel;
+  content: string;  // 题目主要内容
+  scenario?: string;  // 背景情境描述
+  topic: string;
+  context: string;
+  tags: string[];
+  thinkingFramework: {
+    coreChallenge: string;
+    commonPitfalls: string[];
+    excellentResponseIndicators: string[];
+  };
+  expectedOutcomes: string[];
+  guidingQuestions?: {
+    id: string;
+    question: string;
+    purpose: string;
+    orderIndex: number;
+  }[];
+  createdAt: Date;
+};
+
+export type CriticalThinkingGuidingQuestion = {
+  id: string;
+  questionId: string;
+  level: DifficultyLevel;
+  stage: string;
+  question: string;
+  orderIndex: number;
+};
+
+export type CriticalThinkingProgress = {
+  id: string;
+  userId: string;
+  thinkingTypeId: ThinkingTypeId;
+  progressPercentage: number;
+  questionsCompleted: number;
+  averageScore: number;
+  lastUpdated: Date;
+};
+
+export type CriticalThinkingPracticeSession = {
+  id: string;
+  userId: string;
+  questionId: string;
+  answers: {
+    stage: string;
+    answer: string;
+    timestamp: Date;
+  }[];
+  score?: number;
+  aiFeedback?: string;
+  evaluationDetails?: {
+    strengths: string[];
+    improvements: string[];
+    nextSteps: string[];
+  };
+  timeSpent: number;
+  completedAt: Date;
+};
+
+export type ThinkingTypeProgress = {
+  type: ThinkingTypeId;
+  progress: number;
+  questionsCompleted: number;
+  averageScore: number;
+};
+
+export type PracticeStats = {
+  totalQuestions: number;
+  correctRate: number;
+  totalTimeSpent: number;
+};
+
+export type AbilityScore = {
+  type: ThinkingTypeId;
+  score: number;
+  label: string;
+};
+
+export type ProgressResponse = {
+  overallProgress: number;
+  typeProgress: ThinkingTypeProgress[];
+  practiceStats: PracticeStats;
+  abilityRadar: AbilityScore[];
+};
+
+export type PracticeEvaluation = {
+  score: number;
+  feedback: string;
+  suggestions: string[];
+  strengths: string[];
+  improvements: string[];
+};

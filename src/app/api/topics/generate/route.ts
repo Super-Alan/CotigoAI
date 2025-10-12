@@ -44,11 +44,27 @@ export async function POST(req: NextRequest) {
     const savedTopics = [];
     const skippedTopics = [];
 
+    // 先验证用户是否存在（统一检查一次）
+    let validUserId: string | null = auth.userId;
+    try {
+      const userExists = await prisma.user.findUnique({
+        where: { id: auth.userId },
+        select: { id: true }
+      });
+      if (!userExists) {
+        console.warn('[Topics Generate] 用户不存在，使用null作为userId:', auth.userId);
+        validUserId = null;
+      }
+    } catch (error) {
+      console.error('[Topics Generate] 检查用户失败，使用null作为userId:', error);
+      validUserId = null;
+    }
+
     for (const topic of topics) {
       // 检查是否已存在相同话题（根据 topic 内容判断）
       const existingTopic = await prisma.generatedConversationTopic.findFirst({
         where: {
-          userId: auth.userId,
+          ...(validUserId ? { userId: validUserId } : { userId: null }),
           topic: topic.topic,
         },
       });
@@ -58,23 +74,28 @@ export async function POST(req: NextRequest) {
         skippedTopics.push(existingTopic);
       } else {
         // 保存新话题
-        const saved = await prisma.generatedConversationTopic.create({
-          data: {
-            userId: auth.userId,
-            topic: topic.topic,
-            category: topic.category,
-            context: topic.context,
-            referenceUniversity: topic.referenceUniversity,
-            dimension: topic.dimension,
-            difficulty: topic.difficulty,
-            tags: topic.tags,
-            thinkingFramework: topic.thinkingFramework as any,
-            guidingQuestions: topic.guidingQuestions as any,
-            expectedOutcomes: topic.expectedOutcomes,
-            isPublic: false, // 用户生成的话题默认私有
-          },
-        });
-        savedTopics.push(saved);
+        try {
+          const saved = await prisma.generatedConversationTopic.create({
+            data: {
+              userId: validUserId,
+              topic: topic.topic,
+              category: topic.category,
+              context: topic.context,
+              referenceUniversity: topic.referenceUniversity,
+              dimension: topic.dimension,
+              difficulty: topic.difficulty,
+              tags: topic.tags,
+              thinkingFramework: topic.thinkingFramework as any,
+              guidingQuestions: topic.guidingQuestions as any,
+              expectedOutcomes: topic.expectedOutcomes,
+              isPublic: false, // 用户生成的话题默认私有
+            },
+          });
+          savedTopics.push(saved);
+        } catch (saveError) {
+          console.error('[Topics Generate] 保存话题失败:', saveError);
+          throw saveError;
+        }
       }
     }
 

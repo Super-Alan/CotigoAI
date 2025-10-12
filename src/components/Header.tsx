@@ -112,6 +112,39 @@ export default function Header() {
         <div className="flex items-center gap-6">
           {/* Navigation */}
           <nav className="flex gap-4">
+             <div className="relative group">
+              <Link href="/learn" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition flex items-center gap-1">
+                学习
+                <svg className="w-3 h-3 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </Link>
+              {/* Learning Dropdown */}
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="py-2">
+                  <Link href="/learn" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    📚 学习中心
+                  </Link>
+                  <Link href="/learn/daily" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    🎯 每日练习
+                  </Link>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  <Link href="/learn/fallacies" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    🚫 逻辑谬误
+                  </Link>
+                  <Link href="/learn/methodology" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    🔬 方法论
+                  </Link>
+                  <Link href="/learn/templates" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    📝 论证模板
+                  </Link>
+                  <Link href="/learn/topics" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    💭 话题包
+                  </Link>
+                </div>
+              </div>
+            </div>
+            
             <Link href="/conversations" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition">
               对话
             </Link>
@@ -121,6 +154,7 @@ export default function Header() {
             <Link href="/perspectives" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition">
               视角
             </Link>
+           
           </nav>
 
           {/* Auth Section */}

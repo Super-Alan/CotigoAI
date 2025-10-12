@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 import { aiRouter } from '@/lib/ai/router';
+import { prisma } from '@/lib/prisma';
 
 interface DialogueRound {
   round: number;
@@ -21,13 +22,26 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { question, conversationHistory } = body;
+    const { question, conversationHistory, roundIndex } = body;
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json(
         { error: '问题内容不能为空' },
         { status: 400 }
       );
+    }
+
+    // 先查询是否存在缓存（同一会话、同一问题只生成一次）
+    const existing = await prisma.conversationSuggestedAnswerSet.findFirst({
+      where: {
+        conversationId: params.id,
+        userId: auth.userId!,
+        question,
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(existing.suggestions);
     }
 
     const historyContext = conversationHistory && conversationHistory.length > 0
@@ -88,6 +102,17 @@ ${question}
       const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       suggestions = JSON.parse(cleaned);
     }
+
+    // 保存到数据库
+    await prisma.conversationSuggestedAnswerSet.create({
+      data: {
+        conversationId: params.id,
+        userId: auth.userId!,
+        question,
+        suggestions,
+        roundIndex: typeof roundIndex === 'number' ? roundIndex : null,
+      },
+    });
 
     return NextResponse.json(suggestions);
   } catch (error) {
