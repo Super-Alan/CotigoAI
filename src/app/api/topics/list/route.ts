@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helper';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/topics/list - 获取话题列表
 export async function GET(req: NextRequest) {
   try {

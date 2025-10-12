@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import DailyPracticeFeedback from '@/components/learn/daily/DailyPracticeFeedback'
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function DailyPracticeFeedbackPage() {
-  return <DailyPracticeFeedback />
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">加载中...</div>}>
+      <DailyPracticeFeedback />
+    </Suspense>
+  )
 }
