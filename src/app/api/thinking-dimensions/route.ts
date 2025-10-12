@@ -38,13 +38,12 @@ export async function GET(request: NextRequest) {
         methods: thinkingType.methods,
         examples: thinkingType.examples,
         userProgress: progress ? {
-          level: progress.level,
-          experience: progress.experience,
-          totalQuestions: progress.totalQuestions,
-          correctAnswers: progress.correctAnswers,
-          accuracy: progress.totalQuestions > 0 ? 
-            Math.round((progress.correctAnswers / progress.totalQuestions) * 100) : 0,
-          nextLevelExp: (progress.level * 100) - progress.experience
+          level: Math.floor(progress.questionsCompleted / 10) + 1,
+          progressPercentage: progress.progressPercentage,
+          questionsCompleted: progress.questionsCompleted,
+          averageScore: progress.averageScore,
+          accuracy: Math.round(progress.averageScore),
+          nextLevelProgress: progress.questionsCompleted % 10
         } : null
       };
     });

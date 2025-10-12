@@ -137,6 +137,22 @@ async function submitCriticalThinkingSession(
   // 更新用户的思维类型进度
   const experienceGained = correctAnswers * 10 + (score >= 80 ? 20 : 0);
   
+  // 获取当前进度以计算新的平均分
+  const currentProgress = await prisma.criticalThinkingProgress.findUnique({
+    where: {
+      userId_thinkingTypeId: {
+        userId,
+        thinkingTypeId: session.thinkingTypeId
+      }
+    }
+  });
+
+  const newQuestionsCompleted = (currentProgress?.questionsCompleted || 0) + session.questions.length;
+  const newAverageScore = currentProgress
+    ? (currentProgress.averageScore * currentProgress.questionsCompleted + score) / newQuestionsCompleted
+    : score;
+  const newProgressPercentage = Math.min(100, Math.floor(newQuestionsCompleted * 5));
+
   await prisma.criticalThinkingProgress.upsert({
     where: {
       userId_thinkingTypeId: {
@@ -145,26 +161,18 @@ async function submitCriticalThinkingSession(
       }
     },
     update: {
-      experience: {
-        increment: experienceGained
-      },
-      totalQuestions: {
-        increment: session.questions.length
-      },
-      correctAnswers: {
-        increment: correctAnswers
-      },
-      level: {
-        set: Math.floor((await getCurrentExperience(userId, session.thinkingTypeId) + experienceGained) / 100) + 1
-      }
+      questionsCompleted: newQuestionsCompleted,
+      averageScore: newAverageScore,
+      progressPercentage: newProgressPercentage,
+      lastUpdated: new Date()
     },
     create: {
       userId,
       thinkingTypeId: session.thinkingTypeId,
-      experience: experienceGained,
-      totalQuestions: session.questions.length,
-      correctAnswers,
-      level: Math.floor(experienceGained / 100) + 1
+      questionsCompleted: session.questions.length,
+      averageScore: score,
+      progressPercentage: Math.min(100, session.questions.length * 5),
+      lastUpdated: new Date()
     }
   });
 
@@ -257,8 +265,8 @@ async function submitPracticeSession(
   });
 }
 
-// 获取当前经验值
-async function getCurrentExperience(userId: string, thinkingTypeId: string): Promise<number> {
+// 获取当前题目完成数
+async function getCurrentQuestionsCompleted(userId: string, thinkingTypeId: string): Promise<number> {
   const progress = await prisma.criticalThinkingProgress.findUnique({
     where: {
       userId_thinkingTypeId: {
@@ -267,7 +275,7 @@ async function getCurrentExperience(userId: string, thinkingTypeId: string): Pro
       }
     }
   });
-  return progress?.experience || 0;
+  return progress?.questionsCompleted || 0;
 }
 
 // 检查并解锁成就
@@ -290,10 +298,14 @@ async function checkAndUnlockAchievements(
 
     if (!progress) return;
 
+    // 计算等级和估算正确答案数
+    const level = Math.floor(progress.questionsCompleted / 10) + 1;
+    const estimatedCorrectAnswers = Math.round(progress.questionsCompleted * (progress.averageScore / 100));
+
     // 定义成就条件
     const achievementConditions = [
       {
-        condition: progress.level >= 5,
+        condition: level >= 5,
         achievementName: '思维大师',
         description: '在某个思维维度达到5级'
       },
@@ -303,14 +315,14 @@ async function checkAndUnlockAchievements(
         description: '在练习中获得满分'
       },
       {
-        condition: progress.totalQuestions >= 100,
+        condition: progress.questionsCompleted >= 100,
         achievementName: '勤奋学习者',
         description: '完成100道练习题'
       },
       {
-        condition: progress.correctAnswers >= 50 && (progress.correctAnswers / progress.totalQuestions) >= 0.8,
+        condition: progress.averageScore >= 80 && progress.questionsCompleted >= 50,
         achievementName: '准确射手',
-        description: '正确回答50道题且准确率达到80%'
+        description: '完成50道题且平均分达到80分'
       }
     ];
 
