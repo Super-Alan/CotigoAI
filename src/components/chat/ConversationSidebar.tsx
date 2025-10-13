@@ -39,12 +39,14 @@ interface ConversationSidebarProps {
   currentConversationId?: string
   onConversationSelect: (conversationId: string) => void
   onNewConversation: () => void
+  onClose?: () => void
 }
 
 export default function ConversationSidebar({
   currentConversationId,
   onConversationSelect,
-  onNewConversation
+  onNewConversation,
+  onClose
 }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -186,46 +188,60 @@ export default function ConversationSidebar({
   }
 
   return (
-    <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center justify-between mb-4">
+    <div className="w-80 sm:w-96 bg-white border-r border-gray-200 flex flex-col h-full shadow-lg">
+      {/* Header - Mobile Optimized */}
+      <div className="p-3 sm:p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-              <MessageSquare className="h-4 w-4 text-blue-600" />
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
             </div>
-            <h2 className="font-semibold text-base text-gray-900">
+            <h2 className="font-semibold text-sm sm:text-base text-gray-900">
               历史对话
             </h2>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(true)}
-            className="hover:bg-gray-100 rounded-lg h-8 w-8"
-          >
-            <ChevronLeft className="h-4 w-4 text-gray-500" />
-          </Button>
+          <div className="flex items-center space-x-1">
+            {/* Close button for mobile */}
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="lg:hidden hover:bg-gray-100 rounded-lg h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4 text-gray-500" />
+              </Button>
+            )}
+            {/* Collapse button for desktop */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(true)}
+              className="hidden lg:flex hover:bg-gray-100 rounded-lg h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-500" />
+            </Button>
+          </div>
         </div>
 
-        {/* New Conversation Button */}
+        {/* New Conversation Button - Mobile Optimized */}
         <Button
           onClick={onNewConversation}
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-10 shadow-md hover:shadow-lg transition-all font-medium"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-10 sm:h-10 shadow-md hover:shadow-lg transition-all font-medium text-sm sm:text-base"
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
+          <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
           开启新对话
         </Button>
 
-        {/* Search */}
-        <div className="mt-3 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        {/* Search - Mobile Optimized */}
+        <div className="mt-2.5 sm:mt-3 relative">
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
           <input
             type="text"
             placeholder="搜索对话..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-gray-100 transition-colors"
+            className="w-full pl-8 sm:pl-9 pr-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-gray-100 transition-colors"
           />
         </div>
       </div>

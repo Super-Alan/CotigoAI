@@ -257,63 +257,68 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <Link href={`/learn/critical-thinking/${thinkingTypeId}`} className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+        {/* Header - Mobile Optimized */}
+        <div className="mb-4 sm:mb-6">
+          <Link href={`/learn/critical-thinking/${thinkingTypeId}`} className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base min-h-[44px]">
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回{typeName}学习
           </Link>
-          
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               {typeName}练习
             </h1>
-            <Badge variant="outline" className="text-sm">
-              {currentQuestion.difficulty === 'beginner' ? '初级' : 
+            <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-auto">
+              {currentQuestion.difficulty === 'beginner' ? '初级' :
                currentQuestion.difficulty === 'intermediate' ? '中级' : '高级'}
             </Badge>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center space-x-2 mb-6">
-            {['题目理解', '引导思考', '回答问题', '获得反馈'].map((step, index) => (
-              <div key={index} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  index <= currentStep 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {index + 1}
+          {/* Progress Steps - Mobile Optimized with horizontal scroll */}
+          <div className="overflow-x-auto pb-2 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 mb-4 sm:mb-6 min-w-max sm:min-w-0">
+              {['题目理解', '引导思考', '回答问题', '获得反馈'].map((step, index) => (
+                <div key={index} className="flex items-center">
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                    index <= currentStep
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  {index < 3 && (
+                    <div className={`w-8 sm:w-12 h-0.5 sm:h-1 mx-1 sm:mx-2 ${
+                      index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+                    }`} />
+                  )}
                 </div>
-                {index < 3 && (
-                  <div className={`w-12 h-1 mx-2 ${
-                    index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tabs Navigation */}
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            {/* Tabs Navigation - Mobile Optimized */}
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="theory">
-                      <Lightbulb className="h-4 w-4 mr-2" />
-                      理论学习
+                  <TabsList className="grid w-full grid-cols-3 h-auto">
+                    <TabsTrigger value="theory" className="text-xs sm:text-sm py-2 sm:py-2.5">
+                      <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">理论学习</span>
+                      <span className="xs:hidden">理论</span>
                     </TabsTrigger>
-                    <TabsTrigger value="case-analysis">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      实例分析
+                    <TabsTrigger value="case-analysis" className="text-xs sm:text-sm py-2 sm:py-2.5">
+                      <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">实例分析</span>
+                      <span className="xs:hidden">实例</span>
                     </TabsTrigger>
-                    <TabsTrigger value="practice">
-                      <Target className="h-4 w-4 mr-2" />
-                      核心技能
+                    <TabsTrigger value="practice" className="text-xs sm:text-sm py-2 sm:py-2.5">
+                      <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">核心技能</span>
+                      <span className="xs:hidden">技能</span>
                     </TabsTrigger>
                   </TabsList>
 
@@ -595,28 +600,28 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
         </Card>
       </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar - Mobile Optimized */}
+          <div className="space-y-4 sm:space-y-6">
             {/* Progress Control */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">练习进度</CardTitle>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">练习进度</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
                   {currentStep < 1 && (
-                    <Button 
-                      onClick={() => setCurrentStep(1)} 
-                      className="w-full"
+                    <Button
+                      onClick={() => setCurrentStep(1)}
+                      className="w-full min-h-[44px] text-sm sm:text-base"
                       disabled={currentStep >= 1}
                     >
                       查看引导问题
                     </Button>
                   )}
                   {currentStep < 2 && currentStep >= 1 && (
-                    <Button 
-                      onClick={() => setCurrentStep(2)} 
-                      className="w-full"
+                    <Button
+                      onClick={() => setCurrentStep(2)}
+                      className="w-full min-h-[44px] text-sm sm:text-base"
                     >
                       开始回答
                     </Button>
@@ -628,19 +633,19 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
             {/* Timer */}
             {startTime && currentStep < 3 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <Clock className="h-4 w-4 mr-2" />
+                <CardHeader className="pb-3 sm:pb-4">
+                  <CardTitle className="text-base sm:text-lg flex items-center">
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
                     用时统计
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 sm:px-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">
                       {Math.floor((Date.now() - startTime.getTime()) / 60000)}:
                       {String(Math.floor(((Date.now() - startTime.getTime()) % 60000) / 1000)).padStart(2, '0')}
                     </div>
-                    <div className="text-sm text-gray-600">分:秒</div>
+                    <div className="text-xs sm:text-sm text-gray-600">分:秒</div>
                   </div>
                 </CardContent>
               </Card>
@@ -648,25 +653,25 @@ export default function PracticeSession({ thinkingTypeId }: PracticeSessionProps
 
             {/* Tips */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">练习提示</CardTitle>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">练习提示</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm text-gray-600">
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm text-gray-600">
                   <div className="flex items-start space-x-2">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <span>仔细阅读题目，理解问题的核心</span>
                   </div>
                   <div className="flex items-start space-x-2">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <span>利用引导问题帮助你深入思考</span>
                   </div>
                   <div className="flex items-start space-x-2">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <span>回答要有逻辑性和条理性</span>
                   </div>
                   <div className="flex items-start space-x-2">
-                    <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                    <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <span>不要害怕表达自己的观点</span>
                   </div>
                 </div>

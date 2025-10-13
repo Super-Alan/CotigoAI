@@ -21,7 +21,8 @@ import {
   Settings,
   BarChart3,
   Bookmark,
-  Mic
+  Mic,
+  Menu
 } from 'lucide-react'
 import MessageRenderer from './MessageRenderer'
 
@@ -48,6 +49,7 @@ interface AITutorChatProps {
     tags?: string[]
     category?: string
   }
+  onToggleSidebar?: () => void
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -65,7 +67,7 @@ const CATEGORY_COLORS = {
   social_issue: { bg: 'bg-green-50', badge: 'bg-green-100 text-green-800', border: 'border-green-200' }
 }
 
-export default function AITutorChat({ conversationId, initialQuestion }: AITutorChatProps) {
+export default function AITutorChat({ conversationId, initialQuestion, onToggleSidebar }: AITutorChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -361,36 +363,49 @@ export default function AITutorChat({ conversationId, initialQuestion }: AITutor
   return (
     <div className="h-full flex flex-col">
       {/* Top Header Bar */}
-      <div className="border-b border-gray-200 bg-white px-6 py-3">
+      <div className="border-b border-gray-200 bg-white px-3 sm:px-6 py-3">
         <div className="flex items-center justify-between">
-          {/* Left: Title Info */}
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-md">
-              <Brain className="h-5 w-5 text-white" />
+          {/* Left: Hamburger Menu (Mobile) + Title Info */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Hamburger Menu Button - Only on Mobile */}
+            {onToggleSidebar && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleSidebar}
+                className="lg:hidden h-10 w-10 rounded-lg hover:bg-gray-100 flex-shrink-0"
+              >
+                <Menu className="h-5 w-5 text-gray-700" />
+              </Button>
+            )}
+
+            {/* Logo and Title */}
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
+              <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-base font-semibold text-gray-900">AI 批判性思维导师</h1>
-              <p className="text-xs text-gray-500">苏格拉底式引导 · 深度思考训练</p>
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold text-gray-900 truncate">AI 批判性思维导师</h1>
+              <p className="hidden sm:block text-xs text-gray-500">苏格拉底式引导 · 深度思考训练</p>
             </div>
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-gray-100">
-              <BarChart3 className="h-4 w-4 text-gray-600" />
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-gray-100">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-gray-100">
-              <Bookmark className="h-4 w-4 text-gray-600" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-gray-100 hidden sm:flex">
+              <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-gray-100">
-              <Settings className="h-4 w-4 text-gray-600" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-gray-100">
+              <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 px-6 py-8 space-y-6">
+      <div className="flex-1 overflow-y-auto bg-gray-50 px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
           {messages.map((message, index) => (
             <div key={index}>
               {message.role === 'system' && message.metadata?.type === 'question_card' ? (
@@ -507,20 +522,20 @@ export default function AITutorChat({ conversationId, initialQuestion }: AITutor
       <div className="border-t border-gray-200 bg-white">
         {/* Quick Actions Toolbar */}
         {showQuickActions && !isLoading && messages.length > 1 && (
-          <div className="border-b border-gray-100 px-6 py-3">
-            <div className="flex items-center space-x-2 overflow-x-auto">
-              <span className="text-xs text-gray-500 font-medium mr-2 flex-shrink-0">快捷操作:</span>
+          <div className="border-b border-gray-100 px-3 sm:px-6 py-2 sm:py-3">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 overflow-x-auto">
+              <span className="text-[10px] sm:text-xs text-gray-500 font-medium mr-1 sm:mr-2 flex-shrink-0">快捷操作:</span>
               {QUICK_ACTIONS.map(action => (
                 <Button
                   key={action.id}
                   variant="ghost"
                   size="sm"
                   onClick={() => handleQuickAction(action.id)}
-                  className="flex-shrink-0 h-8 px-3 rounded-lg hover:bg-gray-100 text-xs font-medium"
+                  className="flex-shrink-0 h-7 sm:h-8 px-2 sm:px-3 rounded-lg hover:bg-gray-100 text-[10px] sm:text-xs font-medium"
                   title={action.description}
                 >
-                  <action.icon className={`h-3.5 w-3.5 mr-1.5 ${action.color}`} />
-                  {action.label}
+                  <action.icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5 ${action.color}`} />
+                  <span className="hidden sm:inline">{action.label}</span>
                 </Button>
               ))}
             </div>
@@ -528,20 +543,20 @@ export default function AITutorChat({ conversationId, initialQuestion }: AITutor
         )}
 
         {/* Input Box */}
-        <div className="px-8 py-5">
+        <div className="px-3 sm:px-8 py-3 sm:py-5">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-end space-x-4">
+            <div className="flex items-end space-x-2 sm:space-x-4">
               <div className="flex-1 relative">
                 <Textarea
                   ref={textareaRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="输入你的想法... (Enter 发送, Shift+Enter 换行)"
-                  className="min-h-[60px] max-h-[200px] resize-none text-base border-2 border-gray-200 focus:border-blue-500 rounded-2xl px-5 py-4 pr-14 bg-white shadow-sm hover:shadow-md transition-shadow"
+                  placeholder="输入你的想法..."
+                  className="min-h-[50px] sm:min-h-[60px] max-h-[200px] resize-none text-sm sm:text-base border-2 border-gray-200 focus:border-blue-500 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-3 sm:py-4 pr-10 sm:pr-14 bg-white shadow-sm hover:shadow-md transition-shadow"
                   disabled={isLoading}
                 />
-                <div className="absolute bottom-4 right-4 flex space-x-1">
+                <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex space-x-1 hidden sm:flex">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-gray-100" disabled>
                     <Mic className="h-4 w-4 text-gray-400" />
                   </Button>
@@ -550,20 +565,20 @@ export default function AITutorChat({ conversationId, initialQuestion }: AITutor
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
-                className="h-[60px] px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-2xl shadow-md hover:shadow-lg transition-all font-medium text-base"
+                className="h-[50px] sm:h-[60px] px-4 sm:px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all font-medium text-sm sm:text-base"
               >
                 {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                 ) : (
                   <>
-                    <Send className="h-5 w-5 mr-2" />
-                    发送
+                    <Send className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+                    <span className="hidden sm:inline">发送</span>
                   </>
                 )}
               </Button>
             </div>
 
-            <p className="text-xs text-gray-500 mt-4 text-center">
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-2 sm:mt-4 text-center">
               AI 导师会引导你思考，但不会直接给出答案 · 保持好奇心和批判性思维
             </p>
           </div>

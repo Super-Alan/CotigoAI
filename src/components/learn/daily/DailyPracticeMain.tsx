@@ -254,63 +254,63 @@ export default function DailyPracticeMain() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Link href="/learn" className="inline-flex items-center text-gray-600 hover:text-gray-900 transition">
+        {/* Back Button - Mobile Optimized */}
+        <div className="mb-4 sm:mb-6">
+          <Link href="/learn" className="inline-flex items-center text-gray-600 hover:text-gray-900 transition text-sm sm:text-base min-h-[44px]">
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回批判性思维学习
           </Link>
         </div>
 
-        {/* Header Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+        {/* Header Section - Mobile Optimized */}
+        <div className="text-center mb-6 sm:mb-8 px-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4">
             每日练习打卡
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4 sm:mb-6 max-w-2xl mx-auto">
             每天10分钟，通过AI个性化题目提升批判性思维能力
           </p>
         </div>
 
-        {/* Status Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Status Cards - Mobile Optimized */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card className="bg-white">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Flame className={`h-6 w-6 ${dailyStatus.currentStreak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1.5 sm:mb-2">
+                <Flame className={`h-5 w-5 sm:h-6 sm:w-6 ${dailyStatus.currentStreak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
               </div>
-              <div className="text-2xl font-bold text-gray-900">{dailyStatus.currentStreak}</div>
-              <div className="text-sm text-gray-600">连续天数</div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStatus.currentStreak}</div>
+              <div className="text-xs sm:text-sm text-gray-600">连续天数</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Target className="h-6 w-6 text-blue-500" />
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1.5 sm:mb-2">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
               </div>
-              <div className="text-2xl font-bold text-gray-900">{dailyStatus.totalSessions}</div>
-              <div className="text-sm text-gray-600">总练习次数</div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStatus.totalSessions}</div>
+              <div className="text-xs sm:text-sm text-gray-600">总练习次数</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Calendar className="h-6 w-6 text-green-500" />
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1.5 sm:mb-2">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
               </div>
-              <div className="text-2xl font-bold text-gray-900">{dailyStatus.weeklyCompletion}%</div>
-              <div className="text-sm text-gray-600">本周完成率</div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStatus.weeklyCompletion}%</div>
+              <div className="text-xs sm:text-sm text-gray-600">本周完成率</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Trophy className="h-6 w-6 text-yellow-500" />
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1.5 sm:mb-2">
+                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
               </div>
-              <div className="text-2xl font-bold text-gray-900">{dailyStatus.achievements}</div>
-              <div className="text-sm text-gray-600">获得成就</div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStatus.achievements}</div>
+              <div className="text-xs sm:text-sm text-gray-600">获得成就</div>
             </CardContent>
           </Card>
         </div>
@@ -414,26 +414,26 @@ export default function DailyPracticeMain() {
           </CardContent>
         </Card>
 
-        {/* Practice Types */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">选择练习类型</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Practice Types - Mobile Optimized */}
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">选择练习类型</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {practiceTypes.map((type) => {
               const IconComponent = type.icon
               return (
-                <Card key={type.id} className={`${type.color} transition-all duration-300 hover:shadow-lg cursor-pointer`}
+                <Card key={type.id} className={`${type.color} transition-all duration-300 hover:shadow-lg cursor-pointer active:scale-95`}
                       onClick={() => startPractice(type.id)}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <IconComponent className={`h-5 w-5 ${type.iconColor}`} />
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className="p-1.5 sm:p-2 bg-white rounded-lg shadow-sm flex-shrink-0">
+                        <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 ${type.iconColor}`} />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-bold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                           {type.title}
                         </CardTitle>
-                        <Badge 
-                          className={`text-xs mt-1 ${difficultyColors[type.difficulty as keyof typeof difficultyColors]}`}
+                        <Badge
+                          className={`text-[10px] sm:text-xs mt-0.5 sm:mt-1 ${difficultyColors[type.difficulty as keyof typeof difficultyColors]}`}
                         >
                           {difficultyLabels[type.difficulty as keyof typeof difficultyLabels]}
                         </Badge>
@@ -441,15 +441,15 @@ export default function DailyPracticeMain() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <CardDescription className="text-gray-700 mb-3">
+                    <CardDescription className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3 line-clamp-2">
                       {type.description}
                     </CardDescription>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
-                        <Clock className="inline h-4 w-4 mr-1" />
+                      <span className="text-xs sm:text-sm text-gray-600 flex items-center">
+                        <Clock className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                         8-12分钟
                       </span>
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                      <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -458,32 +458,32 @@ export default function DailyPracticeMain() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer"
+        {/* Quick Actions - Mobile Optimized */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer active:scale-95"
                 onClick={() => router.push('/learn/daily/progress')}>
-            <CardContent className="p-6 text-center">
-              <BarChart3 className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">学习进度</h3>
-              <p className="text-sm text-gray-600">查看详细的学习数据和能力评估</p>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2 sm:mb-3" />
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-1 sm:mb-2">学习进度</h3>
+              <p className="text-xs sm:text-sm text-gray-600">查看详细的学习数据和能力评估</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer"
+          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer active:scale-95"
                 onClick={() => router.push('/learn/daily/settings')}>
-            <CardContent className="p-6 text-center">
-              <Settings className="h-8 w-8 text-green-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">练习设置</h3>
-              <p className="text-sm text-gray-600">个性化定制练习内容和难度</p>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2 sm:mb-3" />
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-1 sm:mb-2">练习设置</h3>
+              <p className="text-xs sm:text-sm text-gray-600">个性化定制练习内容和难度</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer"
+          <Card className="bg-white hover:shadow-lg transition-shadow cursor-pointer active:scale-95"
                 onClick={() => router.push('/learn')}>
-            <CardContent className="p-6 text-center">
-              <Star className="h-8 w-8 text-purple-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-2">学习中心</h3>
-              <p className="text-sm text-gray-600">返回主学习中心探索更多内容</p>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2 sm:mb-3" />
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-1 sm:mb-2">学习中心</h3>
+              <p className="text-xs sm:text-sm text-gray-600">返回主学习中心探索更多内容</p>
             </CardContent>
           </Card>
         </div>

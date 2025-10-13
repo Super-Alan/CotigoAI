@@ -296,39 +296,39 @@ export default function LearningCenter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Hero Section - Enhanced */}
-        <div className="relative mb-10">
+        {/* Hero Section - Mobile Optimized */}
+        <div className="relative mb-6 sm:mb-10">
           {/* Background Decoration */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5 rounded-3xl -z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5 rounded-2xl sm:rounded-3xl -z-10" />
 
-          <div className="text-center py-8 px-4">
-            <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm border mb-5 animate-fade-in">
-              <Brain className="h-5 w-5 text-blue-600 mr-2" />
-              <span className="text-sm font-medium text-gray-700">五维批判性思维学习平台</span>
+          <div className="text-center py-6 sm:py-8 px-4">
+            <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-full shadow-sm border mb-4 sm:mb-5 animate-fade-in">
+              <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mr-1.5 sm:mr-2" />
+              <span className="text-xs sm:text-sm font-medium text-gray-700">五维批判性思维学习平台</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 px-2 leading-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 px-2 leading-tight">
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                 AI 驱动
               </span>
               智能学习中心
             </h1>
 
-            <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
               基于五大核心思维维度的智能化学习体系，通过AI导师的个性化指导和每日精选问题，系统提升批判性思维能力
             </p>
 
-            {/* Primary CTA */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Link href="/learn/daily">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
-                  <Rocket className="mr-2 h-5 w-5" />
+            {/* Primary CTA - Mobile Optimized with larger touch targets */}
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-center items-stretch sm:items-center px-2 sm:px-0">
+              <Link href="/learn/daily" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto min-h-[50px] sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                  <Rocket className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   开始今日练习
                 </Button>
               </Link>
-              <Link href="/chat">
-                <Button size="lg" variant="outline" className="border-2 hover:bg-white h-12 px-8 text-base font-semibold">
-                  <Sparkles className="mr-2 h-5 w-5" />
+              <Link href="/chat" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[50px] sm:h-12 border-2 hover:bg-white px-6 sm:px-8 text-sm sm:text-base font-semibold">
+                  <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   AI 导师对话
                 </Button>
               </Link>
@@ -336,22 +336,22 @@ export default function LearningCenter() {
           </div>
         </div>
 
-        {/* Search Bar - Prominent Position */}
-        <div className="max-w-2xl mx-auto mb-10">
+        {/* Search Bar - Mobile Optimized */}
+        <div className="max-w-2xl mx-auto mb-6 sm:mb-10 px-2 sm:px-0">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5 z-10" />
             <Input
               placeholder="搜索思维维度、学习内容..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 text-base rounded-2xl border-2 border-gray-200 focus:border-blue-500 shadow-md hover:shadow-lg transition-shadow bg-white"
+              className="pl-10 sm:pl-12 h-12 sm:h-14 text-sm sm:text-base rounded-xl sm:rounded-2xl border-2 border-gray-200 focus:border-blue-500 shadow-md hover:shadow-lg transition-shadow bg-white"
             />
           </div>
         </div>
 
-        {/* Stats & AI Question - Side by Side */}
-        <div className="mb-10 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Stats & AI Question - Mobile Optimized */}
+        <div className="mb-6 sm:mb-10 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left: Learning Overview - Enhanced with Circular Progress */}
             <Card className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
               <CardHeader className="pb-4">
@@ -428,24 +428,24 @@ export default function LearningCenter() {
               {/* AI Question - Compact */}
               <AIQuestionChatbox />
 
-              {/* Quick Actions - Horizontal Cards */}
+              {/* Quick Actions - Mobile Optimized */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <Zap className="h-4 w-4 mr-2 text-purple-600" />
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
+                  <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-purple-600" />
                   快速入口
                 </h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                   {quickActions.map((action) => (
                     <Link key={action.id} href={action.href}>
-                      <Card className={`${action.bg} ${action.border} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group`}>
-                        <CardContent className="p-4">
-                          <div className="flex flex-col items-center text-center space-y-2">
-                            <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
-                              <action.icon className={`h-6 w-6 ${action.color}`} />
+                      <Card className={`${action.bg} ${action.border} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group active:scale-95`}>
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-2">
+                            <div className="p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
+                              <action.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${action.color}`} />
                             </div>
                             <div>
-                              <div className="font-semibold text-sm text-gray-900">{action.title}</div>
-                              <div className="text-xs text-gray-600 mt-1">{action.description}</div>
+                              <div className="font-semibold text-xs sm:text-sm text-gray-900">{action.title}</div>
+                              <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 line-clamp-2">{action.description}</div>
                             </div>
                           </div>
                         </CardContent>
@@ -458,17 +458,17 @@ export default function LearningCenter() {
           </div>
         </div>
 
-        {/* Core Thinking Dimensions */}
-        <div className="mb-12 sm:mb-16">
-          <div className="flex items-center justify-between mb-8">
+        {/* Core Thinking Dimensions - Mobile Optimized */}
+        <div className="mb-8 sm:mb-12 md:mb-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1.5 sm:mb-2">
                 五大核心思维维度
               </h2>
-              <p className="text-gray-600">系统化培养批判性思维的核心能力</p>
+              <p className="text-sm sm:text-base text-gray-600">系统化培养批判性思维的核心能力</p>
             </div>
-            <Link href="/learn/dimensions">
-              <Button variant="outline" className="hidden sm:flex items-center hover:bg-blue-50 hover:border-blue-300">
+            <Link href="/learn/dimensions" className="sm:flex-shrink-0">
+              <Button variant="outline" className="w-full sm:w-auto flex items-center justify-center hover:bg-blue-50 hover:border-blue-300 min-h-[44px]">
                 查看全部维度
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -476,21 +476,21 @@ export default function LearningCenter() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[...Array(5)].map((_, index) => (
-                <Card key={index} className="animate-pulse h-80">
+                <Card key={index} className="animate-pulse h-72 sm:h-80">
                   <CardHeader>
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-5 sm:h-6 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-32 bg-gray-200 rounded"></div>
+                    <div className="h-28 sm:h-32 bg-gray-200 rounded"></div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredThinkingTypes.map((type) => {
                 const IconComponent = thinkingTypeIcons[type.id as keyof typeof thinkingTypeIcons] || Brain
                 const colors = thinkingTypeColors[type.id as keyof typeof thinkingTypeColors] || thinkingTypeColors.causal_analysis
@@ -577,28 +577,28 @@ export default function LearningCenter() {
                         </div>
                       )}
 
-                      {/* Action Buttons */}
-                      <div className="space-y-3">
+                      {/* Action Buttons - Mobile Optimized */}
+                      <div className="space-y-2.5 sm:space-y-3">
                         <Link href={`/learn/critical-thinking/${type.id}`} className="block">
-                          <Button className={`w-full group h-12 text-base font-semibold ${isRecommended ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-900 hover:bg-gray-800'}`}>
+                          <Button className={`w-full group min-h-[48px] sm:h-12 text-sm sm:text-base font-semibold ${isRecommended ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-900 hover:bg-gray-800'}`}>
                             {progress ? '继续学习' : '开始学习'}
                             {isRecommended ? (
-                              <Rocket className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                              <Rocket className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                             ) : (
-                              <Play className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                              <Play className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                             )}
                           </Button>
                         </Link>
                         <div className="grid grid-cols-2 gap-2">
                           <Link href={`/learn/critical-thinking/${type.id}/practice`}>
-                            <Button variant="outline" className="w-full h-10 text-sm bg-white hover:bg-gray-50">
-                              <Zap className="mr-2 h-4 w-4" />
+                            <Button variant="outline" className="w-full min-h-[42px] sm:h-10 text-xs sm:text-sm bg-white hover:bg-gray-50">
+                              <Zap className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               智能练习
                             </Button>
                           </Link>
                           <Link href={`/learn/critical-thinking/${type.id}/progress`}>
-                            <Button variant="outline" className="w-full h-10 text-sm bg-white hover:bg-gray-50">
-                              <BarChart3 className="mr-2 h-4 w-4" />
+                            <Button variant="outline" className="w-full min-h-[42px] sm:h-10 text-xs sm:text-sm bg-white hover:bg-gray-50">
+                              <BarChart3 className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               查看进度
                             </Button>
                           </Link>
@@ -612,18 +612,18 @@ export default function LearningCenter() {
           )}
         </div>
 
-        {/* Legacy Learning Modules */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-8">
+        {/* Legacy Learning Modules - Mobile Optimized */}
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center justify-between mb-6 sm:mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2">
                 经典学习模块
               </h2>
-              <p className="text-gray-600">传统学习资源，与五维思维体系互补</p>
+              <p className="text-sm sm:text-base text-gray-600">传统学习资源，与五维思维体系互补</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {legacyModules.map((module) => (
               <Link key={module.id} href={module.href}>
                 <Card className={`${module.bg} border-2 transition-all duration-300 hover:shadow-lg hover:scale-105 group cursor-pointer`}>
@@ -653,24 +653,24 @@ export default function LearningCenter() {
           </div>
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+        {/* Call to Action - Mobile Optimized */}
+        <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
             开始你的批判性思维之旅
           </h2>
-          <p className="text-lg mb-6 opacity-90">
+          <p className="text-sm sm:text-base md:text-lg mb-5 sm:mb-6 opacity-90">
             通过科学的方法和AI的帮助，系统提升思维能力
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/learn/daily">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
-                <Flame className="mr-2 h-5 w-5" />
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-2 sm:px-0">
+            <Link href="/learn/daily" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto min-h-[50px] bg-white text-blue-600 hover:bg-gray-100 font-semibold">
+                <Flame className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 开始每日练习
               </Button>
             </Link>
-            <Link href="/learn/path">
-              <Button size="lg" variant="outline" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
-                <Compass className="mr-2 h-5 w-5" />
+            <Link href="/learn/path" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[50px] bg-white text-blue-600 hover:bg-gray-100 font-semibold border-white">
+                <Compass className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 制定学习计划
               </Button>
             </Link>

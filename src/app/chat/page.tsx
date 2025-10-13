@@ -16,6 +16,7 @@ function ChatPageContent() {
     tags?: string[]
     category?: string
   } | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     // 从 URL 参数获取初始问题和对话ID
@@ -45,31 +46,49 @@ function ChatPageContent() {
   const handleConversationSelect = (conversationId: string) => {
     setCurrentConversationId(conversationId)
     router.push(`/chat?conversationId=${conversationId}`)
+    setIsSidebarOpen(false) // 选择对话后关闭侧边栏
   }
 
   // 处理新建对话
   const handleNewConversation = () => {
     setCurrentConversationId(undefined)
     router.push('/chat')
+    setIsSidebarOpen(false) // 新建对话后关闭侧边栏
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="flex h-[calc(100vh-64px)]">
-        {/* Sidebar */}
-        <ConversationSidebar
-          currentConversationId={currentConversationId}
-          onConversationSelect={handleConversationSelect}
-          onNewConversation={handleNewConversation}
-        />
+      <div className="flex h-[calc(100vh-64px)] relative">
+        {/* Mobile Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Drawer on mobile, fixed on desktop */}
+        <div className={`
+          fixed lg:relative inset-y-0 left-0 z-50
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <ConversationSidebar
+            currentConversationId={currentConversationId}
+            onConversationSelect={handleConversationSelect}
+            onNewConversation={handleNewConversation}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 overflow-hidden bg-white">
+        <div className="flex-1 overflow-hidden bg-white flex flex-col">
           {initialQuestion && (
             <AITutorChat
               conversationId={currentConversationId}
               initialQuestion={initialQuestion}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             />
           )}
         </div>
