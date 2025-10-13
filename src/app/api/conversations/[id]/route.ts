@@ -60,3 +60,54 @@ export async function GET(
     );
   }
 }
+
+// DELETE /api/conversations/[id] - 删除对话
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // 支持 Web (NextAuth) 和移动端 (JWT)
+    const auth = await requireAuth(req);
+    if (auth.error) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: auth.error.message } },
+        { status: auth.error.status }
+      );
+    }
+
+    // 验证对话所有权
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: params.id,
+        userId: auth.userId,
+      },
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        { success: false, error: { code: 'NOT_FOUND', message: '对话不存在' } },
+        { status: 404 }
+      );
+    }
+
+    // 删除对话（Prisma会自动级联删除相关消息）
+    await prisma.conversation.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: '对话已删除',
+    });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: '删除对话失败' },
+      },
+      { status: 500 }
+    );
+  }
+}

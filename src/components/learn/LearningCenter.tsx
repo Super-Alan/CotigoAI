@@ -296,95 +296,165 @@ export default function LearningCenter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Hero Section - Simplified */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm border mb-4">
-            <Brain className="h-5 w-5 text-blue-600 mr-2" />
-            <span className="text-sm font-medium text-gray-700">五维批判性思维学习平台</span>
+        {/* Hero Section - Enhanced */}
+        <div className="relative mb-10">
+          {/* Background Decoration */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5 rounded-3xl -z-10" />
+
+          <div className="text-center py-8 px-4">
+            <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm border mb-5 animate-fade-in">
+              <Brain className="h-5 w-5 text-blue-600 mr-2" />
+              <span className="text-sm font-medium text-gray-700">五维批判性思维学习平台</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 px-2 leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                AI 驱动
+              </span>
+              智能学习中心
+            </h1>
+
+            <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+              基于五大核心思维维度的智能化学习体系，通过AI导师的个性化指导和每日精选问题，系统提升批判性思维能力
+            </p>
+
+            {/* Primary CTA */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Link href="/learn/daily">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                  <Rocket className="mr-2 h-5 w-5" />
+                  开始今日练习
+                </Button>
+              </Link>
+              <Link href="/chat">
+                <Button size="lg" variant="outline" className="border-2 hover:bg-white h-12 px-8 text-base font-semibold">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  AI 导师对话
+                </Button>
+              </Link>
+            </div>
           </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 px-2">
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              AI 驱动
-            </span>
-            智能学习中心
-          </h1>
-
-          <p className="text-base sm:text-lg text-gray-600 mb-6 max-w-3xl mx-auto px-4">
-            基于五大核心思维维度的智能化学习体系，通过AI导师的个性化指导和每日精选问题，系统提升批判性思维能力
-          </p>
         </div>
 
-        {/* AI Question Chatbox - Featured */}
-        <div className="mb-8 max-w-4xl mx-auto">
-          <AIQuestionChatbox />
+        {/* Search Bar - Prominent Position */}
+        <div className="max-w-2xl mx-auto mb-10">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+            <Input
+              placeholder="搜索思维维度、学习内容..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-14 text-base rounded-2xl border-2 border-gray-200 focus:border-blue-500 shadow-md hover:shadow-lg transition-shadow bg-white"
+            />
+          </div>
         </div>
 
-        {/* Compact Stats & Quick Actions */}
-        <div className="mb-8 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left: Compact Stats */}
-            <Card className="bg-white shadow-sm border">
-              <CardHeader className="pb-3">
+        {/* Stats & AI Question - Side by Side */}
+        <div className="mb-10 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Learning Overview - Enhanced with Circular Progress */}
+            <Card className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
+              <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
                   学习概览
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <div className="text-xl font-bold text-gray-900">{totalProgress}%</div>
-                    <div className="text-xs text-gray-600">整体进度</div>
+              <CardContent className="space-y-6">
+                {/* Circular Progress */}
+                <div className="flex justify-center">
+                  <div className="relative w-32 h-32">
+                    {/* Background Circle */}
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="currentColor"
+                        strokeWidth="12"
+                        fill="none"
+                        className="text-gray-200"
+                      />
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="url(#gradient)"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 56}`}
+                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - totalProgress / 100)}`}
+                        className="transition-all duration-1000 ease-out"
+                        strokeLinecap="round"
+                      />
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#8b5cf6" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {totalProgress}%
+                      </div>
+                      <div className="text-xs text-gray-600">总进度</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-xl font-bold text-orange-600">{dailyStreak?.currentStreak || 0}</div>
-                    <div className="text-xs text-gray-600">连续天数</div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <div className="flex justify-center mb-2">
+                      <Flame className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">{dailyStreak?.currentStreak || 0}</div>
+                    <div className="text-xs text-gray-600 mt-1">连续打卡</div>
                   </div>
-                  <div>
-                    <div className="text-xl font-bold text-green-600">{totalQuestions}</div>
-                    <div className="text-xs text-gray-600">已完成</div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                    <div className="flex justify-center mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">{totalQuestions}</div>
+                    <div className="text-xs text-gray-600 mt-1">已完成</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Right: Quick Actions - Compact */}
-            <Card className="bg-white shadow-sm border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center">
-                  <Zap className="h-5 w-5 mr-2 text-purple-600" />
+            {/* Right: AI Question & Quick Actions */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* AI Question - Compact */}
+              <AIQuestionChatbox />
+
+              {/* Quick Actions - Horizontal Cards */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Zap className="h-4 w-4 mr-2 text-purple-600" />
                   快速入口
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {quickActions.map((action) => (
                     <Link key={action.id} href={action.href}>
-                      <Button variant="outline" className="w-full h-auto py-3 hover:bg-gray-50 transition-all">
-                        <div className="flex flex-col items-center space-y-1">
-                          <action.icon className={`h-5 w-5 ${action.color}`} />
-                          <span className="text-xs font-medium">{action.title}</span>
-                        </div>
-                      </Button>
+                      <Card className={`${action.bg} ${action.border} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group`}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col items-center text-center space-y-2">
+                            <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
+                              <action.icon className={`h-6 w-6 ${action.color}`} />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-sm text-gray-900">{action.title}</div>
+                              <div className="text-xs text-gray-600 mt-1">{action.description}</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </Link>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Search Bar - Moved below */}
-        <div className="max-w-2xl mx-auto mb-8 px-4">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              placeholder="搜索思维维度或学习内容..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 text-base rounded-xl border-2 border-gray-200 focus:border-blue-500 shadow-sm"
-            />
+              </div>
+            </div>
           </div>
         </div>
 

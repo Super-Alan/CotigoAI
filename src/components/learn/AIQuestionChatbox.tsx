@@ -113,120 +113,82 @@ export default function AIQuestionChatbox() {
   const CategoryIcon = categoryInfo.icon
 
   return (
-    <Card className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2 mb-3">
+    <Card className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
             <div className="p-2 bg-white rounded-lg shadow-sm">
-              <Sparkles className="h-6 w-6 text-purple-600 animate-pulse" />
+              <Sparkles className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-gray-900">
+              <CardTitle className="text-lg font-bold text-gray-900">
                 AI 每日一问
               </CardTitle>
-              <CardDescription className="text-base text-gray-600 mt-1">
-                今日思维挑战 · 开启深度对话
-              </CardDescription>
             </div>
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="hover:bg-white hover:shadow-sm transition-all"
+            className="hover:bg-white hover:shadow-sm transition-all h-8 w-8 p-0"
           >
-            <RefreshCw className={`h-5 w-5 text-purple-600 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 text-purple-600 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
         {/* Category and Difficulty Badges */}
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <Badge className={`${categoryInfo.badge} flex items-center space-x-1`}>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <Badge className={`${categoryInfo.badge} flex items-center space-x-1 text-xs`}>
             <CategoryIcon className="h-3 w-3" />
             <span>{categoryInfo.name}</span>
           </Badge>
-          <Badge className={difficultyInfo.badge}>
+          <Badge className={`${difficultyInfo.badge} text-xs`}>
             {difficultyInfo.name}
           </Badge>
           {question.subcategory && (
-            <Badge variant="outline" className="bg-white">
+            <Badge variant="outline" className="bg-white text-xs">
               {question.subcategory}
             </Badge>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Question Content */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
-          <div className="flex items-start space-x-3">
-            <div className="p-2 bg-purple-50 rounded-lg flex-shrink-0">
-              <MessageSquare className="h-5 w-5 text-purple-600" />
-            </div>
-            <p className="text-lg text-gray-800 leading-relaxed font-medium">
-              {question.question}
-            </p>
-          </div>
+      <CardContent className="space-y-3">
+        {/* Question Content - Compact */}
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-100">
+          <p className="text-base text-gray-800 leading-relaxed">
+            {question.question}
+          </p>
         </div>
 
-        {/* Context (if available) */}
-        {question.context && (
-          <div className="bg-white bg-opacity-70 rounded-lg p-4 border border-purple-100">
-            <div className="flex items-start space-x-2">
-              <Lightbulb className="h-4 w-4 text-purple-500 mt-1 flex-shrink-0" />
-              <p className="text-sm text-gray-700 leading-relaxed">
-                <span className="font-semibold text-gray-900">思考提示：</span>
-                {question.context}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
+        {/* Tags - Compact */}
         {question.tags && question.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {question.tags.map((tag, index) => (
+          <div className="flex flex-wrap gap-1.5">
+            {question.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-white text-gray-700 text-xs rounded-full border border-purple-100"
+                className="px-2 py-0.5 bg-white text-gray-600 text-xs rounded-full border border-purple-100"
               >
                 #{tag}
               </span>
             ))}
+            {question.tags.length > 3 && (
+              <span className="px-2 py-0.5 bg-white text-gray-500 text-xs rounded-full border border-purple-100">
+                +{question.tags.length - 3}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="pt-2">
-          <Link href="/chat">
-            <Button className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 group">
-              <MessageSquare className="mr-2 h-5 w-5" />
-              与 AI 导师探讨这个问题
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        </div>
-
-        {/* Quick Links */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Link href="/learn/daily">
-            <Button
-              variant="outline"
-              className="w-full h-10 text-sm bg-white hover:bg-purple-50 hover:border-purple-300 transition-all"
-            >
-              每日练习
-            </Button>
-          </Link>
-          <Link href="/perspectives">
-            <Button
-              variant="outline"
-              className="w-full h-10 text-sm bg-white hover:bg-purple-50 hover:border-purple-300 transition-all"
-            >
-              多角度分析
-            </Button>
-          </Link>
-        </div>
+        {/* Action Button - Compact */}
+        <Link href="/chat">
+          <Button className="w-full h-10 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 group">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            与 AI 导师探讨
+            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   )
