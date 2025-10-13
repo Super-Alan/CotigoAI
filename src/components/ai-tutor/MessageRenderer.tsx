@@ -207,10 +207,12 @@ export default function MessageRenderer({ content, metadata }: MessageRendererPr
                     li: ({ node, ...props }) => <li className="text-gray-800" {...props} />,
                     strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
                     em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
-                    code: ({ node, inline, ...props }) =>
-                      inline
+                    code: ({ node, ...props }: any) => {
+                      const inline = (props as any).inline
+                      return inline
                         ? <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-900" {...props} />
-                        : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono text-gray-900 overflow-x-auto my-2" {...props} />,
+                        : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono text-gray-900 overflow-x-auto my-2" {...props} />
+                    },
                     blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700 my-2" {...props} />,
                     a: ({ node, ...props }) => <a className="text-blue-600 hover:text-blue-700 underline" {...props} />,
                   }}
@@ -246,10 +248,12 @@ export default function MessageRenderer({ content, metadata }: MessageRendererPr
             li: ({ node, ...props }) => <li className="text-gray-800" {...props} />,
             strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
             em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
-            code: ({ node, inline, ...props }) =>
-              inline
+            code: ({ node, ...props }: any) => {
+              const inline = (props as any).inline
+              return inline
                 ? <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-900" {...props} />
-                : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono text-gray-900 overflow-x-auto my-2" {...props} />,
+                : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono text-gray-900 overflow-x-auto my-2" {...props} />
+            },
             blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700 my-2" {...props} />,
             a: ({ node, ...props }) => <a className="text-blue-600 hover:text-blue-700 underline" {...props} />,
           }}

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     // 8. 调用 AI 服务（流式响应）
     const stream = await aiRouter.chat(messages, {
       stream: true,
-      model: process.env.ACTIVE_AI_MODEL || 'deepseek-v3.1',
+      model: (process.env.ACTIVE_AI_MODEL as 'deepseek-v3.1' | 'qwen3-max') || 'deepseek-v3.1',
       temperature: 0.7,  // 略微提高创造性
       maxTokens: 800     // 控制回复长度
     })
@@ -255,7 +255,7 @@ async function handleQuickAction(
   // 调用 AI 获取快捷操作结果（非流式）
   try {
     const result = await aiRouter.analyze(userPrompt, systemPrompt, {
-      model: process.env.ACTIVE_AI_MODEL || 'deepseek-v3.1'
+      model: (process.env.ACTIVE_AI_MODEL as 'deepseek-v3.1' | 'qwen3-max') || 'deepseek-v3.1'
     })
 
     // 确保返回字符串而不是对象
