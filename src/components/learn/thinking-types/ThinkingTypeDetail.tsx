@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
+import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
@@ -18,7 +18,9 @@ import {
   TrendingUp,
   BarChart3,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info,
+  AlertTriangle
 } from 'lucide-react'
 import { ThinkingType, CriticalThinkingProgress } from '@/types'
 import FishboneChart from './visualizations/FishboneChart'
@@ -27,6 +29,8 @@ import WeightChart from './visualizations/WeightChart'
 import ComparisonTable from './visualizations/ComparisonTable'
 import CaseAnalysisDisplay from './CaseAnalysisDisplay'
 import { CaseAnalysisResult } from '@/lib/prompts/case-analysis-prompts'
+import { ALL_LEARNING_CONTENT } from '@/lib/knowledge/learning-content-data'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ThinkingTypeDetailProps {
   thinkingTypeId: string
@@ -1775,6 +1779,7 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
           </TabsList>
 
           <TabsContent value="theory" className="space-y-6">
+            {/* 定义与概念 */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -1784,11 +1789,192 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 leading-relaxed">
-                  {typeData.learningContent.definition}
+                  {ALL_LEARNING_CONTENT[thinkingTypeId]?.definition || typeData.learningContent.definition}
                 </p>
               </CardContent>
             </Card>
 
+            {/* 核心方法 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.coreMethod && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Lightbulb className="h-5 w-5 mr-2 text-yellow-600" />
+                    核心方法
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {ALL_LEARNING_CONTENT[thinkingTypeId].coreMethod.map((method, i) => (
+                      <div
+                        key={i}
+                        className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4 space-y-3"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <Badge className="bg-blue-600 text-white flex-shrink-0">
+                            {i + 1}
+                          </Badge>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                              {method.title}
+                            </h4>
+                            <p className="text-gray-700 mb-3">
+                              {method.description}
+                            </p>
+                            <Alert className="bg-blue-100 border-blue-300">
+                              <Lightbulb className="h-4 w-4 text-blue-700" />
+                              <AlertDescription className="text-blue-900">
+                                <strong>示例：</strong>{method.example}
+                              </AlertDescription>
+                            </Alert>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 常见陷阱 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.commonPitfalls && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+                    常见陷阱
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {ALL_LEARNING_CONTENT[thinkingTypeId].commonPitfalls.map((pitfall, i) => (
+                      <div
+                        key={i}
+                        className="border border-orange-200 rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                              {pitfall.title}
+                            </h4>
+                            <p className="text-gray-700 mb-3">
+                              {pitfall.description}
+                            </p>
+                            <div className="bg-red-50 border border-red-200 p-3 rounded mb-3">
+                              <p className="text-red-900">
+                                <strong>❌ 错误示例：</strong>
+                                {pitfall.example}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 border border-green-200 p-3 rounded">
+                              <p className="text-green-900">
+                                <strong>✅ 如何避免：</strong>
+                                {pitfall.howToAvoid}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 思考检查清单 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.keyQuestions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                    思考检查清单
+                  </CardTitle>
+                  <CardDescription>
+                    使用这些问题检查你的思维过程
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {ALL_LEARNING_CONTENT[thinkingTypeId].keyQuestions.map((question, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-5 h-5 rounded border-2 border-gray-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs text-gray-500">{i + 1}</span>
+                        </div>
+                        <span className="text-gray-700">{question}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 答题示例对比 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.examples && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Info className="h-5 w-5 mr-2 text-indigo-600" />
+                    答题示例对比
+                  </CardTitle>
+                  <CardDescription>
+                    通过对比学习优秀回答和欠佳回答的差异
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {ALL_LEARNING_CONTENT[thinkingTypeId].examples.map((ex, i) => (
+                      <div key={i} className="space-y-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 mb-2">
+                            {ex.scenario}
+                          </h4>
+                          <p className="text-gray-700">
+                            <strong>问题：</strong>
+                            {ex.question}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* 优秀回答 */}
+                          <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                            <Badge className="bg-green-600 text-white mb-3">
+                              优秀回答
+                            </Badge>
+                            <p className="text-gray-800 leading-relaxed">
+                              {ex.goodAnswer}
+                            </p>
+                          </div>
+
+                          {/* 欠佳回答 */}
+                          <div className="border-2 border-red-500 rounded-lg p-4 bg-red-50">
+                            <Badge className="bg-red-600 text-white mb-3">
+                              欠佳回答
+                            </Badge>
+                            <p className="text-gray-800 leading-relaxed">
+                              {ex.poorAnswer}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Alert className="bg-indigo-50 border-indigo-300">
+                          <Info className="h-4 w-4 text-indigo-700" />
+                          <AlertDescription className="text-indigo-900">
+                            <strong>分析：</strong>
+                            {ex.analysis}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 应用领域 */}
             <Card>
               <CardHeader>
                 <CardTitle>应用领域</CardTitle>
@@ -1807,31 +1993,113 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
           </TabsContent>
 
           <TabsContent value="skills" className="space-y-6">
-            <Card>
+            {/* 技能总览 */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="h-5 w-5 mr-2" />
-                  核心技能
+                <CardTitle className="flex items-center text-xl">
+                  <Target className="h-6 w-6 mr-2 text-blue-600" />
+                  {typeData.name}的5大核心技能
                 </CardTitle>
-                <CardDescription>
-                  掌握这些核心技能，提升你的{typeData.name}能力
+                <CardDescription className="text-base">
+                  系统掌握这些技能，从理解概念到熟练应用，循序渐进提升你的批判性思维能力
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {typeData.learningContent.keySkills.map((skill, index) => (
-                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                      <div className="font-medium text-gray-900 mb-1">
-                        {skill.split('：')[0]}
+            </Card>
+
+            {/* 核心技能详细卡片 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.coreMethod ? (
+              // 如果有详细的核心方法数据，使用增强展示
+              ALL_LEARNING_CONTENT[thinkingTypeId].coreMethod.map((method, index) => (
+                <Card key={index} className="border-2 hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                        {index + 1}
                       </div>
-                      <div className="text-gray-600">
-                        {skill.split('：')[1]}
+                      <div className="flex-1">
+                        <CardTitle className="text-lg mb-2">{method.title}</CardTitle>
+                        <p className="text-gray-700 leading-relaxed">{method.description}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    {/* 示例 */}
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                      <div className="flex items-start space-x-2">
+                        <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-blue-900 mb-1">💡 实际应用示例</h4>
+                          <p className="text-blue-800 text-sm leading-relaxed">{method.example}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 为什么重要 */}
+                    {method.whyImportant && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-semibold text-green-900 mb-2">✅ 为什么这个技能重要？</h4>
+                            <p className="text-green-800 text-sm leading-relaxed">
+                              {method.whyImportant}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 如何提升 */}
+                    {method.howToImprove && method.howToImprove.length > 0 && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <TrendingUp className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-amber-900 mb-2">🚀 提升这项技能的方法</h4>
+                            <ul className="space-y-2 text-sm text-amber-800">
+                              {method.howToImprove.map((tip, tipIndex) => (
+                                <li key={tipIndex} className="flex items-start space-x-2">
+                                  <span className="text-amber-600 mt-1">•</span>
+                                  <span>{tip}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              // 降级方案：使用原有的简化数据
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Target className="h-5 w-5 mr-2" />
+                    核心技能
+                  </CardTitle>
+                  <CardDescription>
+                    掌握这些核心技能，提升你的{typeData.name}能力
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {typeData.learningContent.keySkills.map((skill, index) => (
+                      <div key={index} className="border-l-4 border-blue-500 bg-blue-50 pl-4 py-3 rounded-r-lg">
+                        <div className="font-semibold text-gray-900 mb-1">
+                          {skill.split('：')[0]}
+                        </div>
+                        <div className="text-gray-700">
+                          {skill.split('：')[1]}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="examples" className="space-y-6">

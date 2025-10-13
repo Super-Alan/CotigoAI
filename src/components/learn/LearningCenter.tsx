@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Brain, 
+import AIQuestionChatbox from './AIQuestionChatbox'
+import {
+  Brain,
   Search,
   ArrowRight,
   Target,
@@ -295,97 +296,95 @@ export default function LearningCenter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm border mb-6">
+        {/* Hero Section - Simplified */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm border mb-4">
             <Brain className="h-5 w-5 text-blue-600 mr-2" />
             <span className="text-sm font-medium text-gray-700">五维批判性思维学习平台</span>
           </div>
-          
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-2">
-            智能化
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 px-2">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              思维训练中心
+              AI 驱动
             </span>
+            智能学习中心
           </h1>
-          
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-4xl mx-auto leading-relaxed px-4">
-            基于五大核心思维维度的AI驱动学习体系，通过个性化路径和智能练习，
-            <br className="hidden sm:block" />
-            系统提升批判性思维能力，培养理性分析和独立思考的习惯
+
+          <p className="text-base sm:text-lg text-gray-600 mb-6 max-w-3xl mx-auto px-4">
+            基于五大核心思维维度的智能化学习体系，通过AI导师的个性化指导和每日精选问题，系统提升批判性思维能力
           </p>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
-            {/* Overall Progress */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Trophy className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{totalProgress}%</div>
-              <div className="text-sm text-gray-600">整体进度</div>
-            </div>
+        {/* AI Question Chatbox - Featured */}
+        <div className="mb-8 max-w-4xl mx-auto">
+          <AIQuestionChatbox />
+        </div>
 
-            {/* Daily Streak */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <Flame className="h-6 w-6 text-orange-600" />
+        {/* Compact Stats & Quick Actions */}
+        <div className="mb-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left: Compact Stats */}
+            <Card className="bg-white shadow-sm border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+                  学习概览
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className="text-xl font-bold text-gray-900">{totalProgress}%</div>
+                    <div className="text-xs text-gray-600">整体进度</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-orange-600">{dailyStreak?.currentStreak || 0}</div>
+                    <div className="text-xs text-gray-600">连续天数</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-green-600">{totalQuestions}</div>
+                    <div className="text-xs text-gray-600">已完成</div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {dailyStreak?.currentStreak || 0}
-              </div>
-              <div className="text-sm text-gray-600">连续天数</div>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Total Questions */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+            {/* Right: Quick Actions - Compact */}
+            <Card className="bg-white shadow-sm border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <Zap className="h-5 w-5 mr-2 text-purple-600" />
+                  快速入口
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  {quickActions.map((action) => (
+                    <Link key={action.id} href={action.href}>
+                      <Button variant="outline" className="w-full h-auto py-3 hover:bg-gray-50 transition-all">
+                        <div className="flex flex-col items-center space-y-1">
+                          <action.icon className={`h-5 w-5 ${action.color}`} />
+                          <span className="text-xs font-medium">{action.title}</span>
+                        </div>
+                      </Button>
+                    </Link>
+                  ))}
                 </div>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{totalQuestions}</div>
-              <div className="text-sm text-gray-600">已完成题目</div>
-            </div>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="max-w-lg mx-auto mb-8 px-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="搜索思维维度或学习内容..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 text-base rounded-xl border-2 border-gray-200 focus:border-blue-500 shadow-sm"
-              />
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">快速入口</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <Link key={action.id} href={action.href}>
-                <Card className={`${action.bg} ${action.border} transition-all duration-300 hover:shadow-lg ${action.glow} hover:scale-105 group cursor-pointer`}>
-                  <CardContent className="p-6 text-center">
-                    <div className="flex items-center justify-center mb-4">
-                      <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
-                        <action.icon className={`h-7 w-7 ${action.color}`} />
-                      </div>
-                    </div>
-                    <h3 className="font-bold text-gray-900 mb-2">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+        {/* Search Bar - Moved below */}
+        <div className="max-w-2xl mx-auto mb-8 px-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              placeholder="搜索思维维度或学习内容..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 text-base rounded-xl border-2 border-gray-200 focus:border-blue-500 shadow-sm"
+            />
           </div>
         </div>
 

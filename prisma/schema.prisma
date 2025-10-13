@@ -639,3 +639,25 @@ model KnowledgePointMastery {
   @@index([thinkingTypeId, conceptKey])
   @@map("knowledge_point_mastery")
 }
+
+// ============ 每日批判性问题库 ============
+// 系统问题库：包含常见批判性思维问题、升学面试话题、社会热点话题
+model DailyCriticalQuestion {
+  id            String   @id @default(cuid())
+  question      String   @db.Text // 问题内容
+  category      String   // critical_thinking | interview | social_issue
+  subcategory   String?  // 细分类别 (如：逻辑推理、时事分析、伦理道德等)
+  difficulty    String   @default("intermediate") // beginner | intermediate | advanced
+  tags          Json     @default("[]") // 标签数组
+  thinkingTypes Json     @default("[]") // 关联的思维维度ID数组
+  context       String?  @db.Text // 背景信息或补充说明
+  isActive      Boolean  @default(true) // 是否启用
+  usageCount    Int      @default(0) // 使用次数
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([difficulty])
+  @@index([createdAt])
+  @@map("daily_critical_questions")
+}
