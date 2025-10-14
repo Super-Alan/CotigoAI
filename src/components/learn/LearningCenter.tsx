@@ -596,7 +596,7 @@ export default function LearningCenter() {
                               智能练习
                             </Button>
                           </Link>
-                          <Link href={`/learn/critical-thinking/${type.id}/progress`}>
+                          <Link href="/learn/critical-thinking/progress">
                             <Button variant="outline" className="w-full min-h-[42px] sm:h-10 text-xs sm:text-sm bg-white hover:bg-gray-50">
                               <BarChart3 className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               查看进度

@@ -244,13 +244,13 @@ export default function DimensionsCenter() {
                       {progress ? '继续学习' : '开始学习'}
                     </Button>
                   </Link>
-                  <Link href={`/learn/thinking-types/${selectedType.id}/practice`}>
+                  <Link href={`/learn/critical-thinking/${selectedType.id}/practice`}>
                     <Button size="lg" variant="outline" className="bg-white hover:bg-gray-50">
                       <Zap className="mr-2 h-5 w-5" />
                       智能练习
                     </Button>
                   </Link>
-                  <Link href={`/learn/thinking-types/${selectedType.id}/progress`}>
+                  <Link href="/learn/critical-thinking/progress">
                     <Button size="lg" variant="outline" className="bg-white hover:bg-gray-50">
                       <BarChart3 className="mr-2 h-5 w-5" />
                       查看进度
