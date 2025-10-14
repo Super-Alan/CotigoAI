@@ -182,7 +182,9 @@ export default function AIQuestionChatbox() {
         )}
 
         {/* Action Button - Compact */}
-        <Link href="/chat">
+        <Link
+          href={`/chat?question=${encodeURIComponent(question.question)}&category=${question.category}&tags=${question.tags.join(',')}`}
+        >
           <Button className="w-full h-10 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 group">
             <MessageSquare className="mr-2 h-4 w-4" />
             与 AI 导师探讨

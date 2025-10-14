@@ -120,16 +120,30 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
       } else {
         // conversationId 变为 undefined，表示要开启新对话
         setCurrentConversationId(undefined)
-        if (initialQuestion.content) {
+        if (initialQuestion.content && initialQuestion.content !== '欢迎来到 AI 批判性思维导师！我会通过苏格拉底式提问来引导你深度思考。你想探讨什么问题？') {
+          // 如果有具体问题（非默认欢迎语），自动发送给AI
+          const userMessage = {
+            role: 'user' as const,
+            content: initialQuestion.content,
+            timestamp: new Date(),
+            metadata: {
+              type: 'question_card',
+              category: initialQuestion.category,
+              tags: initialQuestion.tags
+            }
+          }
+          setMessages([userMessage])
+          // 自动调用AI响应
+          sendMessageToAI([userMessage])
+        } else if (initialQuestion.content) {
+          // 默认欢迎语作为system消息显示
           setMessages([
             {
               role: 'system',
               content: initialQuestion.content,
               timestamp: new Date(),
               metadata: {
-                type: 'question_card',
-                category: initialQuestion.category,
-                tags: initialQuestion.tags
+                type: 'welcome_message'
               }
             }
           ])
@@ -147,21 +161,10 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
   }, [messages])
 
   /**
-   * 发送消息
+   * 向AI发送消息（可复用的核心逻辑）
    */
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return
-
-    const userMessage: Message = {
-      role: 'user',
-      content: inputValue.trim(),
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setInputValue('')
+  const sendMessageToAI = async (messagesToSend: Message[]) => {
     setIsLoading(true)
-    setShowQuickActions(false)
 
     try {
       // 如果没有对话ID，先创建对话
@@ -169,11 +172,12 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
       let newConversationCreated = false
 
       if (!convId) {
+        const firstUserMessage = messagesToSend.find(m => m.role === 'user')
         const createResponse = await fetch('/api/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: inputValue.trim().substring(0, 50),
+            title: firstUserMessage?.content.substring(0, 50) || '新对话',
             topic: initialQuestion.content
           })
         })
@@ -185,6 +189,9 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
           newConversationCreated = true
         }
       }
+
+      // 获取最后一条用户消息
+      const userMessage = messagesToSend[messagesToSend.length - 1]
 
       // 发送消息到对话API（自动保存到数据库并返回AI响应）
       const response = await fetch(`/api/conversations/${convId}/messages`, {
@@ -267,7 +274,26 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
       setIsLoading(false)
       setStreamingMessage('')
     }
+  }
 
+  /**
+   * 发送消息
+   */
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return
+
+    const userMessage: Message = {
+      role: 'user',
+      content: inputValue.trim(),
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInputValue('')
+    setShowQuickActions(false)
+
+    // 使用统一的发送逻辑
+    await sendMessageToAI([...messages, userMessage])
     setShowQuickActions(true)
   }
 
