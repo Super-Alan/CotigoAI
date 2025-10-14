@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { getConceptsNeedingReview } from '@/lib/knowledge/mastery-calculator'
 import { getConceptInfo, CONCEPT_MAPPING } from '@/lib/knowledge/concept-mapping'
 
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/knowledge-mastery/review-needed
  * 获取需要复习的知识点列表

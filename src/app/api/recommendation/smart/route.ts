@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getSmartRecommendation, getMultipleRecommendations } from '@/lib/recommendation/smart-recommender'
 
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/recommendation/smart
  * 获取智能推荐
