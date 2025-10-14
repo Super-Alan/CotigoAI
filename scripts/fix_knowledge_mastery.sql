@@ -74,6 +74,80 @@ BEGIN
             RAISE NOTICE 'Column thinkingTypeId added to knowledge_point_mastery';
         END IF;
 
+        -- 检查并添加 conceptKey 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'conceptKey'
+        ) THEN
+            -- 添加列，允许为NULL（暂时）
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "conceptKey" TEXT;
+
+            -- 如果有数据，设置默认值
+            UPDATE "knowledge_point_mastery" SET "conceptKey" = 'default_concept' WHERE "conceptKey" IS NULL;
+
+            -- 设置为 NOT NULL
+            ALTER TABLE "knowledge_point_mastery" ALTER COLUMN "conceptKey" SET NOT NULL;
+
+            RAISE NOTICE 'Column conceptKey added to knowledge_point_mastery';
+        END IF;
+
+        -- 检查并添加 masteryLevel 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'masteryLevel'
+        ) THEN
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "masteryLevel" DOUBLE PRECISION NOT NULL DEFAULT 0.0;
+            RAISE NOTICE 'Column masteryLevel added to knowledge_point_mastery';
+        END IF;
+
+        -- 检查并添加 lastPracticed 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'lastPracticed'
+        ) THEN
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "lastPracticed" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+            RAISE NOTICE 'Column lastPracticed added to knowledge_point_mastery';
+        END IF;
+
+        -- 检查并添加 practiceCount 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'practiceCount'
+        ) THEN
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "practiceCount" INTEGER NOT NULL DEFAULT 0;
+            RAISE NOTICE 'Column practiceCount added to knowledge_point_mastery';
+        END IF;
+
+        -- 检查并添加 createdAt 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'createdAt'
+        ) THEN
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+            RAISE NOTICE 'Column createdAt added to knowledge_point_mastery';
+        END IF;
+
+        -- 检查并添加 updatedAt 列
+        IF NOT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+            AND table_name = 'knowledge_point_mastery'
+            AND column_name = 'updatedAt'
+        ) THEN
+            ALTER TABLE "knowledge_point_mastery" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+            RAISE NOTICE 'Column updatedAt added to knowledge_point_mastery';
+        END IF;
+
         -- 检查并创建唯一约束（如果不存在）
         IF NOT EXISTS (
             SELECT 1 FROM pg_indexes
