@@ -96,7 +96,8 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
       if (isLoading) return
 
       // 如果conversationId与当前状态相同，不需要重新加载
-      if (conversationId === currentConversationId) return
+      // 但是如果两者都是undefined且messages为空，说明是初次加载，需要处理initialQuestion
+      if (conversationId === currentConversationId && messages.length > 0) return
 
       if (conversationId) {
         // 加载已有对话
