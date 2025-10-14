@@ -156,11 +156,6 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId])
 
-  // 自动聚焦输入框
-  useEffect(() => {
-    textareaRef.current?.focus()
-  }, [messages])
-
   /**
    * 向AI发送消息（可复用的核心逻辑）
    */
