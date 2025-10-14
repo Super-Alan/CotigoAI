@@ -401,6 +401,31 @@ To switch between Deepseek and Qwen:
   - Display names for better debugging
 - When adding new components, follow existing patterns in `ui/` directory
 
+### Vercel Deployment Configuration
+
+**AI API Timeout Configuration**:
+- Vercel serverless functions connecting to China-based AI APIs (DeepSeek/Qwen) may experience network latency
+- Set `AI_REQUEST_TIMEOUT` environment variable in Vercel Dashboard (default: 60000ms)
+- Timeout implementation uses `AbortController` in `src/lib/ai/base.ts`
+- See `docs/VERCEL_DEPLOYMENT_TIMEOUT_FIX.md` for detailed setup instructions
+
+**Environment Variables Required**:
+```
+AI_REQUEST_TIMEOUT=60000  # 60 seconds recommended for production
+DATABASE_URL=<production-db-url>
+NEXTAUTH_SECRET=<production-secret>
+DEEPSEEK_API_KEY=<production-key>
+QWEN_API_KEY=<production-key>
+ACTIVE_AI_MODEL=deepseek-v3.1
+```
+
+**Deployment Checklist**:
+1. ✅ Set all environment variables in Vercel Dashboard
+2. ✅ Configure `AI_REQUEST_TIMEOUT` for Production, Preview, and Development
+3. ✅ Verify database connection string
+4. ✅ Test AI chat functionality post-deployment
+5. ✅ Monitor Vercel logs for timeout errors
+
 ## Project-Specific Conventions
 
 ### Code Style
@@ -419,11 +444,43 @@ To switch between Deepseek and Qwen:
   - Back buttons return to appropriate parent pages
   - Header dropdown maintains consistent structure
 
+**Mobile-First Design Principles**:
+- **Touch Targets**: Minimum 44x44px for all interactive elements (iOS HIG standard)
+- **Responsive Spacing**: Use Tailwind's responsive utilities (`sm:`, `md:`, `lg:`) for progressive enhancement
+- **Keyboard Behavior**:
+  - ❌ **Never** auto-focus input fields after AI responses (prevents unwanted keyboard popup on mobile)
+  - ✅ Let users manually tap input fields to trigger keyboard
+  - ✅ Prioritize content readability over input convenience
+- **Compact Layouts**: Reduce padding, margins, and font sizes on mobile while maintaining readability
+  - Example: `pb-2 sm:pb-3`, `text-base sm:text-lg`, `gap-2 sm:gap-3`
+- **Bottom Navigation**: Use fixed bottom bars for primary actions on mobile (prevents thumb strain)
+- **Collapsible Sections**: Convert desktop sidebars to mobile drawers or accordions
+- **Token Efficiency**:
+  - Mobile: `w-24 h-24` for progress circles, `text-[10px]` for labels
+  - Desktop: `sm:w-28 sm:h-28`, `sm:text-xs` for enhanced visibility
+
 ### Data Handling
 - **Nullable Foreign Keys**: Support optional user relationships for graceful degradation
 - **Deduplication**: Check for existing records before creating (e.g., topics by content)
 - **Cascading Deletes**: All user-generated content should cascade on user deletion
 - **Graceful Errors**: Log errors comprehensively but show simple messages to users
+
+**Learning Progress Data Integrity**:
+- **Daily Streak Logic** (`/api/daily-streak`):
+  - Validates date continuity: only counts as active if last practice was today or yesterday
+  - Resets to 0 if user skipped a day (prevents showing stale historical streaks)
+  - Implementation: `src/app/api/daily-streak/route.ts` (lines 40-58)
+- **Completed Questions Count** (`LearningCenter.tsx`):
+  - Uses `questionsCompleted` field from `CriticalThinkingProgress` table
+  - Aggregates across all 5 thinking dimensions
+  - Frontend interface must match backend schema exactly
+- **Progress Percentage**:
+  - Stored directly in database (`progressPercentage` field) rather than calculated
+  - Updated via POST to `/api/critical-thinking/progress` after each practice session
+- **Data Consistency Rules**:
+  - Frontend `UserProgress` interface must align with Prisma `CriticalThinkingProgress` model
+  - Never calculate derived metrics client-side if DB already stores them
+  - Always validate date fields for continuity in streak/progress calculations
 
 ### Naming Conventions
 - **Thinking Dimensions**: Use snake_case IDs (`causal_analysis`, `premise_challenge`)
