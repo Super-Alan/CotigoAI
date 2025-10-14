@@ -79,23 +79,47 @@ export async function makeAIRequest(
   body: any,
   stream: boolean = false
 ): Promise<Response> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  // Vercel serverless 环境下连接国内 AI 服务器可能较慢，设置更长的超时时间
+  const timeoutMs = parseInt(process.env.AI_REQUEST_TIMEOUT || '60000'); // 默认 60 秒
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new AIServiceError(
-      'API_ERROR',
-      error.message || `HTTP ${response.status}: ${response.statusText}`,
-      error
-    );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new AIServiceError(
+        'API_ERROR',
+        error.message || `HTTP ${response.status}: ${response.statusText}`,
+        error
+      );
+    }
+
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+
+    // 处理超时错误
+    if (error.name === 'AbortError') {
+      throw new AIServiceError(
+        'TIMEOUT_ERROR',
+        `AI 请求超时 (${timeoutMs}ms)，请检查网络连接或稍后重试`,
+        error
+      );
+    }
+
+    throw error;
   }
-
-  return response;
 }
