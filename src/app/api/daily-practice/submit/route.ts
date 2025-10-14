@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { aiRouter } from '@/lib/ai/router';
 import { PRACTICE_FEEDBACK_PROMPT } from '@/lib/prompts';
 
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -90,10 +93,12 @@ export async function POST(request: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingStreak = await prisma.dailyStreak.findFirst({
+    const existingStreak = await prisma.dailyStreak.findUnique({
       where: {
-        userId: session.user.id,
-        practiceDate: today
+        userId_practiceDate: {
+          userId: session.user.id,
+          practiceDate: today
+        }
       }
     });
 
@@ -102,10 +107,12 @@ export async function POST(request: NextRequest) {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
 
-      const yesterdayStreak = await prisma.dailyStreak.findFirst({
+      const yesterdayStreak = await prisma.dailyStreak.findUnique({
         where: {
-          userId: session.user.id,
-          practiceDate: yesterday
+          userId_practiceDate: {
+            userId: session.user.id,
+            practiceDate: yesterday
+          }
         }
       });
 
@@ -219,10 +226,14 @@ ${answerResults.map((result, index) => `
       streakUpdated: true
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('提交练习答案失败:', error);
     return NextResponse.json(
-      { error: '服务器内部错误' },
+      {
+        success: false,
+        error: '服务器内部错误',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }
@@ -313,10 +324,12 @@ async function getCurrentStreak(userId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const todayStreak = await prisma.dailyStreak.findFirst({
+  const todayStreak = await prisma.dailyStreak.findUnique({
     where: {
-      userId,
-      practiceDate: today
+      userId_practiceDate: {
+        userId,
+        practiceDate: today
+      }
     }
   });
 

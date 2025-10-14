@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { aiRouter } from '@/lib/ai/router';
 import { createPracticePrompt } from '@/lib/prompts';
 
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -177,10 +180,14 @@ export async function POST(request: NextRequest) {
       nextSteps: practiceData.nextSteps || ''
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('生成练习题目失败:', error);
     return NextResponse.json(
-      { error: '服务器内部错误' },
+      {
+        success: false,
+        error: '服务器内部错误',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }

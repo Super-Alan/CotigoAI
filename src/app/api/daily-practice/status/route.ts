@@ -78,10 +78,14 @@ export async function GET(request: NextRequest) {
       achievements
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching daily practice status:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     )
   }
