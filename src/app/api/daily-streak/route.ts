@@ -37,10 +37,30 @@ export async function GET() {
       _max: { streakCount: true }
     })
 
+    // 检查连续性：只有最后打卡日期是今天或昨天，才算有效连续
+    let currentStreak = 0
+    if (lastRecord) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      const lastPracticeDate = new Date(lastRecord.practiceDate)
+      lastPracticeDate.setHours(0, 0, 0, 0)
+
+      // 如果最后打卡是今天或昨天，连续天数有效
+      if (lastPracticeDate.getTime() === today.getTime() ||
+          lastPracticeDate.getTime() === yesterday.getTime()) {
+        currentStreak = lastRecord.streakCount
+      }
+      // 否则连续天数归零（中断了）
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        currentStreak: lastRecord?.streakCount ?? 0,
+        currentStreak,
         longestStreak: longest._max.streakCount ?? 0,
         lastPracticeDate: lastRecord?.practiceDate ?? null
       }

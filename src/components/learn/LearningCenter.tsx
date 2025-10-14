@@ -52,10 +52,10 @@ interface ThinkingType {
 
 interface UserProgress {
   thinkingTypeId: string
-  totalQuestions: number
-  correctAnswers: number
+  questionsCompleted: number
+  progressPercentage: number
   averageScore: number
-  lastPracticeAt: Date | null
+  lastUpdated: Date
 }
 
 interface DailyStreak {
@@ -239,9 +239,7 @@ export default function LearningCenter() {
           // 智能推荐：找到进度最低的维度（空数组容错）
           if (progressArr.length > 0) {
             const lowestProgress = progressArr.reduce((min: UserProgress, current: UserProgress) => {
-              const currentPercentage = current.totalQuestions > 0 ? (current.correctAnswers / current.totalQuestions) * 100 : 0
-              const minPercentage = min.totalQuestions > 0 ? (min.correctAnswers / min.totalQuestions) * 100 : 0
-              return currentPercentage < minPercentage ? current : min
+              return current.progressPercentage < min.progressPercentage ? current : min
             })
             setRecommendedType(lowestProgress.thinkingTypeId)
           } else {
@@ -278,8 +276,8 @@ export default function LearningCenter() {
   }
 
   const getProgressPercentage = (progress: UserProgress | undefined) => {
-    if (!progress || progress.totalQuestions === 0) return 0
-    return Math.round((progress.correctAnswers / progress.totalQuestions) * 100)
+    if (!progress) return 0
+    return progress.progressPercentage
   }
 
   const filteredThinkingTypes = thinkingTypes.filter(type =>
@@ -287,11 +285,11 @@ export default function LearningCenter() {
     type.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const totalProgress = userProgress.length > 0 
+  const totalProgress = userProgress.length > 0
     ? Math.round(userProgress.reduce((sum, p) => sum + getProgressPercentage(p), 0) / userProgress.length)
     : 0
 
-  const totalQuestions = userProgress.reduce((sum, p) => sum + p.correctAnswers, 0)
+  const totalQuestions = userProgress.reduce((sum, p) => sum + p.questionsCompleted, 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
