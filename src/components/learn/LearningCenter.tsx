@@ -354,18 +354,18 @@ export default function LearningCenter() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left: Learning Overview - Enhanced with Circular Progress */}
             <Card className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+              <CardHeader className="pb-2 sm:pb-3">
+                <CardTitle className="text-base sm:text-lg flex items-center">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-blue-600" />
                   学习概览
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-3 sm:space-y-4">
                 {/* Circular Progress */}
                 <div className="flex justify-center">
-                  <div className="relative w-32 h-32">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28">
                     {/* Background Circle */}
-                    <svg className="w-full h-full transform -rotate-90">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
                       <circle
                         cx="64"
                         cy="64"
@@ -395,29 +395,29 @@ export default function LearningCenter() {
                       </defs>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {totalProgress}%
                       </div>
-                      <div className="text-xs text-gray-600">总进度</div>
+                      <div className="text-[10px] sm:text-xs text-gray-600">总进度</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                    <div className="flex justify-center mb-2">
-                      <Flame className="h-5 w-5 text-orange-500" />
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
+                    <div className="flex justify-center mb-1 sm:mb-1.5">
+                      <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{dailyStreak?.currentStreak || 0}</div>
-                    <div className="text-xs text-gray-600 mt-1">连续打卡</div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStreak?.currentStreak || 0}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">连续打卡</div>
                   </div>
-                  <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                    <div className="flex justify-center mb-2">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div className="bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
+                    <div className="flex justify-center mb-1 sm:mb-1.5">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{totalQuestions}</div>
-                    <div className="text-xs text-gray-600 mt-1">已完成</div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900">{totalQuestions}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">已完成</div>
                   </div>
                 </div>
               </CardContent>
