@@ -19,7 +19,9 @@ import {
   Target,
   RefreshCw,
   BookOpen,
-  Play
+  Play,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { CriticalThinkingQuestion, PracticeEvaluation } from '@/types'
 import CaseAnalysisDisplay from './CaseAnalysisDisplay'
@@ -75,6 +77,9 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
   const [evaluation, setEvaluation] = useState<PracticeEvaluation | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [reflection, setReflection] = useState<any>(null)
+
+  // Mobile UI state
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const typeName = thinkingTypeNames[thinkingTypeId as keyof typeof thinkingTypeNames] || '批判性思维'
 
@@ -406,8 +411,8 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             </div>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center space-x-2 mb-6 overflow-x-auto pb-2">
+          {/* Progress Steps - Desktop only, mobile uses bottom nav */}
+          <div className="hidden md:flex items-center space-x-2 mb-6 overflow-x-auto pb-2">
             {Object.entries(STEP_CONFIG).map(([key, config], idx) => {
               const isActive = key === flowStep
               const isCompleted = config.index < currentStepConfig.index
@@ -455,16 +460,17 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Mobile: Bottom padding for sticky navigation */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
             {/* Step 1: 案例学习 */}
             {flowStep === 'case' && (
               <div className="space-y-6">
                 <Card className="border-2 border-blue-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <BookOpen className="h-6 w-6 mr-2 text-blue-600" />
+                    <CardTitle className="flex items-center text-lg md:text-xl">
+                      <BookOpen className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600" />
                       Step 1: 案例学习
                     </CardTitle>
                     <CardDescription>
@@ -496,7 +502,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                 </Card>
 
                 <div className="flex justify-end">
-                  <Button onClick={() => proceedToNextStep('problem')} size="lg">
+                  <Button onClick={() => proceedToNextStep('problem')} size="lg" className="w-full md:w-auto min-h-11 text-base">
                     学习完毕，查看练习题目
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -525,25 +531,25 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                   </CardHeader>
                   <CardContent>
                     <div className="prose max-w-none">
-                      <p className="text-gray-800 text-lg leading-relaxed mb-4">
+                      <p className="text-gray-800 text-base md:text-lg leading-relaxed md:leading-loose mb-4 p-2">
                         {(currentQuestion as any).question}
                       </p>
                       {currentQuestion.context && (
                         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                           <h4 className="font-medium text-blue-900 mb-2">背景信息：</h4>
-                          <p className="text-blue-800">{currentQuestion.context}</p>
+                          <p className="text-blue-800 leading-relaxed">{currentQuestion.context}</p>
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => proceedToNextStep('case')}>
+                <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-0">
+                  <Button variant="outline" onClick={() => proceedToNextStep('case')} className="min-h-11 text-base order-2 md:order-1">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     返回案例
                   </Button>
-                  <Button onClick={() => proceedToNextStep('guided')} size="lg">
+                  <Button onClick={() => proceedToNextStep('guided')} size="lg" className="min-h-11 text-base order-1 md:order-2">
                     开始思考
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -714,12 +720,12 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => proceedToNextStep('problem')}>
+                <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-0">
+                  <Button variant="outline" onClick={() => proceedToNextStep('problem')} className="min-h-11 text-base order-2 md:order-1">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     返回题目
                   </Button>
-                  <Button onClick={() => proceedToNextStep('answer')} size="lg" className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => proceedToNextStep('answer')} size="lg" className="bg-green-600 hover:bg-green-700 min-h-11 text-base order-1 md:order-2">
                     完成引导思考，开始作答
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -751,14 +757,14 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                       placeholder="请在这里输入你的完整回答...&#10;&#10;建议：&#10;1. 结构清晰，分点论述&#10;2. 结合引导问题的思考&#10;3. 说明理由和依据"
                       value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
-                      className="min-h-[250px] text-base"
+                      className="min-h-[200px] md:min-h-[250px] text-base leading-relaxed p-4"
                     />
                     <p className="text-sm text-gray-500 text-right">{userAnswer.length} 字</p>
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => proceedToNextStep('guided')}>
+                <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-0">
+                  <Button variant="outline" onClick={() => proceedToNextStep('guided')} className="min-h-11 text-base order-2 md:order-1">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     返回引导问题
                   </Button>
@@ -766,7 +772,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                     onClick={submitAnswer}
                     disabled={!userAnswer.trim() || submitting}
                     size="lg"
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-orange-600 hover:bg-orange-700 min-h-11 text-base order-1 md:order-2"
                   >
                     {submitting ? (
                       <>
@@ -847,7 +853,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                 </Card>
 
                 <div className="flex justify-end">
-                  <Button onClick={() => proceedToNextStep('reflection')} size="lg" className="bg-purple-600 hover:bg-purple-700">
+                  <Button onClick={() => proceedToNextStep('reflection')} size="lg" className="bg-purple-600 hover:bg-purple-700 w-full md:w-auto min-h-11 text-base">
                     继续：反思总结
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -864,8 +870,8 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar - Desktop sticky, Mobile bottom sheet */}
+          <div className="hidden lg:block lg:col-span-1 space-y-6">
             {/* Timer */}
             {startTime && flowStep !== 'reflection' && (
               <Card>
@@ -970,6 +976,159 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="container mx-auto px-4 py-3">
+            {/* Progress indicator */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  {currentStepConfig.index + 1}
+                </div>
+                <span className="text-sm font-medium text-gray-900">{currentStepConfig.title}</span>
+              </div>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {sidebarOpen ? <ChevronDown className="h-5 w-5 text-gray-600" /> : <ChevronUp className="h-5 w-5 text-gray-600" />}
+              </button>
+            </div>
+
+            {/* Navigation buttons */}
+            <div className="flex gap-2">
+              {currentStepConfig.index > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const prevStep = Object.entries(STEP_CONFIG).find(([, config]) => config.index === currentStepConfig.index - 1)?.[0] as FlowStep
+                    if (prevStep) proceedToNextStep(prevStep)
+                  }}
+                  className="flex-1 min-h-11"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  上一步
+                </Button>
+              )}
+              {currentStepConfig.index < Object.keys(STEP_CONFIG).length - 1 && (
+                <Button
+                  onClick={() => {
+                    const nextStep = Object.entries(STEP_CONFIG).find(([, config]) => config.index === currentStepConfig.index + 1)?.[0] as FlowStep
+                    if (nextStep) proceedToNextStep(nextStep)
+                  }}
+                  className="flex-1 min-h-11 bg-blue-600 hover:bg-blue-700"
+                >
+                  下一步
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Expandable sidebar content for mobile */}
+          {sidebarOpen && (
+            <div className="border-t border-gray-200 bg-gray-50 max-h-[60vh] overflow-y-auto">
+              <div className="container mx-auto px-4 py-4 space-y-4">
+                {/* Timer */}
+                {startTime && flowStep !== 'reflection' && (
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center mb-2">
+                      <Clock className="h-4 w-4 mr-2 text-gray-600" />
+                      <h4 className="font-medium text-gray-900">用时统计</h4>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {Math.floor((Date.now() - startTime.getTime()) / 60000)}:
+                        {String(Math.floor(((Date.now() - startTime.getTime()) % 60000) / 1000)).padStart(2, '0')}
+                      </div>
+                      <div className="text-sm text-gray-600">分:秒</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tips */}
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h4 className="font-medium text-gray-900 mb-3">学习提示</h4>
+                  <div className="space-y-3 text-sm text-gray-600">
+                    {flowStep === 'case' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>仔细阅读案例，理解核心概念的实际应用</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>思考案例中的关键要点和方法论</span>
+                        </div>
+                      </>
+                    )}
+                    {flowStep === 'problem' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>仔细阅读题目，理解问题的核心</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>注意背景信息中的关键细节</span>
+                        </div>
+                      </>
+                    )}
+                    {flowStep === 'guided' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>逐个思考引导问题，不要跳过</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>每个问题都有其设计目的，帮助你深入思考</span>
+                        </div>
+                      </>
+                    )}
+                    {flowStep === 'answer' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>结合引导问题的思考形成完整答案</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>回答要有逻辑性和条理性</span>
+                        </div>
+                      </>
+                    )}
+                    {flowStep === 'feedback' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>认真阅读AI反馈，理解自己的不足</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>思考如何改进自己的思维方式</span>
+                        </div>
+                      </>
+                    )}
+                    {flowStep === 'reflection' && (
+                      <>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>反思是深度学习的关键环节</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <span>认真填写，将经验抽象为认知模式</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
