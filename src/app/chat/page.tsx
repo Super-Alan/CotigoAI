@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Header from '@/components/Header'
 import AITutorChat from '@/components/ai-tutor/AITutorChat'
 import ConversationSidebar from '@/components/chat/ConversationSidebar'
@@ -9,6 +10,7 @@ import ConversationSidebar from '@/components/chat/ConversationSidebar'
 function ChatPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>()
   const [initialQuestion, setInitialQuestion] = useState<{
     id?: string
@@ -17,6 +19,17 @@ function ChatPageContent() {
     category?: string
   } | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // 登录状态检查
+  useEffect(() => {
+    if (status === 'loading') return // 等待认证状态加载
+
+    if (status === 'unauthenticated') {
+      // 保存当前 URL 参数，登录后可以返回
+      const currentPath = window.location.pathname + window.location.search
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`)
+    }
+  }, [status, router])
 
   useEffect(() => {
     // 从 URL 参数获取初始问题和对话ID
@@ -54,6 +67,30 @@ function ChatPageContent() {
     setCurrentConversationId(undefined)
     router.push('/chat')
     setIsSidebarOpen(false) // 新建对话后关闭侧边栏
+  }
+
+  // 加载中状态
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">验证登录状态...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 未登录状态（重定向中）
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">跳转到登录页面...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

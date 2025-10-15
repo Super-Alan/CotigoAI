@@ -1,18 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState<string>('/learn');
+
+  // 获取 callbackUrl 参数
+  useEffect(() => {
+    const url = searchParams.get('callbackUrl');
+    if (url) {
+      setCallbackUrl(decodeURIComponent(url));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +43,13 @@ export default function SignInPage() {
         const adminEmails = ['admin@cogito.ai', 'super@cogito.ai'];
         const isAdmin = adminEmails.includes(formData.email);
 
-        // 根据角色跳转
-        if (isAdmin) {
+        // 根据角色和 callbackUrl 跳转
+        if (isAdmin && callbackUrl === '/learn') {
+          // 管理员且无特定回调URL，跳转到管理后台
           router.push('/admin');
         } else {
-          router.push('/learn');
+          // 跳转到回调URL或默认页面
+          router.push(callbackUrl);
         }
       }
     } catch (err) {
