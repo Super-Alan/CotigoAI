@@ -60,17 +60,17 @@ export default function Home() {
 
             {/* CTA Buttons - Mobile Optimized with larger touch targets */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-4 sm:px-0">
-              <Link href="/learn" className="w-full sm:w-auto">
+              <Link href="/chat" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto min-h-[52px] sm:h-14 px-6 sm:px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all text-base sm:text-lg font-semibold group">
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  开始学习
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  体验AI导师
                   <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/chat" className="w-full sm:w-auto">
+              <Link href="/learn" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[52px] sm:h-14 px-6 sm:px-8 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 rounded-2xl text-base sm:text-lg font-semibold transition-all">
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  体验AI导师
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  开始学习
                 </Button>
               </Link>
             </div>

@@ -319,18 +319,19 @@ export default function LearningCenter() {
 
             {/* Primary CTA - Mobile Optimized with larger touch targets */}
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-center items-stretch sm:items-center px-2 sm:px-0">
-              <Link href="/learn/daily" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto min-h-[50px] sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all">
-                  <Rocket className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  开始今日练习
-                </Button>
-              </Link>
               <Link href="/chat" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[50px] sm:h-12 border-2 hover:bg-white px-6 sm:px-8 text-sm sm:text-base font-semibold">
+                <Button size="lg" className="w-full sm:w-auto min-h-[50px] sm:h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all">
                   <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   AI 导师对话
                 </Button>
               </Link>
+              <Link href="/learn/daily" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[50px] sm:h-12 border-2 hover:bg-white px-6 sm:px-8 text-sm sm:text-base font-semibold">
+                  <Rocket className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  开始今日练习
+                </Button>
+              </Link>
+
             </div>
           </div>
         </div>
