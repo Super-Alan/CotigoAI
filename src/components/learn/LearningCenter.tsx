@@ -56,6 +56,7 @@ interface UserProgress {
   progressPercentage: number
   averageScore: number
   lastUpdated: Date
+  lastPracticeAt?: Date | null
 }
 
 interface DailyStreak {
@@ -553,7 +554,7 @@ export default function LearningCenter() {
                         <div className="bg-white bg-opacity-60 rounded-lg p-4">
                           <div className="grid grid-cols-3 gap-3 text-center">
                             <div>
-                              <div className="text-lg font-bold text-gray-900">{progress.correctAnswers}</div>
+                              <div className="text-lg font-bold text-gray-900">{progress.questionsCompleted}</div>
                               <div className="text-xs text-gray-600">已完成</div>
                             </div>
                             <div>

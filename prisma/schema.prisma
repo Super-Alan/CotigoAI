@@ -39,6 +39,7 @@ model User {
   criticalThinkingPracticeSessions CriticalThinkingPracticeSession[]
   suggestedAnswerSets             ConversationSuggestedAnswerSet[]
   knowledgePointMastery           KnowledgePointMastery[]
+  adminUser                       AdminUser?
 
   @@map("users")
 }
@@ -660,4 +661,48 @@ model DailyCriticalQuestion {
   @@index([difficulty])
   @@index([createdAt])
   @@map("daily_critical_questions")
+}
+
+// ============ 管理员系统 ============
+
+// 管理员用户扩展
+model AdminUser {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  role        AdminRole @default(ANALYST)
+  permissions Json      @default("[]") // 额外权限数组
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs AdminLog[]
+
+  @@map("admin_users")
+}
+
+enum AdminRole {
+  SUPER_ADMIN    // 超级管理员 - 全部权限
+  CONTENT_ADMIN  // 内容管理员 - 内容相关权限
+  ANALYST        // 数据分析师 - 只读权限
+}
+
+// 管理员操作日志
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String   // 操作类型: CREATE, UPDATE, DELETE, VIEW
+  resource  String   // 操作资源: USER, CONTENT, CONVERSATION, SYSTEM
+  resourceId String? // 资源ID
+  details   Json?    // 操作详情
+  ipAddress String?  // IP地址
+  userAgent String?  // 用户代理
+  createdAt DateTime @default(now())
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, createdAt])
+  @@index([action, resource])
+  @@index([createdAt])
+  @@map("admin_logs")
 }

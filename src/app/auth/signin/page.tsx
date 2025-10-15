@@ -29,7 +29,16 @@ export default function SignInPage() {
       if (result?.error) {
         setError('邮箱或密码错误');
       } else {
-        router.push('/conversations');
+        // 判断是否为管理员
+        const adminEmails = ['admin@cogito.ai', 'super@cogito.ai'];
+        const isAdmin = adminEmails.includes(formData.email);
+
+        // 根据角色跳转
+        if (isAdmin) {
+          router.push('/admin');
+        } else {
+          router.push('/learn');
+        }
       }
     } catch (err) {
       setError('登录失败,请稍后重试');
