@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { isAdminUser, tryLogAdminAction } from '@/lib/admin-auth'
+import { isAdminUser, logAdminAction } from '@/lib/admin-auth'
 
 export async function GET(
   request: NextRequest,
@@ -123,9 +123,18 @@ export async function GET(
       })
     }
 
-    // Log admin action (optional)
-    await tryLogAdminAction(
-      session.user.id,
+    // Get admin user to get adminId for logging
+    const adminUser = await prisma.adminUser.findUnique({
+      where: { userId: session.user.id }
+    })
+
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Admin user not found' }, { status: 404 })
+    }
+
+    // Log admin action
+    await logAdminAction(
+      adminUser.id,
       'VIEW_USER_STATS',
       'USER',
       user.id,

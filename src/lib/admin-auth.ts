@@ -115,36 +115,6 @@ export async function logAdminAction(
   }
 }
 
-// 尝试记录管理员操作（如果 admin_users 表存在）
-export async function tryLogAdminAction(
-  userId: string,
-  action: string,
-  resource: string,
-  resourceId?: string,
-  details?: any,
-  request?: NextRequest
-): Promise<void> {
-  try {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { userId }
-    })
-
-    if (adminUser) {
-      await logAdminAction(
-        adminUser.id,
-        action,
-        resource,
-        resourceId,
-        details,
-        request
-      )
-    }
-  } catch (error) {
-    // admin_users table doesn't exist yet or other error, skip logging
-    console.log('Admin logging skipped:', (error as Error).message)
-  }
-}
-
 // 管理员权限中间件
 export function withAdminAuth(requiredPermission: Permission) {
   return async (req: NextRequest) => {
@@ -182,32 +152,26 @@ export function withAdminAuth(requiredPermission: Permission) {
   }
 }
 
-// 检查是否为管理员用户（通过 email 或 userId）
-export async function isAdminUser(emailOrUserId: string): Promise<boolean> {
+// 检查是否为管理员用户
+export async function isAdminUser(userId: string): Promise<boolean> {
   try {
-    // 判断输入是 email 还是 userId
-    const isEmail = emailOrUserId.includes('@')
-
+    // 临时解决方案：通过用户邮箱判断管理员权限
     const user = await prisma.user.findUnique({
-      where: isEmail ? { email: emailOrUserId } : { id: emailOrUserId },
-      select: { id: true, email: true }
+      where: { id: userId },
+      select: { email: true }
     })
-
-    if (!user) {
-      return false
-    }
-
-    // 管理员邮箱列表（临时解决方案）
+    
+    // 管理员邮箱列表
     const adminEmails = ['admin@cogito.ai', 'super@cogito.ai']
-
-    if (adminEmails.includes(user.email)) {
+    
+    if (user && adminEmails.includes(user.email)) {
       return true
     }
 
     // 尝试查询 AdminUser 表（如果存在）
     try {
       const adminUser = await prisma.adminUser.findUnique({
-        where: { userId: user.id },
+        where: { userId },
         select: { isActive: true }
       })
       return adminUser?.isActive || false
