@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: 'Cogito AI - 批判性思维数智导师',
   description: '一款基于苏格拉底式对话的批判性思维训练平台',
   keywords: ['批判性思维', '苏格拉底', 'AI导师', '论证分析'],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
