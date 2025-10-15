@@ -70,7 +70,7 @@ export default function Header() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'conversation':
-        return '💭 对话';
+        return '💭 话题';
       case 'argument':
         return '🔍 解构';
       case 'perspective':
@@ -169,7 +169,7 @@ export default function Header() {
             </div>
             
             <Link href="/conversations" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition">
-              对话
+              话题
             </Link>
             <Link href="/arguments" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition">
               解构

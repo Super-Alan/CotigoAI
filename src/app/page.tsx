@@ -51,7 +51,7 @@ export default function Home() {
 
             {/* Subtitle - Mobile Optimized */}
             <p className="text-base sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto px-2">
-              通过苏格拉底式引导和系统化训练，培养深度思考能力
+              让AI导师助你形成顶尖批判性思维能力
               <br className="hidden sm:block" />
               <span className="block sm:inline text-sm sm:text-lg text-gray-500 mt-2 sm:mt-0">
                 基于QS Top 20高校面试要求 · 5大核心思维维度体系

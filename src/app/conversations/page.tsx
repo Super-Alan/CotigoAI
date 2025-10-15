@@ -264,7 +264,7 @@ export default function ConversationsPageV2() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 lg:h-3 lg:w-3 bg-primary"></span>
               </span>
-              <span className="text-xs lg:text-sm font-mono font-medium">QS Top 10 面试标准</span>
+              <span className="text-xs lg:text-sm font-mono font-medium">QS Top 20 面试标准</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-display font-bold mb-2 lg:mb-4 text-gradient tracking-tight px-4">
               苏格拉底对话
