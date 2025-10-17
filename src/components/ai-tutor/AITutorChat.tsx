@@ -21,10 +21,10 @@ import {
   Settings,
   BarChart3,
   Bookmark,
-  Mic,
   Menu
 } from 'lucide-react'
 import MessageRenderer from './MessageRenderer'
+import VoiceInput from '@/components/voice/VoiceInput'
 
 interface Message {
   role: 'user' | 'assistant' | 'system'
@@ -275,12 +275,13 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
   /**
    * 发送消息
    */
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || inputValue.trim()
+    if (!textToSend || isLoading) return
 
     const userMessage: Message = {
       role: 'user',
-      content: inputValue.trim(),
+      content: textToSend,
       timestamp: new Date()
     }
 
@@ -291,6 +292,16 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
     // 使用统一的发送逻辑
     await sendMessageToAI([...messages, userMessage])
     setShowQuickActions(true)
+  }
+
+  /**
+   * 处理语音输入 - 自动填入输入框
+   */
+  const handleVoiceTextConfirmed = (text: string) => {
+    // 直接填入输入框，不自动发送
+    setInputValue(text)
+    // 聚焦输入框，方便用户编辑
+    textareaRef.current?.focus()
   }
 
   /**
@@ -578,14 +589,17 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
                   className="min-h-[50px] sm:min-h-[60px] max-h-[200px] resize-none text-sm sm:text-base border-2 border-gray-200 focus:border-blue-500 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-3 sm:py-4 pr-10 sm:pr-14 bg-white shadow-sm hover:shadow-md transition-shadow"
                   disabled={isLoading}
                 />
-                <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex space-x-1 hidden sm:flex">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-gray-100" disabled>
-                    <Mic className="h-4 w-4 text-gray-400" />
-                  </Button>
+                <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex space-x-1">
+                  <VoiceInput
+                    onTextConfirmed={handleVoiceTextConfirmed}
+                    disabled={isLoading}
+                    className="h-8 w-8 sm:h-8 sm:w-8"
+                    placeholder="语音输入"
+                  />
                 </div>
               </div>
               <Button
-                onClick={handleSendMessage}
+                onClick={() => handleSendMessage()}
                 disabled={!inputValue.trim() || isLoading}
                 className="h-[50px] sm:h-[60px] px-4 sm:px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all font-medium text-sm sm:text-base"
               >

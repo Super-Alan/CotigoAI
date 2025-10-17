@@ -115,6 +115,36 @@ export async function logAdminAction(
   }
 }
 
+// 尝试记录管理员操作（如果 admin_users 表存在）
+export async function tryLogAdminAction(
+  userId: string,
+  action: string,
+  resource: string,
+  resourceId?: string,
+  details?: any,
+  request?: NextRequest
+): Promise<void> {
+  try {
+    const adminUser = await prisma.adminUser.findUnique({
+      where: { userId }
+    })
+
+    if (adminUser) {
+      await logAdminAction(
+        adminUser.id,
+        action,
+        resource,
+        resourceId,
+        details,
+        request
+      )
+    }
+  } catch (error) {
+    // admin_users table doesn't exist yet or other error, skip logging
+    console.log('Admin logging skipped:', (error as Error).message)
+  }
+}
+
 // 管理员权限中间件
 export function withAdminAuth(requiredPermission: Permission) {
   return async (req: NextRequest) => {
