@@ -206,7 +206,7 @@ function parseWebSocketResponse(data: Buffer): { messageType: number; payload: a
         if (gzipStart >= 0 && payloadBuffer.length > gzipStart + 1 &&
             payloadBuffer[gzipStart] === 0x1f && payloadBuffer[gzipStart + 1] === 0x8b) {
           const gzipData = payloadBuffer.slice(gzipStart);
-          payloadBuffer = zlib.gunzipSync(gzipData);
+          payloadBuffer = Buffer.from(zlib.gunzipSync(gzipData));
         }
       } catch (error) {
         console.error('[WebSocket] GZIP 解压缩失败:', error);
