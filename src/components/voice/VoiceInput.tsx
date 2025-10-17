@@ -371,6 +371,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
   const buttonState = getButtonState();
 
+  // 检测是否为纯图标模式（无 placeholder 文本）
+  const isIconOnly = !placeholder || placeholder.trim() === '';
+
   return (
     <>
       {/* 隐藏的录音器组件 */}
@@ -378,11 +381,11 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
       <Button
         variant={buttonState.variant}
-        size="sm"
-        className={`relative flex items-center gap-2 ${buttonState.className} ${className}`}
+        size={isIconOnly ? "icon" : "sm"}
+        className={`relative flex items-center justify-center ${isIconOnly ? 'p-0' : 'gap-2'} ${buttonState.className} ${className}`}
         onClick={state.isRecording ? handleStopRecording : handleStartRecording}
         disabled={disabled || state.status === 'requesting' || state.status === 'processing'}
-        title={buttonState.text}
+        title={buttonState.text || '语音输入'}
       >
         {/* 音频可视化器 */}
         {buttonState.showVisualizer && (
@@ -397,13 +400,13 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
         {/* 图标 */}
         <buttonState.icon
-          className={`h-4 w-4 ${buttonState.iconClassName || ''} ${
+          className={`${isIconOnly ? 'h-5 w-5' : 'h-4 w-4'} ${buttonState.iconClassName || ''} ${
             buttonState.showVisualizer ? 'opacity-0' : ''
           }`}
         />
 
-        {/* 文本（仅在非录音状态显示） */}
-        {!buttonState.showVisualizer && (
+        {/* 文本（仅在非图标模式且非录音状态显示） */}
+        {!isIconOnly && !buttonState.showVisualizer && (
           <span className="hidden sm:inline text-sm">
             {buttonState.text}
           </span>
