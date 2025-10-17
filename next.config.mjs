@@ -18,7 +18,7 @@ const nextConfig = {
       ignored: ['**/mobile/**', '**/node_modules/**']
     };
     
-    // 排除移动端相关的模块
+    // 排除移动端相关的模块和服务端专用库
     config.externals = config.externals || [];
     if (isServer) {
       config.externals.push(
@@ -26,7 +26,10 @@ const nextConfig = {
         'expo',
         '@expo/vector-icons',
         'react-native',
-        'react-native-web'
+        'react-native-web',
+        'ws',           // WebSocket 服务端库
+        'bufferutil',   // ws 的可选依赖
+        'utf-8-validate' // ws 的可选依赖
       );
     }
     
