@@ -31,18 +31,18 @@ export async function POST(
       );
     }
 
-    // 先查询是否存在缓存（同一会话、同一问题只生成一次）
-    const existing = await prisma.conversationSuggestedAnswerSet.findFirst({
-      where: {
-        conversationId: params.id,
-        userId: auth.userId!,
-        question,
-      },
-    });
+    // TODO: Enable caching after creating ConversationSuggestedAnswerSet table in schema
+    // const existing = await prisma.conversationSuggestedAnswerSet.findFirst({
+    //   where: {
+    //     conversationId: params.id,
+    //     userId: auth.userId!,
+    //     question,
+    //   },
+    // });
 
-    if (existing) {
-      return NextResponse.json(existing.suggestions);
-    }
+    // if (existing) {
+    //   return NextResponse.json(existing.suggestions);
+    // }
 
     const historyContext = conversationHistory && conversationHistory.length > 0
       ? conversationHistory.map((round: DialogueRound) =>
@@ -103,16 +103,16 @@ ${question}
       suggestions = JSON.parse(cleaned);
     }
 
-    // 保存到数据库
-    await prisma.conversationSuggestedAnswerSet.create({
-      data: {
-        conversationId: params.id,
-        userId: auth.userId!,
-        question,
-        suggestions,
-        roundIndex: typeof roundIndex === 'number' ? roundIndex : null,
-      },
-    });
+    // TODO: Save to database after creating ConversationSuggestedAnswerSet table
+    // await prisma.conversationSuggestedAnswerSet.create({
+    //   data: {
+    //     conversationId: params.id,
+    //     userId: auth.userId!,
+    //     question,
+    //     suggestions,
+    //     roundIndex: typeof roundIndex === 'number' ? roundIndex : null,
+    //   },
+    // });
 
     return NextResponse.json(suggestions);
   } catch (error) {

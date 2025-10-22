@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const { sessionType, difficulty, preferredTopics } = await request.json();
+    const { sessionType, preferredTopics } = await request.json(); // difficulty removed
 
     // 验证输入参数 - 支持5大核心思维维度
     const validSessionTypes = [
@@ -28,22 +28,21 @@ export async function POST(request: NextRequest) {
       // 兼容旧类型（逐步废弃）
       'fallacies', 'arguments', 'methodology', 'topics'
     ];
-    const validDifficulties = ['beginner', 'intermediate', 'advanced'];
+    // difficulty validation removed
 
     if (!validSessionTypes.includes(sessionType)) {
       return NextResponse.json({ error: '无效的练习类型' }, { status: 400 });
     }
 
-    if (!validDifficulties.includes(difficulty)) {
-      return NextResponse.json({ error: '无效的难度等级' }, { status: 400 });
-    }
+    // difficulty validation removed
 
     // 获取用户学习数据
-    const userProgress = await prisma.userLessonProgress.findMany({
-      where: { userId: session.user.id },
-      orderBy: { updatedAt: 'desc' },
-      take: 10
-    });
+    // TODO: Re-enable when userLessonProgress table is created
+    const userProgress: any[] = []; // await prisma.userLessonProgress.findMany({
+    //   where: { userId: session.user.id },
+    //   orderBy: { updatedAt: 'desc' },
+    //   take: 10
+    // });
 
     // 获取用户最近的练习记录
     const recentSessions = await prisma.practiceSession.findMany({
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest) {
     // 生成练习题目的提示词
     const prompt = createPracticePrompt(
       sessionType,
-      difficulty,
+      userLevel, // Use userLevel instead of difficulty
       userLevel,
       recentTopics,
       weakAreas
@@ -137,10 +136,10 @@ export async function POST(request: NextRequest) {
         sessionType,
         duration: practiceData.estimatedTime || 600,
         totalQuestions: practiceData.questions?.length || 5,
-        metadata: {
-          difficulty,
+        metadata: JSON.stringify({
+          // difficulty removed
           learningObjectives: practiceData.learningObjectives || []
-        }
+        })
       }
     });
 
@@ -167,7 +166,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       sessionId: practiceSession.id,
       sessionType: practiceSession.sessionType,
-      difficulty: metadata.difficulty,
+      // difficulty removed from metadata
       estimatedTime: practiceSession.duration,
       learningObjectives: metadata.learningObjectives || [],
       questions: questions.map(q => ({
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
         type: q.questionType,
         content: q.content,
         options: q.options,
-        difficulty: q.difficulty
+        difficulty: q.difficulty // Note: This is PracticeQuestion difficulty (numeric), not CriticalThinkingQuestion difficulty
       })),
       nextSteps: practiceData.nextSteps || ''
     });

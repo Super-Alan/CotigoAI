@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 验证reflection数据格式（如果提供）
-    if (reflection) {
+    // 验证reflection数据格式（如果提供且非空）
+    if (reflection && (reflection.learned || reflection.nextSteps)) {
+      // 如果提供了reflection，必须同时提供learned和nextSteps
       if (!reflection.learned || !reflection.nextSteps) {
         return NextResponse.json(
           { error: '反思数据不完整：需要learned和nextSteps字段' },
@@ -69,8 +70,10 @@ export async function POST(request: NextRequest) {
         answers,
         score: score || 0,
         aiFeedback: aiFeedback || '',
-        evaluationDetails: evaluationDetails || null,
-        reflection: reflection || null, // 存储反思数据
+        evaluationDetails: {
+          ...(typeof evaluationDetails === 'object' && evaluationDetails !== null ? evaluationDetails : {}),
+          reflection: reflection || null
+        },
         timeSpent: timeSpent || 0,
         completedAt: new Date()
       },
@@ -147,7 +150,7 @@ export async function POST(request: NextRequest) {
         sessionId: practiceSession.id,
         score: practiceSession.score,
         feedback: practiceSession.aiFeedback,
-        reflection: practiceSession.reflection,
+        reflection: (practiceSession.evaluationDetails as any)?.reflection || null,
         thinkingType: practiceSession.question.thinkingType,
         progress: {
           questionsCompleted: newQuestionsCompleted,

@@ -33,6 +33,10 @@ npm run db:sync:full          # Full sync (structure + data)
 npm run db:backup:local       # Backup local database to backups/
 npm run db:backup:remote      # Backup remote database to backups/
 
+# AI Content Generation
+npm run generate:daily-questions  # Generate daily questions using AI (100+ questions)
+npm run test:daily-questions     # Test daily questions generation script
+
 # Build & Deployment
 npm run build                 # Build for production
 npm run start                 # Start production server

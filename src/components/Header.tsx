@@ -151,19 +151,6 @@ export default function Header() {
                   <Link href="/learn/daily" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                     🎯 每日练习
                   </Link>
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                  <Link href="/learn/fallacies" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                    🚫 逻辑谬误
-                  </Link>
-                  <Link href="/learn/methodology" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                    🔬 方法论
-                  </Link>
-                  <Link href="/learn/templates" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                    📝 论证模板
-                  </Link>
-                  <Link href="/learn/topics" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                    💭 话题包
-                  </Link>
                 </div>
               </div>
             </div>
@@ -353,34 +340,6 @@ export default function Header() {
                     onClick={() => setShowMobileMenu(false)}
                   >
                     🎯 每日练习
-                  </Link>
-                  <Link
-                    href="/learn/fallacies"
-                    className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    🚫 逻辑谬误
-                  </Link>
-                  <Link
-                    href="/learn/methodology"
-                    className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    🔬 方法论
-                  </Link>
-                  <Link
-                    href="/learn/templates"
-                    className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    📝 论证模板
-                  </Link>
-                  <Link
-                    href="/learn/topics"
-                    className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    💭 话题包
                   </Link>
                 </div>
               </div>

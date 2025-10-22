@@ -12,14 +12,15 @@ export async function GET(
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
-    const difficulty = searchParams.get('difficulty') // beginner | intermediate | advanced
+    const level = searchParams.get('level') // 1-5
 
     const whereClause: any = {
       thinkingTypeId: params.id
     }
 
-    if (difficulty) {
-      whereClause.difficulty = difficulty
+    // ✅ 添加Level过滤，确保只返回当前Level的题目
+    if (level) {
+      whereClause.level = parseInt(level)
     }
 
     const questions = await prisma.criticalThinkingQuestion.findMany({
@@ -37,10 +38,16 @@ export async function GET(
       take: limit
     })
 
+    // 映射数据库字段到前端期望的字段名
+    const mappedQuestions = questions.map(q => ({
+      ...q,
+      content: q.question, // 将 question 映射为 content
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
-        questions
+        questions: mappedQuestions
       }
     })
   } catch (error) {

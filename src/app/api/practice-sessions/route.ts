@@ -139,10 +139,12 @@ export async function POST(request: NextRequest) {
 
     if (thinkingTypeId) {
       // 批判性思维练习：从现有题库中随机选择一个问题
+      // difficulty field removed - use level instead (1-5)
+      const level = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 3 : 2;
       const availableQuestions = await prisma.criticalThinkingQuestion.findMany({
         where: {
           thinkingTypeId,
-          difficulty: difficulty === 'easy' ? 'beginner' : difficulty === 'hard' ? 'advanced' : 'intermediate'
+          level: level
         },
         take: 10 // 获取10个候选
       });

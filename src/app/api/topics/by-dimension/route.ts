@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
         id: true,
         topic: true,
         context: true,
-        difficulty: true,
         category: true,
         tags: true,
         dimension: true,

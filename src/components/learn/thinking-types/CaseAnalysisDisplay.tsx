@@ -32,6 +32,16 @@ interface CaseAnalysisDisplayProps {
  * 6. 思维导图
  */
 export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: CaseAnalysisDisplayProps) {
+  // Defensive check: ensure caseAnalysis has required structure
+  if (!caseAnalysis) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+        <p>案例分析数据不完整</p>
+      </div>
+    )
+  }
+
   const [expandedSteps, setExpandedSteps] = useState<number[]>([0]) // 默认展开第一个步骤
 
   const toggleStep = (index: number) => {
@@ -43,7 +53,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
   }
 
   const expandAll = () => {
-    setExpandedSteps(caseAnalysis.frameworkAnalysis.map((_, i) => i))
+    setExpandedSteps((caseAnalysis.frameworkAnalysis || []).map((_, i) => i))
   }
 
   const collapseAll = () => {
@@ -80,7 +90,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {caseAnalysis.keyPoints.map((point, index) => (
+            {(caseAnalysis.keyPoints || []).map((point, index) => (
               <div
                 key={index}
                 className="bg-gradient-to-br from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-4"
@@ -117,7 +127,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
                 variant="outline"
                 size="sm"
                 onClick={expandAll}
-                disabled={expandedSteps.length === caseAnalysis.frameworkAnalysis.length}
+                disabled={expandedSteps.length === (caseAnalysis.frameworkAnalysis || []).length}
               >
                 全部展开
               </Button>
@@ -134,7 +144,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {caseAnalysis.frameworkAnalysis.map((step, index) => {
+            {(caseAnalysis.frameworkAnalysis || []).map((step, index) => {
               const isExpanded = expandedSteps.includes(index)
 
               return (
@@ -218,7 +228,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {caseAnalysis.pitfalls.map((pitfall, index) => (
+            {(caseAnalysis.pitfalls || []).map((pitfall, index) => (
               <div
                 key={index}
                 className="bg-orange-50 border-l-4 border-orange-500 rounded-r-lg p-4 space-y-3"
@@ -258,7 +268,7 @@ export default function CaseAnalysisDisplay({ caseAnalysis, className = '' }: Ca
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {caseAnalysis.recommendations.map((recommendation, index) => (
+            {(caseAnalysis.recommendations || []).map((recommendation, index) => (
               <div
                 key={index}
                 className="flex items-start space-x-3 p-4 bg-purple-50 border border-purple-200 rounded-lg"

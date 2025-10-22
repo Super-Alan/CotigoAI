@@ -66,7 +66,7 @@ const criticalThinkingQuestions = [
   // 多维归因与利弊权衡
   {
     thinkingTypeId: 'causal_analysis',
-    difficulty: 'beginner',
+    // difficulty field removed
     topic: '为什么现在的年轻人越来越不愿意结婚？',
     context: '近年来，中国的结婚率持续下降，离婚率上升。2022年全国结婚登记数量为683.3万对，创下1986年以来的新低。同时，初婚年龄不断推迟，一线城市平均初婚年龄已超过30岁。',
     question: '为什么现在的年轻人越来越不愿意结婚？这一现象背后有哪些深层原因？',
@@ -84,7 +84,7 @@ const criticalThinkingQuestions = [
   },
   {
     thinkingTypeId: 'causal_analysis',
-    difficulty: 'intermediate',
+    // difficulty field removed
     topic: '人工智能是否会加剧社会不平等？',
     context: 'AI技术快速发展，在提高效率的同时也引发担忧。一方面，AI可能替代大量工作岗位；另一方面，掌握AI技术的企业和个人可能获得更大优势。同时，AI的发展需要大量数据和计算资源，这些资源往往集中在少数大公司手中。',
     question: '人工智能技术的发展是否会加剧社会不平等？请从多个维度分析其潜在影响。',
@@ -103,7 +103,7 @@ const criticalThinkingQuestions = [
   // 前提质疑与方法批判
   {
     thinkingTypeId: 'premise_challenge',
-    difficulty: 'beginner',
+    // difficulty field removed
     topic: '\"读书无用论\"是否有道理？',
     context: '近年来，一些人提出"读书无用论"，认为大学毕业生就业困难，收入不如一些没有高学历的人。他们举例说，某些网红、主播收入远超博士生，一些技术工人的薪资也比大学生高。',
     question: '"读书无用论"是否有道理？这个论证的前提假设是什么？',
@@ -121,7 +121,7 @@ const criticalThinkingQuestions = [
   },
   {
     thinkingTypeId: 'premise_challenge',
-    difficulty: 'intermediate',
+    // difficulty field removed
     topic: '网络调查显示90%的人支持某政策，这个结果可信吗？',
     context: '某网站发布调查称，90%的网民支持延长产假政策。调查通过网站弹窗进行，共收集到50万份回复。媒体广泛报道了这一结果，称"民意明确支持延长产假"。',
     question: '网络调查显示90%的人支持某政策，这个结果可信吗？调查方法有什么问题？',
@@ -140,7 +140,7 @@ const criticalThinkingQuestions = [
   // 谬误识别与证据评估
   {
     thinkingTypeId: 'fallacy_detection',
-    difficulty: 'beginner',
+    // difficulty field removed
     topic: '\"他连自己的孩子都教育不好，怎么能当教育部长？\"这个论证有问题吗？',
     context: '在某次网络讨论中，有人批评新任教育部长，理由是"他的孩子学习成绩不好，说明他连自己的孩子都教育不好，怎么能管理全国的教育事业？"这个观点得到了很多人的赞同。',
     question: '"他连自己的孩子都教育不好，怎么能当教育部长？"这个论证有什么逻辑问题？',
@@ -158,7 +158,7 @@ const criticalThinkingQuestions = [
   },
   {
     thinkingTypeId: 'fallacy_detection',
-    difficulty: 'intermediate',
+    // difficulty field removed
     topic: '\"自从使用了这个学习方法，我的成绩提高了，所以这个方法很有效\"，这个结论可靠吗？',
     context: '小明在社交媒体上分享："我之前成绩一直不好，后来用了某培训机构的学习方法，成绩从60分提高到了85分。这个方法真的很有效，推荐给大家！"这条分享获得了很多点赞和转发。',
     question: '"自从使用了这个学习方法，我的成绩提高了，所以这个方法很有效"，这个结论可靠吗？',
@@ -177,7 +177,7 @@ const criticalThinkingQuestions = [
   // 观点迭代与反思
   {
     thinkingTypeId: 'iterative_reflection',
-    difficulty: 'beginner',
+    // difficulty field removed
     topic: '你曾经坚信的某个观点后来改变了吗？是什么让你改变了想法？',
     context: '每个人在成长过程中都会遇到观点转变的时刻。可能是因为新的经历、新的信息，或者更深入的思考。这种观点的演化是思维成熟的标志，但也需要我们反思：什么样的证据足以改变我们的观点？我们如何避免固执己见，同时又不轻易摇摆？',
     question: '你曾经坚信的某个观点后来改变了吗？是什么让你改变了想法？',
@@ -195,7 +195,7 @@ const criticalThinkingQuestions = [
   },
   {
     thinkingTypeId: 'iterative_reflection',
-    difficulty: 'intermediate',
+    // difficulty field removed
     topic: '面对与自己观点相冲突的信息时，你通常如何处理？',
     context: '在信息爆炸的时代，我们经常遇到与自己既有观点相冲突的信息。心理学研究表明，人们倾向于寻找支持自己观点的信息（确认偏差），而忽视或排斥相反的证据。这种倾向可能导致观点极化和思维僵化。',
     question: '面对与自己观点相冲突的信息时，你通常如何处理？如何克服确认偏差？',
@@ -214,7 +214,7 @@ const criticalThinkingQuestions = [
   // 关联与迁移
   {
     thinkingTypeId: 'connection_transfer',
-    difficulty: 'beginner',
+    // difficulty field removed
     topic: '疫情期间的在线教育经验对未来教育发展有什么启示？',
     context: '新冠疫情期间，全球教育系统被迫转向在线模式。这次大规模的在线教育实验暴露了数字鸿沟、师生互动不足等问题，但也展现了教育技术的潜力，推动了教学方式的创新。',
     question: '疫情期间的在线教育经验对未来教育发展有什么启示？如何进行经验迁移？',
@@ -232,7 +232,7 @@ const criticalThinkingQuestions = [
   },
   {
     thinkingTypeId: 'connection_transfer',
-    difficulty: 'intermediate',
+    // difficulty field removed
     topic: '古代"科举制"对现代教育公平有什么借鉴意义？',
     context: '中国古代的科举制度实行了1300多年，被认为是世界上最早的公务员考试制度。它打破了门第出身的限制，为寒门子弟提供了上升通道，但也产生了应试教育、八股文等问题。现代社会仍在探索教育公平的实现路径。',
     question: '古代"科举制"对现代教育公平有什么借鉴意义？如何进行历史经验的迁移？',

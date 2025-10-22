@@ -594,7 +594,7 @@ export default function AITutorChat({ conversationId, initialQuestion, onToggleS
                     onTextConfirmed={handleVoiceTextConfirmed}
                     disabled={isLoading}
                     className="h-8 w-8 sm:h-8 sm:w-8"
-                    placeholder="语音输入"
+                    placeholder=""
                   />
                 </div>
               </div>

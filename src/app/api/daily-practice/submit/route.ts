@@ -303,7 +303,7 @@ async function checkAchievements(userId: string, performance: {
         data: {
           userId,
           achievementId: achievement.id,
-          progress: {}
+          progress: JSON.stringify({})
         }
       });
 

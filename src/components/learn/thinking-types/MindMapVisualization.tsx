@@ -25,6 +25,11 @@ interface MindMapVisualizationProps {
  * 使用纯CSS实现的径向布局思维导图
  */
 export default function MindMapVisualization({ data, className = '' }: MindMapVisualizationProps) {
+  // Defensive check: ensure data exists and has required structure
+  if (!data || !data.central || !data.branches || !Array.isArray(data.branches)) {
+    return null // Don't render if data is invalid
+  }
+
   const { central, branches } = data
 
   // 计算每个分支的角度

@@ -137,11 +137,11 @@ export type ThinkingType = {
 };
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+export type CognitiveLevel = 1 | 2 | 3 | 4 | 5;
 
 export type CriticalThinkingQuestion = {
   id: string;
   thinkingTypeId: ThinkingTypeId;
-  difficulty: DifficultyLevel;
   content: string;  // 题目主要内容
   scenario?: string;  // 背景情境描述
   topic: string;
@@ -159,13 +159,28 @@ export type CriticalThinkingQuestion = {
     purpose: string;
     orderIndex: number;
   }[];
+  // Level 1-5 fields (removed difficulty field)
+  level: CognitiveLevel;
+  learningObjectives?: string[];
+  scaffolding?: {
+    tools?: string[];
+    checklists?: string[];
+    frameworks?: string[];
+    hints?: string[];
+  };
+  assessmentCriteria?: {
+    [key: string]: {
+      weight: number;
+      description: string;
+    };
+  };
   createdAt: Date;
 };
 
 export type CriticalThinkingGuidingQuestion = {
   id: string;
   questionId: string;
-  level: DifficultyLevel;
+  level: string; // Changed from DifficultyLevel to string (e.g., "level_1", "level_2")
   stage: string;
   question: string;
   orderIndex: number;
@@ -179,6 +194,31 @@ export type CriticalThinkingProgress = {
   questionsCompleted: number;
   averageScore: number;
   lastUpdated: Date;
+  // Level 1-5 progression tracking
+  currentLevel: CognitiveLevel;
+  level1Progress: number;  // 0-100
+  level2Progress: number;
+  level3Progress: number;
+  level4Progress: number;
+  level5Progress: number;
+  level1Unlocked: boolean;
+  level2Unlocked: boolean;
+  level3Unlocked: boolean;
+  level4Unlocked: boolean;
+  level5Unlocked: boolean;
+};
+
+export type PracticeStepProgress = {
+  currentStep: number;  // 1-6
+  steps: {
+    [key: string]: {
+      completed: boolean;
+      timestamp?: string;
+      timeSpent?: number;
+      data?: any;
+    };
+  };
+  totalTimeSpent: number;
 };
 
 export type CriticalThinkingPracticeSession = {
@@ -199,6 +239,11 @@ export type CriticalThinkingPracticeSession = {
   };
   timeSpent: number;
   completedAt: Date;
+  // Level-based practice tracking
+  level: CognitiveLevel;
+  stepProgress?: PracticeStepProgress;
+  reflectionNotes?: string;
+  improvementPlan?: string;
 };
 
 export type ThinkingTypeProgress = {
@@ -228,9 +273,53 @@ export type ProgressResponse = {
 };
 
 export type PracticeEvaluation = {
-  score: number;
+  score: number; // 百分制总分 (0-100)
+  scores: {
+    depth: number; // 思维深度 (0-100)
+    logic: number; // 逻辑性 (0-100)
+    critical: number; // 批判性 (0-100)
+    completeness: number; // 完整性 (0-100)
+    innovation: number; // 创新性 (0-100)
+  };
   feedback: string;
   suggestions: string[];
-  strengths: string[];
-  improvements: string[];
+  strengths: string;
+  improvements: string;
+  keyLearnings: string;
+};
+
+export type LevelContentType = 'theory' | 'case_study' | 'practice' | 'reflection';
+
+export type LevelLearningContent = {
+  id: string;
+  thinkingTypeId: ThinkingTypeId;
+  level: CognitiveLevel;
+  contentType: LevelContentType;
+  title: string;
+  description: string;
+  content: {
+    sections?: Array<{
+      type: 'text' | 'interactive_animation' | 'game' | 'video' | 'checklist';
+      content: string | any;
+    }>;
+    [key: string]: any;
+  };
+  estimatedTime: number;  // minutes
+  orderIndex: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type LevelUnlockCriteria = {
+  minQuestions: number;
+  minAccuracy: number;  // percentage 0-100
+};
+
+export type LevelUnlockProgress = {
+  questionsCompleted: number;
+  questionsRequired: number;
+  averageScore: number;
+  requiredScore: number;
+  canUnlock: boolean;
+  message: string;
 };

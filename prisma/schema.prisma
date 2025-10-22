@@ -1,6 +1,3 @@
-// Cogito AI - Prisma Schema
-// Database Schema for Critical Thinking AI Platform
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,36 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============ 用户认证 ============
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // 关系
-  accounts                        Account[]
-  sessions                        Session[]
-  conversations                   Conversation[]
-  argumentAnalyses                ArgumentAnalysis[]
-  perspectiveSessions             PerspectiveSession[]
-  generatedTopics                 GeneratedConversationTopic[]
-  settings                        UserSettings?
-  lessonProgress                  UserLessonProgress[]
-  bookmarks                       LearningBookmark[]
-  practiceSessions                PracticeSession[]
-  userAnswers                     UserAnswer[]
-  dailyStreaks                    DailyStreak[]
-  userAchievements                UserAchievement[]
-  criticalThinkingProgress        CriticalThinkingProgress[]
-  criticalThinkingPracticeSessions CriticalThinkingPracticeSession[]
-  suggestedAnswerSets             ConversationSuggestedAnswerSet[]
-  knowledgePointMastery           KnowledgePointMastery[]
-  adminUser                       AdminUser?
+  id                                                             String                            @id @default(cuid())
+  name                                                           String?
+  email                                                          String                            @unique
+  emailVerified                                                  DateTime?
+  image                                                          String?
+  password                                                       String?
+  createdAt                                                      DateTime                          @default(now())
+  updatedAt                                                      DateTime                          @updatedAt
+  accounts                                                       Account[]
+  adminUser                                                      AdminUser?
+  argumentAnalyses                                               ArgumentAnalysis[]
+  conversations                                                  Conversation[]
+  criticalThinkingPracticeSessions                               CriticalThinkingPracticeSession[]
+  criticalThinkingProgress                                       CriticalThinkingProgress[]
+  dailyStreaks                                                   DailyStreak[]
+  generatedTopics                                                GeneratedConversationTopic[]
+  knowledgePointMastery                                          KnowledgePointMastery[]
+  knowledge_point_mastery_knowledge_point_mastery_user_idTousers KnowledgePointMastery[]           @relation("knowledge_point_mastery_user_idTousers")
+  perspectiveSessions                                            PerspectiveSession[]
+  practiceSessions                                               PracticeSession[]
+  sessions                                                       Session[]
+  userAchievements                                               UserAchievement[]
+  userAnswers                                                    UserAnswer[]
+  settings                                                       UserSettings?
+  theoryProgress                                                 TheoryProgress[]
+  theoryContentFeedback                                          TheoryContentFeedback[] // V3新增
+  learningPathStates                                             LearningPathState[]
+  userPreferences                                                UserPreferences?
 
   @@map("users")
 }
@@ -50,15 +46,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -83,7 +78,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ============ 用户设置 ============
 model UserSettings {
   id              String   @id @default(cuid())
   userId          String   @unique
@@ -93,143 +87,111 @@ model UserSettings {
   enableAnalytics Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
 
-// ============ 苏格拉底对话 ============
 model Conversation {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String?
-  title     String   @default("新对话")
+  title     String    @default("新对话")
   topic     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
-  suggestedAnswerSets ConversationSuggestedAnswerSet[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
 
   @@index([userId, createdAt])
   @@map("conversations")
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   role           String
-  content        String   @db.Text
+  content        String
   metadata       Json?
-  createdAt      DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@map("messages")
 }
 
-// ============ 建议答案缓存 ============
-model ConversationSuggestedAnswerSet {
-  id             String   @id @default(cuid())
-  conversationId String
-  userId         String
-  question       String   @db.Text
-  suggestions    Json     // { suggestions: [{id, text, intent, difficulty}] }
-  roundIndex     Int?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([conversationId, question])
-  @@index([userId, createdAt])
-  @@map("conversation_suggested_answer_sets")
-}
-
-// ============ 论点解构器 ============
 model ArgumentAnalysis {
   id        String   @id @default(cuid())
   userId    String
-  inputText String   @db.Text
+  inputText String
   analysis  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@map("argument_analyses")
 }
 
-// ============ 多棱镜视角 ============
 model PerspectiveSession {
-  id        String   @id @default(cuid())
-  userId    String
-  topic     String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           String               @id @default(cuid())
+  userId       String
+  topic        String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  messages     PerspectiveMessage[]
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   perspectives Perspective[]
-  messages     PerspectiveMessage[]
 
   @@index([userId, createdAt])
   @@map("perspective_sessions")
 }
 
 model Perspective {
-  id         String   @id @default(cuid())
+  id         String               @id @default(cuid())
   sessionId  String
   roleName   String
   roleConfig Json
-  viewpoint  String   @db.Text
-  createdAt  DateTime @default(now())
-
-  session  PerspectiveSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  messages PerspectiveMessage[]
+  viewpoint  String
+  createdAt  DateTime             @default(now())
+  messages   PerspectiveMessage[]
+  session    PerspectiveSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@map("perspectives")
 }
 
 model PerspectiveMessage {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   sessionId     String
   perspectiveId String?
   role          String
-  content       String   @db.Text
-  createdAt     DateTime @default(now())
-
-  session     PerspectiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  perspective Perspective?       @relation(fields: [perspectiveId], references: [id], onDelete: Cascade)
+  content       String
+  createdAt     DateTime           @default(now())
+  perspective   Perspective?       @relation(fields: [perspectiveId], references: [id], onDelete: Cascade)
+  session       PerspectiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
   @@map("perspective_messages")
 }
 
-// ============ 话题生成与推荐 ============
 model GeneratedConversationTopic {
-  id                   String   @id @default(cuid())
-  userId               String?
-  topic                String   @db.Text
-  category             String
-  context              String   @db.Text
-  referenceUniversity  String
-  dimension            String   // causal_analysis | premise_challenge | fallacy_detection | iterative_reflection | connection_transfer
-  difficulty           String   // beginner | intermediate | advanced
-  tags                 String[]
-  thinkingFramework    Json     // { coreChallenge, commonPitfalls, excellentResponseIndicators }
-  guidingQuestions     Json     // Array of { level, stage, question }
-  expectedOutcomes     String[]
-  isPublic             Boolean  @default(false) // 是否为公开话题（系统预生成）
-  usageCount           Int      @default(0) // 使用次数统计
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String?
+  topic               String
+  category            String
+  context             String
+  referenceUniversity String
+  dimension           String
+  difficulty          String
+  tags                String[]
+  thinkingFramework   Json
+  guidingQuestions    Json
+  expectedOutcomes    String[]
+  isPublic            Boolean  @default(false)
+  usageCount          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([isPublic, dimension, difficulty])
@@ -237,11 +199,10 @@ model GeneratedConversationTopic {
   @@map("generated_conversation_topics")
 }
 
-// ============ 系统配置 (管理端) ============
 model SystemConfig {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String   @db.Text
+  value     String
   category  String
   isSecret  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -250,315 +211,194 @@ model SystemConfig {
   @@map("system_config")
 }
 
-// ============ 学习中心 ============
-
-// 逻辑谬误与偏差库
-model LogicalFallacy {
-  id              String   @id @default(cuid())
-  name            String   // 谬误名称，如"人身攻击"
-  nameEn          String   // 英文名称，如"Ad Hominem"
-  category        String   // 分类：formal_fallacy | informal_fallacy | cognitive_bias
-  definition      String   @db.Text // 定义
-  identifySignals String[] // 识别信号
-  countermeasures String[] // 对策
-  examples        Json     // 示例 [{scenario, description, analysis}]
-  difficulty      String   @default("beginner") // beginner | intermediate | advanced
-  tags            String[] // 标签
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([category, difficulty])
-  @@map("logical_fallacies")
-}
-
-// 论证结构与写作模板
-model ArgumentTemplate {
-  id          String   @id @default(cuid())
-  name        String   // 模板名称，如"PEEL"
-  fullName    String   // 完整名称，如"Point-Evidence-Explain-Link"
-  category    String   // 分类：structure | framework | technique
-  description String   @db.Text // 描述
-  structure   Json     // 结构定义 [{step, title, description, example}]
-  examples    Json     // 完整示例 [{topic, content, analysis}]
-  useCases    String[] // 适用场景
-  difficulty  String   @default("beginner") // beginner | intermediate | advanced
-  tags        String[] // 标签
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([category, difficulty])
-  @@map("argument_templates")
-}
-
-// 方法论微课
-model MethodologyLesson {
-  id           String   @id @default(cuid())
-  title        String   // 课程标题
-  category     String   // 分类：sampling | experiment | statistics | ethics
-  description  String   @db.Text // 课程描述
-  content      Json     // 课程内容 [{section, title, content, type}]
-  interactions Json     // 交互式任务 [{type, question, options, answer, explanation}]
-  selfTest     Json     // 自测题目 [{question, type, options, correctAnswer, explanation}]
-  duration     Int      // 预计学习时长（分钟）
-  difficulty   String   @default("beginner") // beginner | intermediate | advanced
-  prerequisites String[] // 前置知识
-  learningGoals String[] // 学习目标
-  tags         String[] // 标签
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // 用户学习进度
-  progress UserLessonProgress[]
-
-  @@index([category, difficulty])
-  @@map("methodology_lessons")
-}
-
-// 话题包
-model TopicPackage {
-  id                String   @id @default(cuid())
-  title             String   // 话题标题
-  category          String   // 分类：policy | technology | social
-  description       String   @db.Text // 话题描述
-  context           String   @db.Text // 背景信息
-  perspectives      Json     // 多视角陈述 [{stakeholder, position, arguments, evidence}]
-  visualDeconstruction Json  // 可视化解构 [{type, data, description}]
-  dialogueRoutes    Json     // 对话路线 [{route, questions, expectedOutcomes}]
-  keyTerms          Json     // 关键术语 [{term, definition}]
-  relatedFallacies  String[] // 相关谬误ID
-  relatedTemplates  String[] // 相关模板ID
-  difficulty        String   @default("intermediate") // beginner | intermediate | advanced
-  tags              String[] // 标签
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([category, difficulty])
-  @@map("topic_packages")
-}
-
-// 用户学习进度
-model UserLessonProgress {
-  id           String   @id @default(cuid())
-  userId       String
-  lessonId     String
-  status       String   @default("not_started") // not_started | in_progress | completed
-  progress     Float    @default(0) // 0-100
-  testScore    Float?   // 自测分数
-  timeSpent    Int      @default(0) // 学习时长（分钟）
-  completedAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson MethodologyLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, lessonId])
-  @@index([userId, status])
-  @@map("user_lesson_progress")
-}
-
-// 学习收藏夹
-model LearningBookmark {
-  id           String   @id @default(cuid())
-  userId       String
-  resourceType String   // fallacy | template | lesson | topic
-  resourceId   String
-  notes        String?  @db.Text // 用户笔记
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, resourceType, resourceId])
-  @@index([userId, resourceType])
-  @@map("learning_bookmarks")
-}
-
-// ============ 每日练习打卡系统 ============
-
-// 练习会话
 model PracticeSession {
-  id              String   @id @default(cuid())
-  userId          String   @map("user_id")
-  sessionType     String   @map("session_type") // fallacies | arguments | methodology | topics | mixed
-  duration        Int      @default(600) // 10分钟 = 600秒
-  totalQuestions  Int      @map("total_questions") @default(5)
-  correctAnswers  Int      @map("correct_answers") @default(0)
-  score           Float    @default(0.00)
-  metadata        Json     @default("{}")
-  startedAt       DateTime @map("started_at") @default(now())
-  completedAt     DateTime? @map("completed_at")
-  createdAt       DateTime @map("created_at") @default(now())
-  updatedAt       DateTime @map("updated_at") @updatedAt
+  id             String             @id @default(cuid())
+  userId         String             @map("user_id")
+  sessionType    String             @map("session_type")
+  duration       Int                @default(600)
+  totalQuestions Int                @default(5) @map("total_questions")
+  correctAnswers Int                @default(0) @map("correct_answers")
+  score          Decimal            @default(0.00) @db.Decimal(5, 2)
+  metadata       String             @default("{}")
+  startedAt      DateTime           @default(now()) @map("started_at") @db.Timestamp(6)
+  completedAt    DateTime?          @map("completed_at") @db.Timestamp(6)
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  questions      PracticeQuestion[]
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  questions PracticeQuestion[]
-
-  @@index([userId, createdAt])
+  @@index([createdAt(sort: Desc)], map: "idx_practice_sessions_created_at")
+  @@index([userId], map: "idx_practice_sessions_user_id")
   @@map("practice_sessions")
 }
 
-// 练习题目
 model PracticeQuestion {
-  id            String   @id @default(cuid())
-  sessionId     String   @map("session_id")
-  questionType  String   @map("question_type") // multiple_choice | true_false | analysis | matching
-  content       Json     // 题目内容
-  options       Json?    // 选项
-  correctAnswer String   @map("correct_answer") // 正确答案
-  explanation   Json     // 解析
-  difficulty    Int      @default(1) // 1-5
-  sourceContent String?  @map("source_content") // 来源内容ID
-  createdAt     DateTime @map("created_at") @default(now())
+  id            String          @id @default(cuid())
+  sessionId     String          @map("session_id")
+  questionType  String          @map("question_type")
+  content       String
+  options       String?
+  correctAnswer String          @map("correct_answer")
+  explanation   String
+  difficulty    Int             @default(1)
+  sourceContent String?         @map("source_content")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  session       PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  answers       UserAnswer[]
 
-  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  answers UserAnswer[]
-
-  @@index([sessionId])
+  @@index([sessionId], map: "idx_practice_questions_session_id")
   @@map("practice_questions")
 }
 
-// 用户答案
 model UserAnswer {
-  id         String   @id @default(cuid())
-  questionId String   @map("question_id")
-  userId     String   @map("user_id")
+  id         String           @id @default(cuid())
+  questionId String           @map("question_id")
+  userId     String           @map("user_id")
   answer     String
-  isCorrect  Boolean  @map("is_correct") @default(false)
-  timeSpent  Int      @map("time_spent") @default(0) // 答题用时（秒）
-  answeredAt DateTime @map("answered_at") @default(now())
+  isCorrect  Boolean          @default(false) @map("is_correct")
+  timeSpent  Int              @default(0) @map("time_spent")
+  answeredAt DateTime         @default(now()) @map("answered_at") @db.Timestamp(6)
+  question   PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([questionId])
+  @@index([questionId], map: "idx_user_answers_question_id")
+  @@index([userId], map: "idx_user_answers_user_id")
   @@map("user_answers")
 }
 
-// 每日打卡
 model DailyStreak {
   id           String   @id @default(cuid())
   userId       String   @map("user_id")
   practiceDate DateTime @map("practice_date") @db.Date
   completed    Boolean  @default(false)
-  streakCount  Int      @map("streak_count") @default(0)
-  createdAt    DateTime @map("created_at") @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  streakCount  Int      @default(0) @map("streak_count")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, practiceDate])
-  @@index([userId, practiceDate])
+  @@index([userId, practiceDate(sort: Desc)], map: "idx_daily_streaks_user_date")
   @@map("daily_streaks")
 }
 
-// 成就
 model Achievement {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  category    String   // streak | accuracy | speed | knowledge | milestone
-  criteria    Json     // 成就条件
-  badgeIcon   String?  @map("badge_icon")
-  rarity      Int      @default(1) // 1=普通, 5=传奇
-  createdAt   DateTime @map("created_at") @default(now())
-
+  id               String            @id @default(cuid())
+  name             String
+  description      String
+  category         String
+  criteria         Json
+  badgeIcon        String?           @map("badge_icon")
+  rarity           Int               @default(1)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
   userAchievements UserAchievement[]
 
   @@map("achievements")
 }
 
-// 用户成就
 model UserAchievement {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  achievementId String   @map("achievement_id")
-  earnedAt      DateTime @map("earned_at") @default(now())
-  progress      Json     @default("{}")
-
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  achievementId String      @map("achievement_id")
+  earnedAt      DateTime    @default(now()) @map("earned_at") @db.Timestamp(6)
+  progress      String      @default("{}")
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, achievementId])
-  @@index([userId])
+  @@index([userId], map: "idx_user_achievements_user_id")
   @@map("user_achievements")
 }
 
-// ============ 批判性思维训练系统 ============
-
-// 思维类型
 model ThinkingType {
-  id              String   @id // causal_analysis, premise_challenge, fallacy_detection, iterative_reflection, connection_transfer
-  name            String   // 思维类型名称
-  description     String   @db.Text // 描述
-  icon            String   // 图标名称
-  learningContent Json     // 学习内容 {framework, methods, examples}
-  createdAt       DateTime @default(now())
-
-  questions    CriticalThinkingQuestion[]
-  userProgress CriticalThinkingProgress[]
+  id                   String                     @id
+  name                 String
+  description          String
+  icon                 String
+  learningContent      Json
+  createdAt            DateTime                   @default(now())
+  userProgress         CriticalThinkingProgress[]
+  questions            CriticalThinkingQuestion[]
+  levelLearningContent LevelLearningContent[]
+  theoryContents       TheoryContent[]
 
   @@map("thinking_types")
 }
 
-// 批判性思维练习题目
 model CriticalThinkingQuestion {
-  id                String   @id @default(cuid())
-  thinkingTypeId    String
-  difficulty        String   // beginner | intermediate | advanced
-  topic             String   @db.Text
-  context           String   @db.Text
-  question          String   @db.Text // 主要问题
-  tags              Json     // 标签 (环境经济学, 气候变化, 经济政策等)
-  thinkingFramework Json     // 思维框架
-  expectedOutcomes  Json     // 预期结果
-  caseAnalysis      Json?    // AI生成的案例分析 {overview, keyPoints, framework, examples, pitfalls, recommendations, mindmap}
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  thinkingType              ThinkingType                      @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
-  guidingQuestions          CriticalThinkingGuidingQuestion[]
-  practiceSessions          CriticalThinkingPracticeSession[]
-  intelligentGuidedCache    IntelligentGuidedQuestionCache?   // AI生成的智能引导缓存
+  id                     String                            @id @default(cuid())
+  thinkingTypeId         String
+  topic                  String
+  context                String
+  question               String
+  tags                   Json
+  thinkingFramework      Json
+  expectedOutcomes       Json
+  caseAnalysis           Json?
+  level                  Int                               @default(1) // Level 1-5
+  learningObjectives     Json?                             // 学习目标
+  scaffolding            Json?                             // 思维脚手架（Level 1-3使用）
+  assessmentCriteria     Json?                             // 评估标准
+  createdAt              DateTime                          @default(now())
+  updatedAt              DateTime                          @updatedAt
+  guidingQuestions       CriticalThinkingGuidingQuestion[]
+  practiceSessions       CriticalThinkingPracticeSession[]
+  thinkingType           ThinkingType                      @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  intelligentGuidedCache IntelligentGuidedQuestionCache?
 
   @@index([thinkingTypeId])
-  @@index([difficulty])
+  @@index([level])
   @@index([createdAt])
   @@map("critical_thinking_questions")
 }
 
-// 引导问题
 model CriticalThinkingGuidingQuestion {
-  id         String   @id @default(cuid())
-  questionId String
-  level      String   // beginner | intermediate | advanced
-  stage      String   // 阶段标识
-  question   String   @db.Text
-  orderIndex Int      // 排序索引
-
+  id             String                   @id @default(cuid())
+  questionId     String
+  level          String
+  stage          String
+  question       String
+  orderIndex     Int
   parentQuestion CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  @@unique([questionId, level, orderIndex])
+  @@unique([questionId, level, orderIndex], map: "critical_thinking_guiding_quest_questionId_level_orderIndex_key")
   @@index([questionId])
   @@index([level])
   @@map("critical_thinking_guiding_questions")
 }
 
-// 用户思维类型进度
 model CriticalThinkingProgress {
-  id                   String   @id @default(cuid())
-  userId               String
-  thinkingTypeId       String
-  progressPercentage   Int      @default(0) // 0-100
-  questionsCompleted   Int      @default(0)
-  averageScore         Float    @default(0.0)
-  lastUpdated          DateTime @default(now())
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  thinkingType ThinkingType @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  id                       String       @id @default(cuid())
+  userId                   String
+  thinkingTypeId           String
+  progressPercentage       Int          @default(0)
+  questionsCompleted       Int          @default(0)
+  averageScore             Float        @default(0.0)
+  lastUpdated              DateTime     @default(now())
+  lastPracticeAt           DateTime?
+  // Level 1-5 progression tracking
+  currentLevel             Int          @default(1) // 当前Level (1-5)
+  level1Progress           Int          @default(0) // Level 1进度 0-100
+  level2Progress           Int          @default(0)
+  level3Progress           Int          @default(0)
+  level4Progress           Int          @default(0)
+  level5Progress           Int          @default(0)
+  level1Unlocked           Boolean      @default(true)  // Level 1默认解锁
+  level2Unlocked           Boolean      @default(false)
+  level3Unlocked           Boolean      @default(false)
+  level4Unlocked           Boolean      @default(false)
+  level5Unlocked           Boolean      @default(false)
+  // 各Level完成题目数和平均分
+  level1QuestionsCompleted Int          @default(0)
+  level2QuestionsCompleted Int          @default(0)
+  level3QuestionsCompleted Int          @default(0)
+  level4QuestionsCompleted Int          @default(0)
+  level5QuestionsCompleted Int          @default(0)
+  level1AverageScore       Float        @default(0)
+  level2AverageScore       Float        @default(0)
+  level3AverageScore       Float        @default(0)
+  level4AverageScore       Float        @default(0)
+  level5AverageScore       Float        @default(0)
+  thinkingType             ThinkingType @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  user                     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, thinkingTypeId])
   @@index([userId])
@@ -566,50 +406,72 @@ model CriticalThinkingProgress {
   @@map("critical_thinking_progress")
 }
 
-// 批判性思维练习会话
 model CriticalThinkingPracticeSession {
-  id                String   @id @default(cuid())
+  id                String                   @id @default(cuid())
   userId            String
   questionId        String
-  answers           Json     // 分层级答案
-  score             Int?     // 0-100
-  aiFeedback        String?  @db.Text
-  evaluationDetails Json?    // 评估详情
-  reflection        Json?    // 反思总结 { learned: string, nextSteps: string, questions?: string }
-  timeSpent         Int      // 答题用时（秒）
-  completedAt       DateTime @default(now())
-
-  user     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers           Json
+  score             Int?
+  aiFeedback        String?
+  evaluationDetails Json?
+  timeSpent         Int
+  completedAt       DateTime                 @default(now())
+  // Level-based practice tracking
+  level             Int                      @default(1) // 练习时的Level (1-5)
+  stepProgress      Json?                    // 6步进度记录
+  reflectionNotes   String?                  // 反思笔记
+  improvementPlan   String?                  // 改进计划
+  question          CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([questionId])
   @@index([completedAt])
   @@index([score])
+  @@index([level])
   @@map("critical_thinking_practice_sessions")
 }
 
-// AI生成的智能引导问题缓存
-// 用于存储和复用AI为特定题目生成的个性化引导问题
+model LevelLearningContent {
+  id             String       @id @default(cuid())
+  thinkingTypeId String
+  level          Int          // 1-5
+  contentType    String       // "concepts" | "frameworks" | "examples" | "practice_guide"
+  title          String
+  description    String       @db.Text
+  content        Json         // 内容主体（支持富文本、交互元素）
+  estimatedTime  Int          // 预计学习时间（分钟）
+  orderIndex     Int          // 排序
+  tags           String[]     // 标签数组
+  prerequisites  String[]     // 前置内容ID数组
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  thinkingType   ThinkingType @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([thinkingTypeId, level, contentType, orderIndex])
+  @@index([thinkingTypeId])
+  @@index([level])
+  @@index([contentType])
+  @@map("level_learning_content")
+}
+
 model IntelligentGuidedQuestionCache {
-  id                  String   @id @default(cuid())
-  questionId          String   // 关联的题目ID
-  thinkingType        String   // 思维维度 (causal_analysis | premise_challenge | etc)
-  difficulty          String   // 难度等级 (beginner | intermediate | advanced)
-  guidedQuestions     Json     // AI生成的引导问题数组 [{ question, purpose, thinkingDirection, keywords }]
-  thinkingPath        String   @db.Text // 思维路径描述
-  expectedInsights    String[] // 期望获得的洞察
-  generatedBy         String   @default("ai") // 生成方式: ai | manual | preset
-  usageCount          Int      @default(0) // 使用次数统计
-  qualityRating       Float?   // 质量评分 (0-5)，可由用户反馈或系统评估
-  isActive            Boolean  @default(true) // 是否启用
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  lastUsedAt          DateTime? // 最后使用时间
+  id               String                   @id @default(cuid())
+  questionId       String                   @unique
+  thinkingType     String
+  difficulty       String
+  guidedQuestions  Json
+  thinkingPath     String
+  expectedInsights String[]
+  generatedBy      String                   @default("ai")
+  usageCount       Int                      @default(0)
+  qualityRating    Float?
+  isActive         Boolean                  @default(true)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  lastUsedAt       DateTime?
+  question         CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  question CriticalThinkingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@unique([questionId]) // 每个题目只有一个智能引导缓存
   @@index([thinkingType, difficulty])
   @@index([usageCount])
   @@index([qualityRating])
@@ -617,43 +479,47 @@ model IntelligentGuidedQuestionCache {
   @@map("intelligent_guided_question_cache")
 }
 
-// ============ 知识点掌握度追踪系统 ============
-
-// 知识点掌握度追踪
-// 用于追踪用户对每个思维维度下各个核心概念的掌握情况
 model KnowledgePointMastery {
-  id             String   @id @default(cuid())
-  userId         String
-  thinkingTypeId String   // 思维维度ID (causal_analysis | premise_challenge | etc)
-  conceptKey     String   // 概念标识符 (correlation_vs_causation | confounding_factors | etc)
-  masteryLevel   Float    @default(0.0) // 掌握度 (0-1)
-  lastPracticed  DateTime @default(now()) // 最后练习时间
-  practiceCount  Int      @default(0) // 练习次数
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                                           String   @id @default(cuid())
+  user_id                                      String
+  thinking_type_id                             String
+  concept_key                                  String
+  mastery_level                                Float    @default(0.0)
+  last_practiced                               DateTime @default(now())
+  practice_count                               Int      @default(0)
+  created_at                                   DateTime @default(now())
+  updated_at                                   DateTime
+  userId                                       String
+  thinkingTypeId                               String
+  conceptKey                                   String
+  masteryLevel                                 Float    @default(0.0)
+  lastPracticed                                DateTime @default(now())
+  practiceCount                                Int      @default(0)
+  createdAt                                    DateTime @default(now())
+  updatedAt                                    DateTime @default(now()) @updatedAt
+  user                                         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_knowledge_point_mastery_user_idTousers User     @relation("knowledge_point_mastery_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, thinkingTypeId, conceptKey])
-  @@index([userId, lastPracticed])
-  @@index([userId, masteryLevel])
+  @@unique([user_id, thinking_type_id, concept_key])
   @@index([thinkingTypeId, conceptKey])
+  @@index([thinking_type_id, concept_key])
+  @@index([user_id, last_practiced])
+  @@index([user_id, mastery_level])
   @@map("knowledge_point_mastery")
 }
 
-// ============ 每日批判性问题库 ============
-// 系统问题库：包含常见批判性思维问题、升学面试话题、社会热点话题
 model DailyCriticalQuestion {
   id            String   @id @default(cuid())
-  question      String   @db.Text // 问题内容
-  category      String   // critical_thinking | interview | social_issue
-  subcategory   String?  // 细分类别 (如：逻辑推理、时事分析、伦理道德等)
-  difficulty    String   @default("intermediate") // beginner | intermediate | advanced
-  tags          Json     @default("[]") // 标签数组
-  thinkingTypes Json     @default("[]") // 关联的思维维度ID数组
-  context       String?  @db.Text // 背景信息或补充说明
-  isActive      Boolean  @default(true) // 是否启用
-  usageCount    Int      @default(0) // 使用次数
+  question      String
+  category      String
+  subcategory   String?
+  difficulty    String   @default("intermediate")
+  tags          Json     @default("[]")
+  thinkingTypes Json     @default("[]")
+  context       String?
+  isActive      Boolean  @default(true)
+  usageCount    Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -663,46 +529,270 @@ model DailyCriticalQuestion {
   @@map("daily_critical_questions")
 }
 
-// ============ 管理员系统 ============
-
-// 管理员用户扩展
 model AdminUser {
-  id          String    @id @default(cuid())
-  userId      String    @unique
-  role        AdminRole @default(ANALYST)
-  permissions Json      @default("[]") // 额外权限数组
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  logs AdminLog[]
+  id          String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String     @unique
+  role        AdminRole  @default(ANALYST)
+  permissions Json       @default("[]")
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  logs        AdminLog[]
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("admin_users")
 }
 
-enum AdminRole {
-  SUPER_ADMIN    // 超级管理员 - 全部权限
-  CONTENT_ADMIN  // 内容管理员 - 内容相关权限
-  ANALYST        // 数据分析师 - 只读权限
-}
-
-// 管理员操作日志
 model AdminLog {
-  id        String   @id @default(cuid())
-  adminId   String
-  action    String   // 操作类型: CREATE, UPDATE, DELETE, VIEW
-  resource  String   // 操作资源: USER, CONTENT, CONVERSATION, SYSTEM
-  resourceId String? // 资源ID
-  details   Json?    // 操作详情
-  ipAddress String?  // IP地址
-  userAgent String?  // 用户代理
-  createdAt DateTime @default(now())
-
-  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  adminId    String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  admin      AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId, createdAt])
   @@index([action, resource])
   @@index([createdAt])
   @@map("admin_logs")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  CONTENT_ADMIN
+  ANALYST
+}
+
+// ============================================
+// 理论体系 (Theory System) - 新增
+// ============================================
+
+model TheoryContent {
+  id             String   @id @default(cuid())
+  thinkingTypeId String
+  level          Int      // Level 1-5
+
+  // 基础信息
+  title          String
+  subtitle       String?
+  description    String   @db.Text
+  learningObjectives Json
+
+  // 3个核心章节 (纯理论，不含练习)
+  conceptsIntro      String?  @db.Text
+  conceptsContent    Json     // 核心概念详细内容
+
+  modelsIntro        String?  @db.Text
+  modelsContent      Json     // 思维模型详细内容
+
+  demonstrationsIntro String?  @db.Text
+  demonstrationsContent Json   // 实例演示详细内容
+
+  // 元数据
+  estimatedTime      Int      // 预计学习时间（分钟）
+  difficulty         String   // beginner | intermediate | advanced
+  tags               String[] // 标签数组
+  keywords           String[] // 关键词（用于搜索）
+  prerequisites      String[] // 前置内容ID数组
+  relatedTopics      String[] // 相关主题ID数组
+
+  // 内容版本管理
+  version            String   @default("1.0.0")
+  isPublished        Boolean  @default(false)
+  publishedAt        DateTime?
+
+  // 内容质量指标
+  qualityScore       Float?
+  viewCount          Int      @default(0)
+  completionRate     Float?
+  userRating         Float?
+
+  // V3新增：质量管理字段
+  qualityMetrics     Json?    // 详细质量指标 (conceptsScore, modelsScore, demonstrationsScore)
+  validationStatus   String   @default("draft") // draft | validated | published
+  validationErrors   Json?    // 验证错误记录
+  reviewNotes        String?  @db.Text // 人工审核备注
+  feedbackCount      Int      @default(0) // 用户反馈数量
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // 关系
+  thinkingType       ThinkingType @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  userProgress       TheoryProgress[]
+  contentFeedback    TheoryContentFeedback[] // V3新增：用户反馈关系
+
+  @@unique([thinkingTypeId, level, version])
+  @@index([thinkingTypeId])
+  @@index([level])
+  @@index([isPublished])
+  @@index([difficulty])
+  @@index([createdAt])
+  @@index([validationStatus]) // V3新增索引
+  @@map("theory_content")
+}
+
+model TheoryProgress {
+  id               String   @id @default(cuid())
+  userId           String
+  theoryContentId  String
+
+  // 学习进度
+  status           String   @default("not_started") // not_started | in_progress | completed | reviewed
+  progressPercent  Int      @default(0) // 0-100
+
+  // 章节完成状态
+  sectionsCompleted Json    @default("{}") // {concepts: false, models: false, demonstrations: false}
+
+  // 学习时间
+  timeSpent        Int      @default(0) // 秒
+  startedAt        DateTime?
+  completedAt      DateTime?
+  lastViewedAt     DateTime @default(now())
+
+  // 学习行为
+  scrollDepth      Int      @default(0) // 滚动深度百分比
+  interactionCount Int      @default(0) // 交互次数
+
+  // 学习笔记
+  notes            String?  @db.Text
+  highlights       Json?    // 高亮内容
+  bookmarked       Boolean  @default(false)
+
+  // 自评
+  selfRating       Int?     // 1-5分自评
+  confidenceLevel  String?  // low | medium | high
+  needsReview      Boolean  @default(false)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // 关系
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theoryContent    TheoryContent @relation(fields: [theoryContentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, theoryContentId])
+  @@index([userId])
+  @@index([theoryContentId])
+  @@index([status])
+  @@index([lastViewedAt])
+  @@map("theory_progress")
+}
+
+// V3新增：理论内容用户反馈表
+model TheoryContentFeedback {
+  id              String   @id @default(cuid())
+  theoryContentId String
+  userId          String
+
+  // 反馈类型
+  feedbackType    String   // quality_issue | content_error | suggestion | praise
+  section         String   // concepts | models | demonstrations | general
+
+  // 详细反馈
+  rating          Int?     // 1-5星评分
+  comment         String   @db.Text
+  specificIssue   Json?    // { conceptId, stepNumber, issueDescription }
+
+  // 处理状态
+  status          String   @default("pending") // pending | reviewed | resolved | dismissed
+  adminResponse   String?  @db.Text
+  resolvedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 关系
+  theoryContent   TheoryContent @relation(fields: [theoryContentId], references: [id], onDelete: Cascade)
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([theoryContentId])
+  @@index([userId])
+  @@index([status])
+  @@index([feedbackType])
+  @@index([section])
+  @@index([createdAt])
+  @@map("theory_content_feedback")
+}
+
+// ============================================
+// 个性化学习路径系统 (Personalized Learning Path System)
+// ============================================
+
+model LearningPathState {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 路径元数据
+  pathType  String   @default("adaptive") // adaptive | linear | custom
+  status    String   @default("active")   // active | paused | completed
+
+  // 当前进度
+  currentStepId     String?
+  currentStepIndex  Int      @default(0)
+  totalSteps        Int
+  completedSteps    Int      @default(0)
+
+  // 路径配置
+  targetDimensions  String[] // 目标学习维度
+  learningStyle     String   @default("balanced") // theory_first | practice_first | balanced
+  difficultyLevel   String   @default("auto")     // auto | beginner | intermediate | advanced
+
+  // 时间统计
+  totalTimeSpent    Int      @default(0) // 分钟
+  estimatedTimeLeft Int?
+
+  // 路径步骤（JSON）
+  pathSteps         Json     // PathStep[]序列化
+
+  // 自适应参数
+  adaptiveConfig    Json?    // 自适应算法配置
+
+  // 时间戳
+  startedAt         DateTime @default(now())
+  lastAccessedAt    DateTime @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, pathType])
+  @@index([userId])
+  @@index([status])
+  @@index([lastAccessedAt])
+  @@map("learning_path_state")
+}
+
+model UserPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 学习偏好
+  preferredLearningStyle String @default("balanced") // theory_first | practice_first | balanced
+  preferredDifficulty    String @default("auto")     // auto | beginner | intermediate | advanced
+  dailyTimeGoal          Int    @default(30)         // 每日学习目标（分钟）
+
+  // 通知偏好
+  enableReviewReminders  Boolean @default(true)
+  enableProgressUpdates  Boolean @default(true)
+  reminderFrequency      String  @default("daily")   // daily | weekly | off
+
+  // 显示偏好
+  showEstimatedTime      Boolean @default(true)
+  showDifficultyBadges   Boolean @default(true)
+  compactMode            Boolean @default(false)
+
+  // 自适应设置
+  enableAdaptivePath     Boolean @default(true)
+  autoUnlockLevels       Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_preferences")
 }

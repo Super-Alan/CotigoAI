@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import AIQuestionChatbox from './AIQuestionChatbox'
+import TheorySystemContainerV2 from './thinking-types/TheorySystemContainerV2'
 import {
   Brain,
   Search,
@@ -37,7 +38,8 @@ import {
   Flame,
   CheckCircle,
   Timer,
-  Rocket
+  Rocket,
+  GraduationCap
 } from 'lucide-react'
 
 interface ThinkingType {
@@ -158,48 +160,6 @@ const quickActions = [
   }
 ]
 
-const legacyModules = [
-  {
-    id: 'fallacies',
-    title: '逻辑谬误库',
-    description: '识别和应对各种逻辑谬误',
-    icon: Brain,
-    href: '/learn/fallacies',
-    count: 25,
-    color: 'text-red-600',
-    bg: 'bg-red-50'
-  },
-  {
-    id: 'templates',
-    title: '论证模板',
-    description: '掌握经典论证结构',
-    icon: BookOpen,
-    href: '/learn/templates',
-    count: 12,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50'
-  },
-  {
-    id: 'methodology',
-    title: '方法论课程',
-    description: '系统学习思维方法',
-    icon: Target,
-    href: '/learn/methodology',
-    count: 16,
-    color: 'text-green-600',
-    bg: 'bg-green-50'
-  },
-  {
-    id: 'topics',
-    title: '话题包',
-    description: '复杂议题多角度分析',
-    icon: Lightbulb,
-    href: '/learn/topics',
-    count: 8,
-    color: 'text-purple-600',
-    bg: 'bg-purple-50'
-  }
-]
 
 export default function LearningCenter() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -612,44 +572,33 @@ export default function LearningCenter() {
           )}
         </div>
 
-        {/* Legacy Learning Modules - Mobile Optimized */}
-        <div className="mb-8 sm:mb-12">
-          <div className="flex items-center justify-between mb-6 sm:mb-8">
+        {/* Theory System - Collapsible per dimension */}
+        <div className="mb-8 sm:mb-12 md:mb-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2">
-                经典学习模块
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1.5 sm:mb-2 flex items-center gap-2">
+                <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                批判性思维理论体系
               </h2>
-              <p className="text-sm sm:text-base text-gray-600">传统学习资源，与五维思维体系互补</p>
+              <p className="text-sm sm:text-base text-gray-600">系统化学习五大维度的理论基础 - 5个Level × 4类内容</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {legacyModules.map((module) => (
-              <Link key={module.id} href={module.href}>
-                <Card className={`${module.bg} border-2 transition-all duration-300 hover:shadow-lg hover:scale-105 group cursor-pointer`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
-                        <module.icon className={`h-6 w-6 ${module.color}`} />
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {module.count} 项
-                      </Badge>
-                    </div>
-                    <h3 className="font-bold text-gray-900 mb-2 group-hover:text-gray-700">
-                      {module.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {module.description}
-                    </p>
-                    <div className="flex items-center text-sm text-gray-500 group-hover:text-gray-700">
-                      <span>立即学习</span>
-                      <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+          <div className="space-y-4">
+            {filteredThinkingTypes.map((type) => (
+              <TheorySystemContainerV2
+                key={`theory-${type.id}`}
+                thinkingTypeId={type.id}
+                thinkingTypeName={type.name}
+                initialExpanded={false}
+              />
             ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-gray-700">
+              💡 <strong>学习建议</strong>：理论体系按照由浅入深的5个Level设计，建议从Level 1开始逐步学习。每个Level包含核心概念、思维模型和实例演示三个章节。
+            </p>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,33 +22,37 @@ import {
   BookOpen,
   Play,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Lock,
+  GraduationCap,
+  FileText
 } from 'lucide-react'
 import { CriticalThinkingQuestion, PracticeEvaluation } from '@/types'
-import CaseAnalysisDisplay from './CaseAnalysisDisplay'
 import ReflectionSummary from './ReflectionSummary'
+import { LevelSelector, type LevelInfo } from './LevelSelector'
+import { NextLevelGuidance } from './NextLevelGuidance'
+import LearningContentViewer from './LearningContentViewer'
 import { CaseAnalysisResult } from '@/lib/prompts/case-analysis-prompts'
+import { checkLevelUnlock, type UnlockResult } from '@/lib/unlock-system'
 
 interface PracticeSessionProps {
   thinkingTypeId: string
 }
 
-// 6步线性流程（已移除概念学习步骤）
+// 5步线性流程（移除案例学习步骤）
 type FlowStep =
-  | 'case'          // Step 1: 案例学习
-  | 'problem'       // Step 2: 题目呈现
-  | 'guided'        // Step 3: 引导思考
-  | 'answer'        // Step 4: 完整作答
-  | 'feedback'      // Step 5: 评估反馈
-  | 'reflection'    // Step 6: 反思总结
+  | 'problem'       // Step 1: 题目呈现
+  | 'guided'        // Step 2: 引导思考
+  | 'answer'        // Step 3: 完整作答
+  | 'feedback'      // Step 4: 评估反馈
+  | 'reflection'    // Step 5: 反思总结
 
 const STEP_CONFIG = {
-  case: { index: 0, title: '案例学习', icon: BookOpen },
-  problem: { index: 1, title: '题目呈现', icon: MessageSquare },
-  guided: { index: 2, title: '引导思考', icon: Lightbulb },
-  answer: { index: 3, title: '完整作答', icon: Target },
-  feedback: { index: 4, title: '评估反馈', icon: CheckCircle },
-  reflection: { index: 5, title: '反思总结', icon: Lightbulb }
+  problem: { index: 0, title: '题目呈现', icon: MessageSquare },
+  guided: { index: 1, title: '引导思考', icon: Lightbulb },
+  answer: { index: 2, title: '完整作答', icon: Target },
+  feedback: { index: 3, title: '评估反馈', icon: CheckCircle },
+  reflection: { index: 4, title: '反思总结', icon: Lightbulb }
 }
 
 const thinkingTypeNames = {
@@ -58,15 +63,90 @@ const thinkingTypeNames = {
   connection_transfer: '知识迁移'
 }
 
+// Level configuration - 扩展到5个Level
+const LEVEL_CONFIGS = [
+  {
+    level: 1,
+    name: '基础入门',
+    description: '识别与理解 - 掌握基本概念和识别方法',
+    icon: BookOpen,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-300',
+    requirements: ['理解基本概念', '识别简单案例'],
+    unlockCriteria: { minQuestions: 0, minAccuracy: 0 }
+  },
+  {
+    level: 2,
+    name: '初步应用',
+    description: '简单分析 - 能够进行基础分析和简单应用',
+    icon: Target,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-300',
+    requirements: ['基础分析能力', '简单场景应用'],
+    unlockCriteria: { minQuestions: 10, minAccuracy: 80 }
+  },
+  {
+    level: 3,
+    name: '深入分析',
+    description: '复杂推理 - 能够进行深入分析和复杂推理',
+    icon: Lightbulb,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-300',
+    requirements: ['深度分析', '复杂案例处理'],
+    unlockCriteria: { minQuestions: 8, minAccuracy: 75 }
+  },
+  {
+    level: 4,
+    name: '综合运用',
+    description: '跨域整合 - 能够综合运用多种思维工具',
+    icon: CheckCircle,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-300',
+    requirements: ['综合分析', '跨领域应用'],
+    unlockCriteria: { minQuestions: 6, minAccuracy: 70 }
+  },
+  {
+    level: 5,
+    name: '专家创新',
+    description: '创新应用 - 能够创新性地应用和拓展思维方法',
+    icon: Target,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-300',
+    requirements: ['创新思考', '方法拓展', '理论建构'],
+    unlockCriteria: { minQuestions: 5, minAccuracy: 65 }
+  }
+]
+
 export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
 
+  // Ref to track if question has been loaded for current level
+  // This prevents reloading when user switches tabs/windows
+  const questionLoadedRef = useRef<{ [key: number]: boolean }>({})
+
   // Core state
   const [currentQuestion, setCurrentQuestion] = useState<CriticalThinkingQuestion | null>(null)
-  const [flowStep, setFlowStep] = useState<FlowStep>('case')
+  const [flowStep, setFlowStep] = useState<FlowStep>('problem')
   const [loading, setLoading] = useState(false)
   const [startTime, setStartTime] = useState<Date | null>(null)
+
+  // Level management state
+  const [currentLevel, setCurrentLevel] = useState(1)
+  const [showLevelSelector, setShowLevelSelector] = useState(false)
+  const [levels, setLevels] = useState<LevelInfo[]>([])
+  const [unlockProgress, setUnlockProgress] = useState<UnlockResult | null>(null)
+  const [justUnlockedLevel, setJustUnlockedLevel] = useState<number | undefined>(undefined)
+
+  // Tab and learning content state
+  const [activeTab, setActiveTab] = useState('practice')
+  const [learningContents, setLearningContents] = useState<any[]>([])
+  const [loadingContents, setLoadingContents] = useState(false)
 
   // Step-specific state
   const [caseAnalysis, setCaseAnalysis] = useState<CaseAnalysisResult | null>(null)
@@ -82,8 +162,135 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const typeName = thinkingTypeNames[thinkingTypeId as keyof typeof thinkingTypeNames] || '批判性思维'
+  const currentLevelConfig = LEVEL_CONFIGS.find(config => config.level === currentLevel) || LEVEL_CONFIGS[0]
 
-  // 从 localStorage 恢复状态
+  // Level progress loading
+  const loadLevelProgress = async () => {
+    if (!session) return
+
+    try {
+      const response = await fetch(`/api/critical-thinking/progress`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.progress) {
+          const progress = data.data.progress.find((p: any) => p.thinkingTypeId === thinkingTypeId)
+
+          if (progress) {
+            const levelsData: LevelInfo[] = [
+              {
+                level: 1,
+                unlocked: progress.level1Unlocked ?? true,
+                progress: progress.level1Progress ?? 0,
+                questionsCompleted: progress.questionsCompleted ?? 0,
+                currentLevel: progress.currentLevel === 1
+              },
+              {
+                level: 2,
+                unlocked: progress.level2Unlocked ?? false,
+                progress: progress.level2Progress ?? 0,
+                questionsCompleted: 0,
+                currentLevel: progress.currentLevel === 2
+              },
+              {
+                level: 3,
+                unlocked: progress.level3Unlocked ?? false,
+                progress: progress.level3Progress ?? 0,
+                questionsCompleted: 0,
+                currentLevel: progress.currentLevel === 3
+              },
+              {
+                level: 4,
+                unlocked: progress.level4Unlocked ?? false,
+                progress: progress.level4Progress ?? 0,
+                questionsCompleted: 0,
+                currentLevel: progress.currentLevel === 4
+              },
+              {
+                level: 5,
+                unlocked: progress.level5Unlocked ?? false,
+                progress: progress.level5Progress ?? 0,
+                questionsCompleted: 0,
+                currentLevel: progress.currentLevel === 5
+              }
+            ]
+
+            setLevels(levelsData)
+            setCurrentLevel(progress.currentLevel ?? 1)
+          } else {
+            // No progress - set defaults
+            const defaultLevels: LevelInfo[] = [
+              { level: 1, unlocked: true, progress: 0, questionsCompleted: 0, currentLevel: true },
+              { level: 2, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+              { level: 3, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+              { level: 4, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+              { level: 5, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false }
+            ]
+            setLevels(defaultLevels)
+            setCurrentLevel(1)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load level progress:', error)
+      // Set defaults on error
+      const defaultLevels: LevelInfo[] = [
+        { level: 1, unlocked: true, progress: 0, questionsCompleted: 0, currentLevel: true },
+        { level: 2, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+        { level: 3, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+        { level: 4, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false },
+        { level: 5, unlocked: false, progress: 0, questionsCompleted: 0, currentLevel: false }
+      ]
+      setLevels(defaultLevels)
+      setCurrentLevel(1)
+    }
+  }
+
+  // Learning content loading
+  const loadLearningContents = async () => {
+    if (!session) return
+
+    try {
+      setLoadingContents(true)
+      const response = await fetch(
+        `/api/critical-thinking/learning-content?thinkingTypeId=${thinkingTypeId}&level=${currentLevel}`
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.contents) {
+          setLearningContents(data.data.contents)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load learning contents:', error)
+    } finally {
+      setLoadingContents(false)
+    }
+  }
+
+  // Level management functions
+  const isLevelUnlocked = (level: number) => {
+    const levelData = levels.find(l => l.level === level)
+    return levelData?.unlocked ?? (level === 1)
+  }
+
+  const canAdvanceToLevel = (level: number) => {
+    return isLevelUnlocked(level)
+  }
+
+  const handleLevelChange = (newLevel: number) => {
+    if (isLevelUnlocked(newLevel)) {
+      // 清除新level的加载标记，允许重新加载题目
+      questionLoadedRef.current[newLevel] = false
+      setCurrentLevel(newLevel)
+      setShowLevelSelector(false)
+      // Reload question and learning contents for new level
+      loadQuestion()
+      loadLearningContents()
+    }
+  }
+
+  // From localStorage 恢复状态
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -127,50 +334,90 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       return
     }
 
-    loadQuestion()
+    loadLevelProgress()
   }, [thinkingTypeId, session, status, router])
+
+  useEffect(() => {
+    if (session && levels.length > 0) {
+      // 检查当前level是否已经加载过题目
+      // 如果已加载且有题目，且用户还在答题中（未完成反思），则不重新加载
+      // 这样可以防止切换标签页时丢失进度
+      const alreadyLoaded = questionLoadedRef.current[currentLevel]
+      const isInProgress = currentQuestion && flowStep !== 'reflection'
+
+      if (!alreadyLoaded || !isInProgress) {
+        console.log('🔥 useEffect triggered: loading question and content for level', currentLevel,
+                    'alreadyLoaded:', alreadyLoaded, 'isInProgress:', isInProgress)
+        loadQuestion()
+        loadLearningContents()
+        questionLoadedRef.current[currentLevel] = true
+      } else {
+        console.log('⏭️ useEffect skipped: question in progress for level', currentLevel, 'flowStep:', flowStep)
+      }
+    } else {
+      console.log('⏸️ useEffect skipped: session=', !!session, ', levels.length=', levels.length)
+    }
+  }, [currentLevel, session, levels.length])
 
   const loadQuestion = async () => {
     if (!session) return
 
     try {
       setLoading(true)
-      setFlowStep('case')
+      setFlowStep('problem')
       setUserAnswer('')
       setEvaluation(null)
       setReflection(null)
       setCaseAnalysis(null)
       setIntelligentGuided(null)
+      setJustUnlockedLevel(undefined)
 
       // 清除localStorage中的旧状态
       if (typeof window !== 'undefined') {
         localStorage.removeItem(`practice-session-${thinkingTypeId}`)
       }
 
-      // 尝试从数据库获取现有题目
-      const response = await fetch(`/api/thinking-types/${thinkingTypeId}/questions?limit=1`)
+      // 使用Level-filtered API获取题目
+      const response = await fetch(
+        `/api/critical-thinking/questions/by-level?thinkingTypeId=${thinkingTypeId}&level=${currentLevel}&limit=1`
+      )
+
+      console.log('🔍 API Response Status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
-        if (data.success && data.data.questions.length > 0) {
+        console.log('🔍 API Response Data:', data)
+        console.log('🔍 Questions Count:', data.data?.questions?.length)
+
+        if (data.success && data.data && data.data.questions && data.data.questions.length > 0) {
           const question = data.data.questions[0]
+          console.log('✅ Found question:', question.topic)
           setCurrentQuestion(question)
           setStartTime(new Date())
 
-          // 加载案例分析
+          // 不再自动加载案例分析，因为我们移除了案例学习步骤
+          // 如果需要案例分析，用户可以在练习过程中查看
           if (question.caseAnalysis) {
             setCaseAnalysis(question.caseAnalysis as CaseAnalysisResult)
-          } else {
-            loadCaseAnalysis(question.id)
           }
+
+          console.log('✅ Question loaded successfully, exiting function')
           return
+        } else {
+          console.log('⚠️ No questions found in response or invalid data structure')
         }
+      } else {
+        console.log('❌ API Response not OK, status:', response.status)
       }
 
-      // 如果没有现有题目，生成新题目
+      // 如果该Level没有题目，生成新题目
       const generateResponse = await fetch(`/api/thinking-types/${thinkingTypeId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ difficulty: 'intermediate' })
+        body: JSON.stringify({
+          level: currentLevel,
+          difficulty: currentLevel <= 2 ? 'beginner' : currentLevel <= 4 ? 'intermediate' : 'advanced'
+        })
       })
 
       if (generateResponse.ok) {
@@ -222,14 +469,13 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
           thinkingType: thinkingTypeId,
           questionTopic: currentQuestion.topic,
           questionContext: currentQuestion.context,
-          difficulty: currentQuestion.difficulty
+          level: currentLevel // difficulty removed, using level parameter
         })
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          // 保存引导问题数据和缓存状态
           setIntelligentGuided({
             ...data.data,
             cached: data.cached,
@@ -251,20 +497,57 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       setSubmitting(true)
       const timeSpent = startTime ? Math.round((new Date().getTime() - startTime.getTime()) / 1000) : 0
 
+      // 评估答案
       const response = await fetch('/api/critical-thinking/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           questionId: currentQuestion.id,
           userAnswer: userAnswer.trim(),
-          thinkingTypeId
+          thinkingTypeId,
+          level: currentLevel
         })
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          setEvaluation(data.data.evaluation)
+          const evaluation = data.data.evaluation
+          setEvaluation(evaluation)
+
+          // 更新Level进度并检查解锁
+          const progressResponse = await fetch('/api/critical-thinking/progress/update-level', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              thinkingTypeId,
+              level: currentLevel,
+              score: evaluation.score, // 已经是百分制 (0-100)
+              questionId: currentQuestion.id,
+              timeSpent
+            })
+          })
+
+          if (progressResponse.ok) {
+            const progressData = await progressResponse.json()
+            if (progressData.success) {
+              const { unlockProgress: newUnlockProgress, updatedProgress } = progressData.data
+
+              // 检查是否解锁了新Level
+              if (newUnlockProgress?.canUnlock && currentLevel < 5) {
+                const nextLevel = currentLevel + 1
+                if (updatedProgress[`level${nextLevel}Unlocked`]) {
+                  setJustUnlockedLevel(nextLevel)
+                }
+              }
+
+              setUnlockProgress(newUnlockProgress)
+
+              // 重新加载Level进度
+              await loadLevelProgress()
+            }
+          }
+
           setFlowStep('feedback')
         }
       }
@@ -288,11 +571,12 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
         body: JSON.stringify({
           questionId: currentQuestion?.id,
           thinkingTypeId,
-          answers: userAnswer, // 用户完整答案
+          level: currentLevel, // 添加级别参数
+          answers: userAnswer,
           score: evaluation?.score || 0,
           aiFeedback: evaluation?.feedback || '',
           evaluationDetails: evaluation || null,
-          reflection: reflectionData, // 反思数据
+          reflection: reflectionData,
           timeSpent
         })
       })
@@ -306,18 +590,40 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
 
       const result = await response.json()
       console.log('会话保存成功:', result)
+
+      // Progress data is returned in result.data.progress
+      // TODO: Display progress updates to user if needed
     } catch (error) {
       console.error('保存会话网络错误:', error)
       alert('网络错误，请检查连接后重试')
       return
     }
 
-    // 加载下一题
-    loadQuestion()
+    // ✅ 不再自动加载下一题，让用户在NextLevelGuidance中选择
+    // 移除：loadQuestion()
   }
 
   const proceedToNextStep = (nextStep: FlowStep) => {
     setFlowStep(nextStep)
+  }
+
+  // 开始新的练习题目
+  const startNewQuestion = () => {
+    // 重置所有状态
+    setFlowStep('problem')
+    setUserAnswer('')
+    setEvaluation(null)
+    setReflection(null)
+    setCaseAnalysis(null)
+    setIntelligentGuided(null)
+    setJustUnlockedLevel(undefined)
+    setStartTime(new Date())
+
+    // 清除当前level的加载标记，允许重新加载
+    questionLoadedRef.current[currentLevel] = false
+
+    // 加载新题目
+    loadQuestion()
   }
 
   const handleStepClick = (stepKey: string) => {
@@ -325,20 +631,13 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
     const stepConfig = STEP_CONFIG[step]
 
     // 检查是否可以跳转到该步骤
-    // 规则：只能跳转到已完成的步骤或当前步骤的下一步
     const currentIndex = STEP_CONFIG[flowStep].index
     const targetIndex = stepConfig.index
 
-    // 允许跳转到：
-    // 1. 已完成的步骤（targetIndex < currentIndex）
-    // 2. 当前步骤（targetIndex === currentIndex）
-    // 3. 下一步（targetIndex === currentIndex + 1）
     if (targetIndex <= currentIndex + 1) {
-      // 如果跳转到"引导思考"步骤，且还没有加载引导问题，则加载
       if (step === 'guided' && !intelligentGuided && !loadingGuidedQuestions) {
         loadIntelligentGuidedQuestions()
       }
-
       setFlowStep(step)
     }
   }
@@ -348,7 +647,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">正在加载练习题目...</p>
+          <p className="text-gray-600">正在加载Level {currentLevel}练习题目...</p>
         </div>
       </div>
     )
@@ -359,11 +658,16 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">暂无练习题目</h2>
-          <p className="text-gray-600 mb-4">该思维类型的练习题目正在准备中</p>
-          <Link href={`/learn/critical-thinking/${thinkingTypeId}`}>
-            <Button>返回学习页面</Button>
-          </Link>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Level {currentLevel} 暂无练习题目</h2>
+          <p className="text-gray-600 mb-4">该级别的练习题目正在准备中</p>
+          <div className="space-y-2">
+            <Button onClick={() => setShowLevelSelector(true)} variant="outline">
+              选择其他级别
+            </Button>
+            <Link href={`/learn/critical-thinking/${thinkingTypeId}`}>
+              <Button>返回学习页面</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -385,10 +689,100 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               {typeName}练习
             </h1>
-            <Badge variant="outline" className="text-sm">
-              {currentQuestion.difficulty === 'beginner' ? '初级' :
-               currentQuestion.difficulty === 'intermediate' ? '中级' : '高级'}
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-sm">
+                Level {currentQuestion.level}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Level Selector */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">当前级别</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLevelSelector(!showLevelSelector)}
+              >
+                切换级别
+                {showLevelSelector ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* Current Level Display */}
+            <Card className={`${currentLevelConfig.borderColor} border-2 ${currentLevelConfig.bgColor}`}>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-12 h-12 rounded-full ${currentLevelConfig.bgColor} border-2 ${currentLevelConfig.borderColor} flex items-center justify-center`}>
+                    <currentLevelConfig.icon className={`h-6 w-6 ${currentLevelConfig.color}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className={`font-bold text-lg ${currentLevelConfig.color}`}>
+                      Level {currentLevel}: {currentLevelConfig.name}
+                    </h4>
+                    <p className="text-sm text-gray-600">{currentLevelConfig.description}</p>
+                  </div>
+                  {/* TODO: Display user progress when data is loaded */}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Level Selector Dropdown */}
+            {showLevelSelector && (
+              <Card className="mt-3 border-2 border-gray-200">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {LEVEL_CONFIGS.map((levelConfig) => {
+                      const isUnlocked = isLevelUnlocked(levelConfig.level)
+                      const canAdvance = canAdvanceToLevel(levelConfig.level)
+                      const isCurrent = levelConfig.level === currentLevel
+
+                      return (
+                        <button
+                          key={levelConfig.level}
+                          onClick={() => handleLevelChange(levelConfig.level)}
+                          disabled={!isUnlocked}
+                          className={`p-3 rounded-lg border-2 text-left transition-all ${
+                            isCurrent
+                              ? `${levelConfig.borderColor} ${levelConfig.bgColor}`
+                              : isUnlocked
+                                ? 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+                                : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2 mb-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              isUnlocked ? levelConfig.bgColor : 'bg-gray-200'
+                            }`}>
+                              {isUnlocked ? (
+                                (() => {
+                                  const IconComponent = levelConfig.icon;
+                                  return <IconComponent className={`h-4 w-4 ${levelConfig.color}`} />;
+                                })()
+                              ) : (
+                                <Lock className="h-4 w-4 text-gray-400" />
+                              )}
+                            </div>
+                            <span className={`font-semibold ${isUnlocked ? levelConfig.color : 'text-gray-400'}`}>
+                              Level {levelConfig.level}
+                            </span>
+                          </div>
+                          <div className={`text-sm ${isUnlocked ? 'text-gray-700' : 'text-gray-400'}`}>
+                            {levelConfig.name}
+                          </div>
+                          {!isUnlocked && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              需要: {levelConfig.unlockCriteria.minQuestions}题 @ {levelConfig.unlockCriteria.minAccuracy}%准确率
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* 理论学习提示 */}
@@ -397,21 +791,21 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               <Lightbulb className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm text-blue-900">
-                  <strong>💡 学习建议：</strong>
-                  如果你还不熟悉【{typeName}】的核心概念和方法，建议先
+                  <strong>💡 Level {currentLevel} 学习建议：</strong>
+                  {currentLevelConfig.requirements.join('、')}。如需理论基础，请先
                   <Link
                     href={`/learn/critical-thinking/${thinkingTypeId}`}
                     className="underline font-medium hover:text-blue-700 mx-1"
                   >
                     返回学习页面
                   </Link>
-                  查看"理论学习"标签页，掌握基础知识后再进行练习效果更佳。
+                  查看"理论学习"标签页。
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Progress Steps - Desktop only, mobile uses bottom nav */}
+          {/* Progress Steps - Desktop only */}
           <div className="hidden md:flex items-center space-x-2 mb-6 overflow-x-auto pb-2">
             {Object.entries(STEP_CONFIG).map(([key, config], idx) => {
               const isActive = key === flowStep
@@ -460,79 +854,104 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
           </div>
         </div>
 
-        {/* Mobile: Bottom padding for sticky navigation */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Step 1: 案例学习 */}
-            {flowStep === 'case' && (
-              <div className="space-y-6">
-                <Card className="border-2 border-blue-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg md:text-xl">
-                      <BookOpen className="h-5 w-5 md:h-6 md:w-6 mr-2 text-blue-600" />
-                      Step 1: 案例学习
-                    </CardTitle>
-                    <CardDescription>
-                      通过真实案例理解【{typeName}】在实际场景中的应用
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {loadingCaseAnalysis ? (
-                      <div className="py-12 text-center">
-                        <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                        <p className="text-gray-600">AI正在生成专业的案例分析...</p>
-                      </div>
-                    ) : caseAnalysis ? (
-                      <CaseAnalysisDisplay caseAnalysis={caseAnalysis} />
-                    ) : (
-                      <div className="py-12 text-center">
-                        <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">案例分析暂未生成</h3>
-                        <Button
-                          onClick={() => currentQuestion?.id && loadCaseAnalysis(currentQuestion.id)}
-                          disabled={!currentQuestion?.id}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          生成案例分析
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+        {/* 3-Tab Layout */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="theory" className="flex items-center space-x-2">
+              <GraduationCap className="h-4 w-4" />
+              <span className="hidden sm:inline">📚 理论学习</span>
+              <span className="sm:hidden">理论</span>
+            </TabsTrigger>
+            <TabsTrigger value="examples" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">💡 实例分析</span>
+              <span className="sm:hidden">实例</span>
+            </TabsTrigger>
+            <TabsTrigger value="practice" className="flex items-center space-x-2">
+              <Target className="h-4 w-4" />
+              <span className="hidden sm:inline">🎯 核心技能</span>
+              <span className="sm:hidden">练习</span>
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="flex justify-end">
-                  <Button onClick={() => proceedToNextStep('problem')} size="lg" className="w-full md:w-auto min-h-11 text-base">
-                    学习完毕，查看练习题目
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
+          {/* Tab 1: 理论学习 */}
+          <TabsContent value="theory">
+            {loadingContents ? (
+              <div className="py-12 text-center">
+                <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-gray-600">正在加载Level {currentLevel}理论内容...</p>
               </div>
+            ) : (
+              <LearningContentViewer
+                thinkingTypeId={thinkingTypeId}
+                level={currentLevel}
+                contents={learningContents.filter(c =>
+                  c.contentType === 'concepts' || c.contentType === 'frameworks'
+                )}
+              />
             )}
+          </TabsContent>
 
-            {/* Step 2: 题目呈现 */}
+          {/* Tab 2: 实例分析 */}
+          <TabsContent value="examples">
+            <div className="space-y-6">
+              {loadingContents ? (
+                <div className="py-12 text-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+                  <p className="text-gray-600">正在加载实例内容...</p>
+                </div>
+              ) : learningContents.filter(c => c.contentType === 'examples' || c.contentType === 'practice_guide').length > 0 ? (
+                <LearningContentViewer
+                  thinkingTypeId={thinkingTypeId}
+                  level={currentLevel}
+                  contents={learningContents.filter(c =>
+                    c.contentType === 'examples' || c.contentType === 'practice_guide'
+                  )}
+                />
+              ) : (
+                <div className="py-12 text-center">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Level {currentLevel} 的实例分析正在准备中</p>
+                  <p className="text-sm text-gray-500 mt-2">包含典型案例和实践指南，敬请期待</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Tab 3: 核心技能练习 */}
+          <TabsContent value="practice">
+            {/* Mobile: Bottom padding for sticky navigation */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24 md:pb-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-4">
+            {/* Step 1: 题目呈现 */}
             {flowStep === 'problem' && (
               <div className="space-y-6">
                 <Card className="border-2 border-purple-200">
                   <CardHeader>
                     <CardTitle className="flex items-center text-xl">
                       <MessageSquare className="h-6 w-6 mr-2 text-purple-600" />
-                      Step 2: 练习题目
+                      Step 1: Level {currentLevel} 练习题目
                     </CardTitle>
-                    {currentQuestion.tags && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {(currentQuestion.tags as string[]).map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Badge className={`${currentLevelConfig.bgColor} ${currentLevelConfig.color} border-0`}>
+                        {currentLevelConfig.name}
+                      </Badge>
+                      {currentQuestion.tags && (
+                        <div className="flex flex-wrap gap-2">
+                          {(currentQuestion.tags as string[]).map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="prose max-w-none">
                       <p className="text-gray-800 text-base md:text-lg leading-relaxed md:leading-loose mb-4 p-2">
-                        {(currentQuestion as any).question}
+                        {currentQuestion.content}
                       </p>
                       {currentQuestion.context && (
                         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
@@ -544,20 +963,16 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                   </CardContent>
                 </Card>
 
-                <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-0">
-                  <Button variant="outline" onClick={() => proceedToNextStep('case')} className="min-h-11 text-base order-2 md:order-1">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    返回案例
-                  </Button>
-                  <Button onClick={() => proceedToNextStep('guided')} size="lg" className="min-h-11 text-base order-1 md:order-2">
-                    开始思考
+                <div className="flex justify-end">
+                  <Button onClick={() => proceedToNextStep('guided')} size="lg" className="w-full md:w-auto min-h-11 text-base">
+                    开始Level {currentLevel}思考
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Step 3: 智能引导思考 */}
+            {/* Step 2: 智能引导思考 */}
             {flowStep === 'guided' && (
               <div className="space-y-6">
                 <Card className="border-2 border-green-200">
@@ -566,7 +981,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                       <div>
                         <CardTitle className="flex items-center text-xl">
                           <Lightbulb className="h-6 w-6 mr-2 text-green-600" />
-                          Step 3: 智能引导思考
+                          Step 2: 智能引导思考
                         </CardTitle>
                         <CardDescription className="mt-2">
                           AI为这道题目量身定制的引导问题，帮助你建立思维框架
@@ -733,14 +1148,14 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               </div>
             )}
 
-            {/* Step 4: 完整作答 */}
+            {/* Step 3: 完整作答 */}
             {flowStep === 'answer' && (
               <div className="space-y-6">
                 <Card className="border-2 border-orange-200">
                   <CardHeader>
                     <CardTitle className="flex items-center text-xl">
                       <Target className="h-6 w-6 mr-2 text-orange-600" />
-                      Step 4: 你的回答
+                      Step 3: 你的回答
                     </CardTitle>
                     <CardDescription>
                       请结合引导问题，详细阐述你的思考过程和结论
@@ -749,8 +1164,18 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                   <CardContent className="space-y-4">
                     {/* 题目回顾 */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h4 className="font-medium text-gray-700 mb-2">题目回顾：</h4>
-                      <p className="text-gray-800">{(currentQuestion as any).question}</p>
+                      <h4 className="font-medium text-gray-700 mb-3">题目回顾：</h4>
+                      <div className="space-y-3">
+                        <p className="text-gray-800 text-base leading-relaxed">
+                          {currentQuestion.content}
+                        </p>
+                        {currentQuestion.context && (
+                          <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                            <h5 className="font-medium text-blue-900 text-sm mb-1">背景信息：</h5>
+                            <p className="text-blue-800 text-sm leading-relaxed">{currentQuestion.context}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <Textarea
@@ -790,30 +1215,68 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               </div>
             )}
 
-            {/* Step 5: 评估反馈 */}
+            {/* Step 4: 评估反馈 */}
             {flowStep === 'feedback' && evaluation && (
               <div className="space-y-6">
                 <Card className="border-2 border-green-200">
                   <CardHeader>
                     <CardTitle className="flex items-center text-xl">
                       <CheckCircle className="h-6 w-6 mr-2 text-green-600" />
-                      Step 5: AI 评估反馈
+                      Step 4: AI 评估反馈
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      {/* Overall Score */}
+                      {/* Overall Score - 百分制 */}
                       <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-                        <div className="text-4xl font-bold text-blue-600 mb-2">
-                          {evaluation.score}/10
+                        <div className="text-5xl font-bold text-blue-600 mb-2">
+                          {evaluation.score}
+                          <span className="text-2xl text-gray-500">/100</span>
                         </div>
                         <div className="text-base text-gray-600">综合得分</div>
                       </div>
 
+                      {/* Dimension Scores - 各维度评分（加权百分制） */}
+                      {evaluation.scores && (
+                        <div className="bg-white border border-gray-200 rounded-lg p-5">
+                          <h4 className="font-semibold text-gray-900 mb-4 text-center">各维度评分（总分=各维度之和）</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-red-600">{evaluation.scores.critical}</div>
+                              <div className="text-xs text-gray-500 mt-1">批判性</div>
+                              <div className="text-[10px] text-gray-400">满分25</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-600">{evaluation.scores.logic}</div>
+                              <div className="text-xs text-gray-500 mt-1">逻辑性</div>
+                              <div className="text-[10px] text-gray-400">满分25</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-purple-600">{evaluation.scores.depth}</div>
+                              <div className="text-xs text-gray-500 mt-1">思维深度</div>
+                              <div className="text-[10px] text-gray-400">满分20</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-orange-600">{evaluation.scores.completeness}</div>
+                              <div className="text-xs text-gray-500 mt-1">完整性</div>
+                              <div className="text-[10px] text-gray-400">满分20</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-pink-600">{evaluation.scores.innovation}</div>
+                              <div className="text-xs text-gray-500 mt-1">创新性</div>
+                              <div className="text-[10px] text-gray-400">满分10</div>
+                            </div>
+                          </div>
+                          <div className="mt-3 text-center text-xs text-gray-500">
+                            {evaluation.scores.critical} + {evaluation.scores.logic} + {evaluation.scores.depth} + {evaluation.scores.completeness} + {evaluation.scores.innovation} = {evaluation.score}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Feedback */}
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                         <h4 className="font-medium text-blue-900 mb-2">详细反馈：</h4>
-                        <p className="text-blue-800 leading-relaxed">{evaluation.feedback}</p>
+                        <p className="text-blue-800 leading-relaxed whitespace-pre-wrap">{evaluation.feedback}</p>
                       </div>
 
                       {/* Strengths and Improvements */}
@@ -823,14 +1286,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                             <CheckCircle className="h-5 w-5 mr-2" />
                             优点
                           </h4>
-                          <ul className="space-y-2">
-                            {evaluation.strengths.map((strength, index) => (
-                              <li key={index} className="text-sm text-green-800 flex items-start">
-                                <span className="w-2 h-2 bg-green-600 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                                {strength}
-                              </li>
-                            ))}
-                          </ul>
+                          <p className="text-sm text-green-800 whitespace-pre-wrap">{evaluation.strengths}</p>
                         </div>
 
                         <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
@@ -838,14 +1294,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                             <Lightbulb className="h-5 w-5 mr-2" />
                             改进建议
                           </h4>
-                          <ul className="space-y-2">
-                            {evaluation.improvements.map((improvement, index) => (
-                              <li key={index} className="text-sm text-yellow-800 flex items-start">
-                                <span className="w-2 h-2 bg-yellow-600 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                                {improvement}
-                              </li>
-                            ))}
-                          </ul>
+                          <p className="text-sm text-yellow-800 whitespace-pre-wrap">{evaluation.improvements}</p>
                         </div>
                       </div>
                     </div>
@@ -861,12 +1310,61 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               </div>
             )}
 
-            {/* Step 6: 反思总结 */}
+            {/* Step 5: 反思总结 & 进阶提示 */}
             {flowStep === 'reflection' && (
-              <ReflectionSummary
-                thinkingTypeName={typeName}
-                onComplete={handleReflectionComplete}
-              />
+              <div className="space-y-6">
+                {/* 反思总结 */}
+                {!reflection && evaluation && (
+                  <ReflectionSummary
+                    evaluation={evaluation}
+                    level={currentLevel}
+                    onComplete={(notes, plan) => handleReflectionComplete({ learned: notes, nextSteps: plan })}
+                    onSkip={() => handleReflectionComplete({ learned: '', nextSteps: '' })}
+                  />
+                )}
+
+                {/* 进阶提示 - 反思完成后显示 */}
+                {reflection && (() => {
+                  const currentLevelInfo = levels.find(l => l.level === currentLevel);
+                  const levelProgressData = currentLevelInfo ? {
+                    level: currentLevel,
+                    questionsCompleted: currentLevelInfo.questionsCompleted,
+                    averageScore: currentLevelInfo.averageScore ?? 0,
+                    progress: currentLevelInfo.progress
+                  } : {
+                    level: currentLevel,
+                    questionsCompleted: 0,
+                    averageScore: 0,
+                    progress: 0
+                  };
+
+                  // Transform UnlockResult to unlockStatus format
+                  const unlockStatus = unlockProgress ? {
+                    unlocked: unlockProgress.canUnlock,
+                    level: currentLevel + 1,
+                    message: unlockProgress.message,
+                    questionsCompleted: unlockProgress.progress.questionsCompleted,
+                    questionsRequired: unlockProgress.progress.questionsRequired,
+                    averageScore: unlockProgress.progress.averageScore,
+                    requiredScore: unlockProgress.progress.requiredScore
+                  } : undefined;
+
+                  return (
+                    <NextLevelGuidance
+                      currentLevel={currentLevel}
+                      levelProgress={levelProgressData}
+                      unlockStatus={unlockStatus}
+                      onNextQuestion={startNewQuestion}
+                      onViewNextLevel={() => {
+                        if (justUnlockedLevel) {
+                          setCurrentLevel(justUnlockedLevel);
+                          startNewQuestion();
+                        }
+                      }}
+                    />
+                  );
+                })()}
+              </div>
             )}
           </div>
 
@@ -900,18 +1398,6 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm text-gray-600">
-                  {flowStep === 'case' && (
-                    <>
-                      <div className="flex items-start space-x-2">
-                        <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                        <span>仔细阅读案例，理解核心概念的实际应用</span>
-                      </div>
-                      <div className="flex items-start space-x-2">
-                        <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                        <span>思考案例中的关键要点和方法论</span>
-                      </div>
-                    </>
-                  )}
                   {flowStep === 'problem' && (
                     <>
                       <div className="flex items-start space-x-2">
@@ -1052,18 +1538,6 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                 <div className="bg-white rounded-lg p-4 border border-gray-200">
                   <h4 className="font-medium text-gray-900 mb-3">学习提示</h4>
                   <div className="space-y-3 text-sm text-gray-600">
-                    {flowStep === 'case' && (
-                      <>
-                        <div className="flex items-start space-x-2">
-                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                          <span>仔细阅读案例，理解核心概念的实际应用</span>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                          <span>思考案例中的关键要点和方法论</span>
-                        </div>
-                      </>
-                    )}
                     {flowStep === 'problem' && (
                       <>
                         <div className="flex items-start space-x-2">
@@ -1130,6 +1604,8 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
             </div>
           )}
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

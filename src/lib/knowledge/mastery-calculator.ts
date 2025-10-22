@@ -61,52 +61,49 @@ async function updateSingleConceptMastery(
   conceptKey: string,
   newScore: number // 0-1
 ): Promise<void> {
-  const existing = await prisma.knowledgePointMastery.findUnique({
-    where: {
-      userId_thinkingTypeId_conceptKey: {
-        userId,
-        thinkingTypeId,
-        conceptKey
-      }
-    }
-  })
+  // TODO: Fix KnowledgePointMastery schema duplication issue before enabling
+  // The schema has duplicate fields with both snake_case and camelCase
+  console.log(`[DISABLED] Would update concept ${conceptKey} for user ${userId}: ${(newScore * 100).toFixed(1)}%`)
+  return
 
-  // 加权平均算法：70%历史 + 30%本次
-  // 这个比例确保历史表现有更大权重，但新表现也能快速影响掌握度
-  const newMasteryLevel = existing
-    ? existing.masteryLevel * 0.7 + newScore * 0.3
-    : newScore
+  // const existing = await prisma.knowledgePointMastery.findUnique({
+  //   where: {
+  //     userId_thinkingTypeId_conceptKey: {
+  //       userId,
+  //       thinkingTypeId,
+  //       conceptKey
+  //     }
+  //   }
+  // })
 
-  await prisma.knowledgePointMastery.upsert({
-    where: {
-      userId_thinkingTypeId_conceptKey: {
-        userId,
-        thinkingTypeId,
-        conceptKey
-      }
-    },
-    update: {
-      masteryLevel: newMasteryLevel,
-      lastPracticed: new Date(),
-      practiceCount: { increment: 1 },
-      updatedAt: new Date()
-    },
-    create: {
-      id: generateId(),
-      userId,
-      thinkingTypeId,
-      conceptKey,
-      masteryLevel: newScore,
-      lastPracticed: new Date(),
-      practiceCount: 1,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  })
+  // const newMasteryLevel = existing
+  //   ? existing.masteryLevel * 0.7 + newScore * 0.3
+  //   : newScore
 
-  console.log(
-    `Updated concept ${conceptKey}: ${(newMasteryLevel * 100).toFixed(1)}%`
-  )
+  // await prisma.knowledgePointMastery.upsert({
+  //   where: {
+  //     userId_thinkingTypeId_conceptKey: {
+  //       userId,
+  //       thinkingTypeId,
+  //       conceptKey
+  //     }
+  //   },
+  //   update: {
+  //     masteryLevel: newMasteryLevel,
+  //     lastPracticed: new Date(),
+  //     practiceCount: { increment: 1 }
+  //   },
+  //   create: {
+  //     userId,
+  //     thinkingTypeId,
+  //     conceptKey,
+  //     masteryLevel: newScore,
+  //     lastPracticed: new Date(),
+  //     practiceCount: 1
+  //   }
+  // })
+
+  // console.log(`Updated concept ${conceptKey}: ${(newMasteryLevel * 100).toFixed(1)}%`)
 }
 
 /**

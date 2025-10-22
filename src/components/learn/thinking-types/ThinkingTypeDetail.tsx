@@ -1027,7 +1027,8 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
   
   // 获取真实题目数据
   const { topics, loading: topicsLoading, error: topicsError } = useTopicsByDimension(thinkingTypeId)
-  const { questions: hkuQuestions, loading: hkuLoading, error: hkuError } = useHKUCaseAnalysis(thinkingTypeId)
+  // 方案A：使用静态内容，不再从数据库获取
+  // const { questions: hkuQuestions, loading: hkuLoading, error: hkuError } = useHKUCaseAnalysis(thinkingTypeId)
   
   // AI分析生成
   const { analyses, generateAnalysis, loading: analysisLoading, errors: analysisErrors } = useAnalysisGeneration()
@@ -2103,117 +2104,70 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
           </TabsContent>
 
           <TabsContent value="examples" className="space-y-6">
-            {/* 显示加载状态 */}
-            {hkuLoading && (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  <span className="text-gray-600">正在加载香港大学批判性思维案例分析...</span>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 显示错误状态 */}
-            {hkuError && (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8 text-red-600">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  <span>加载失败: {hkuError}</span>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 显示HKU批判性思维案例分析 */}
-            {!hkuLoading && !hkuError && hkuQuestions.length > 0 && (
+            {/* 方案A：直接使用静态学习内容 */}
+            {ALL_LEARNING_CONTENT[thinkingTypeId]?.examples ? (
               <>
-                {hkuQuestions.map((question, index) => (
-                  <div key={question.id} className="space-y-6">
-                    {/* 题目信息卡片 */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="flex items-center">
-                              <Lightbulb className="h-5 w-5 mr-2 text-yellow-600" />
-                              【{index === 0 ? '基础案例' : '进阶案例'}】{question.topic}
-                            </CardTitle>
-                            <CardDescription className="mt-2">
-                              {question.question}
-                            </CardDescription>
-                          </div>
-                          <Badge variant="outline" className="ml-4">
-                            {question.difficulty === 'intermediate' ? '中等难度' :
-                             question.difficulty === 'beginner' ? '初级' : '高级'}
-                          </Badge>
-                        </div>
-                        {question.tags && question.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {question.tags.map((tag: string, tagIndex: number) => (
-                              <Badge key={tagIndex} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                          <h4 className="font-medium text-blue-900 mb-2">背景信息</h4>
-                          <p className="text-blue-800 leading-relaxed">{question.context}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                {ALL_LEARNING_CONTENT[thinkingTypeId].examples.map((example, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Lightbulb className="h-5 w-5 mr-2 text-yellow-600" />
+                        案例 {index + 1}
+                      </CardTitle>
+                      <CardDescription>
+                        {example.scenario}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* 问题背景 */}
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">💡 思考问题</h4>
+                        <p className="text-blue-800 leading-relaxed">{example.question}</p>
+                      </div>
 
-                    {/* 案例分析展示 */}
-                    {question.caseAnalysis ? (
-                      <CaseAnalysisDisplay caseAnalysis={question.caseAnalysis as CaseAnalysisResult} />
-                    ) : (
-                      <Card>
-                        <CardContent className="py-12">
-                          <div className="text-center">
-                            <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">案例分析暂未生成</h3>
-                            <p className="text-gray-600 mb-4">
-                              该题目的专业案例分析正在准备中，请点击"开始练习"查看实时生成的分析
+                      {/* 答案对比 */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                          <Target className="h-5 w-5 mr-2 text-indigo-600" />
+                          答案对比分析
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* 优秀回答 */}
+                          <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                            <Badge className="bg-green-600 text-white mb-3">
+                              ✅ 优秀回答
+                            </Badge>
+                            <p className="text-gray-800 leading-relaxed text-sm">
+                              {example.goodAnswer}
                             </p>
-                            <Link href={`/learn/critical-thinking/${thinkingTypeId}/practice`}>
-                              <Button>
-                                开始练习
-                                <ArrowRight className="h-4 w-4 ml-2" />
-                              </Button>
-                            </Link>
                           </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
+
+                          {/* 欠佳回答 */}
+                          <div className="border-2 border-red-500 rounded-lg p-4 bg-red-50">
+                            <Badge className="bg-red-600 text-white mb-3">
+                              ❌ 欠佳回答
+                            </Badge>
+                            <p className="text-gray-800 leading-relaxed text-sm">
+                              {example.poorAnswer}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 分析说明 */}
+                      <Alert className="bg-indigo-50 border-indigo-300">
+                        <Info className="h-4 w-4 text-indigo-700" />
+                        <AlertDescription className="text-indigo-900">
+                          <strong>📊 专家分析：</strong>
+                          {example.analysis}
+                        </AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  </Card>
                 ))}
               </>
-            )}
-
-            {/* 如果没有HKU题目，显示提示 */}
-            {!hkuLoading && !hkuError && hkuQuestions.length === 0 && (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无案例分析</h3>
-                    <p className="text-gray-600 mb-4">
-                      该思维维度的香港大学批判性思维案例正在准备中
-                    </p>
-                    <Link href={`/learn/critical-thinking/${thinkingTypeId}/practice`}>
-                      <Button>
-                        前往练习
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 如果没有真实题目，显示静态示例 */}
-            {!topicsLoading && !topicsError && topics.length === 0 && (
+            ) : (
+              // 如果静态内容中也没有示例，显示通用示例（从 typeData 获取）
               <>
                 {typeData.learningContent.examples.map((example, index) => (
                   <Card key={index}>
@@ -2229,7 +2183,7 @@ export default function ThinkingTypeDetail({ thinkingTypeId }: ThinkingTypeDetai
                     <CardContent>
                       {/* 可视化分析部分 */}
                       {renderVisualizationForExample(example, index)}
-                      
+
                       {/* 详细分析文本（可折叠） */}
                       <div className="mt-6">
                         <details className="group">
