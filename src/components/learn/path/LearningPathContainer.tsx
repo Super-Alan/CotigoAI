@@ -22,6 +22,18 @@ export default function LearningPathContainer() {
     }
   });
 
+  // 获取今日任务（用于标记）
+  const { data: dailyStatus } = useQuery({
+    queryKey: ['daily-practice-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/daily-practice/status');
+      if (!res.ok) return null;
+      return res.json();
+    },
+    retry: false,
+    staleTime: 60000 // 1分钟缓存
+  });
+
   // 生成新路径
   const generateMutation = useMutation({
     mutationFn: async (config?: any) => {
@@ -163,6 +175,7 @@ export default function LearningPathContainer() {
       <PathTimeline
         steps={path.steps}
         currentStepId={currentStep?.id}
+        todayTaskStepId={dailyStatus?.todayTask?.stepId}
       />
     </div>
   );

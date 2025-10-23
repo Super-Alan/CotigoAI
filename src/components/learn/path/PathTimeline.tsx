@@ -12,9 +12,10 @@ import { STEP_TYPE_LABELS, DIFFICULTY_LEVELS } from '@/types/learning-path';
 interface PathTimelineProps {
   steps: PathStep[];
   currentStepId?: string;
+  todayTaskStepId?: string; // 新增：今日任务步骤ID
 }
 
-export default function PathTimeline({ steps, currentStepId }: PathTimelineProps) {
+export default function PathTimeline({ steps, currentStepId, todayTaskStepId }: PathTimelineProps) {
   const router = useRouter();
 
   // 按Level分组
@@ -84,11 +85,13 @@ export default function PathTimeline({ steps, currentStepId }: PathTimelineProps
             {levelSteps.map((step, index) => {
               const Icon = getStepIcon(step.type);
               const isCurrentStep = step.id === currentStepId;
+              const isTodayTask = step.id === todayTaskStepId && !step.completed;
 
               return (
                 <Card
                   key={step.id}
                   className={`relative p-4 transition-all duration-200 cursor-pointer ${
+                    isTodayTask ? 'ring-2 ring-green-500 shadow-lg bg-green-50' :
                     isCurrentStep ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
                   } ${step.status === 'locked' ? 'opacity-60' : ''}`}
                   onClick={() => handleStepClick(step)}
@@ -116,7 +119,12 @@ export default function PathTimeline({ steps, currentStepId }: PathTimelineProps
                         <Badge className={`text-xs ${getDifficultyColor(step.difficulty)}`}>
                           {DIFFICULTY_LEVELS[step.difficulty]}
                         </Badge>
-                        {isCurrentStep && (
+                        {isTodayTask && (
+                          <Badge className="bg-green-600 text-white text-xs animate-pulse">
+                            📅 今日任务
+                          </Badge>
+                        )}
+                        {isCurrentStep && !isTodayTask && (
                           <Badge className="bg-blue-600 text-white text-xs">
                             当前步骤
                           </Badge>

@@ -174,6 +174,10 @@ export type CriticalThinkingQuestion = {
       description: string;
     };
   };
+  caseAnalysis?: any; // JSON field from database
+  isCompleted?: boolean; // Added by API for completion status
+  completedAt?: Date | null; // Added by API for completion tracking
+  lastScore?: number | null; // Added by API for last score
   createdAt: Date;
 };
 

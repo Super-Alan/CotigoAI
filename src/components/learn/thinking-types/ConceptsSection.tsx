@@ -63,7 +63,7 @@ export default function ConceptsSection({
       {/* Concepts List */}
       <div className="space-y-6">
         {concepts.map((concept, index) => (
-          <Card key={concept.id} className="p-6 hover:shadow-md transition-shadow">
+          <Card key={concept.id || concept.conceptId || `concept-${index}`} className="p-6 hover:shadow-md transition-shadow">
             {/* Concept Header */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-3">

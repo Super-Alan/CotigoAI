@@ -64,9 +64,9 @@ interface ThinkingType {
 
 interface UserProgress {
   thinkingTypeId: string
-  totalQuestions: number
-  correctAnswers: number
+  questionsCompleted: number
   averageScore: number
+  progressPercentage: number
   lastPracticeAt: Date | null
 }
 
@@ -194,52 +194,31 @@ export default function ProgressDashboard() {
   }
 
   const fetchWeeklyProgress = async () => {
-    // Mock data for weekly progress
-    const mockWeeklyData = [
-      { date: '2024-01-15', questionsCompleted: 12, averageScore: 85 },
-      { date: '2024-01-16', questionsCompleted: 8, averageScore: 78 },
-      { date: '2024-01-17', questionsCompleted: 15, averageScore: 92 },
-      { date: '2024-01-18', questionsCompleted: 10, averageScore: 88 },
-      { date: '2024-01-19', questionsCompleted: 18, averageScore: 95 },
-      { date: '2024-01-20', questionsCompleted: 14, averageScore: 82 },
-      { date: '2024-01-21', questionsCompleted: 20, averageScore: 90 }
-    ]
-    setWeeklyProgress(mockWeeklyData)
+    try {
+      const response = await fetch('/api/practice/weekly-progress')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.weeklyProgress) {
+          setWeeklyProgress(data.data.weeklyProgress)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch weekly progress:', error)
+    }
   }
 
   const fetchAchievements = async () => {
-    // Mock achievements data
-    const mockAchievements = [
-      {
-        id: 'first_practice',
-        name: '初次练习',
-        description: '完成第一次思维练习',
-        icon: 'star',
-        unlockedAt: new Date('2024-01-15')
-      },
-      {
-        id: 'streak_7',
-        name: '七日连击',
-        description: '连续练习7天',
-        icon: 'flame',
-        unlockedAt: new Date('2024-01-21')
-      },
-      {
-        id: 'perfect_score',
-        name: '完美表现',
-        description: '单次练习获得满分',
-        icon: 'trophy',
-        unlockedAt: new Date('2024-01-19')
-      },
-      {
-        id: 'dimension_master',
-        name: '维度大师',
-        description: '在某个思维维度达到90%正确率',
-        icon: 'brain',
-        unlockedAt: null
+    try {
+      const response = await fetch('/api/achievements')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data.achievements) {
+          setAchievements(data.data.achievements)
+        }
       }
-    ]
-    setAchievements(mockAchievements)
+    } catch (error) {
+      console.error('Failed to fetch achievements:', error)
+    }
   }
 
   const fetchKnowledgeMastery = async () => {
@@ -257,8 +236,9 @@ export default function ProgressDashboard() {
   }
 
   const getProgressPercentage = (progress: UserProgress) => {
-    if (progress.totalQuestions === 0) return 0
-    return Math.round((progress.correctAnswers / progress.totalQuestions) * 100)
+    if (!progress) return 0
+    const percentage = progress.progressPercentage || 0
+    return isNaN(percentage) ? 0 : percentage
   }
 
   const getRadarData = () => {
@@ -277,7 +257,7 @@ export default function ProgressDashboard() {
       const type = thinkingTypes.find(t => t.id === progress.thinkingTypeId)
       return {
         name: type?.name || progress.thinkingTypeId,
-        value: progress.correctAnswers,
+        value: progress.questionsCompleted,
         color: COLORS[index % COLORS.length]
       }
     })
@@ -291,12 +271,12 @@ export default function ProgressDashboard() {
     }))
   }
 
-  const totalQuestions = userProgress.reduce((sum, p) => sum + p.correctAnswers, 0)
-  const averageScore = userProgress.length > 0 
-    ? Math.round(userProgress.reduce((sum, p) => sum + p.averageScore, 0) / userProgress.length)
+  const totalQuestions = userProgress.reduce((sum, p) => sum + (p.questionsCompleted || 0), 0)
+  const averageScore = userProgress.length > 0
+    ? Math.round(userProgress.reduce((sum, p) => sum + (p.averageScore || 0), 0) / userProgress.length) || 0
     : 0
-  const totalProgress = userProgress.length > 0 
-    ? Math.round(userProgress.reduce((sum, p) => sum + getProgressPercentage(p), 0) / userProgress.length)
+  const totalProgress = userProgress.length > 0
+    ? Math.round(userProgress.reduce((sum, p) => sum + getProgressPercentage(p), 0) / userProgress.length) || 0
     : 0
 
   const unlockedAchievements = achievements.filter(a => a.unlockedAt)
@@ -620,7 +600,7 @@ export default function ProgressDashboard() {
                           <div className="text-lg font-bold text-gray-900">{percentage}%</div>
                           {progress && (
                             <div className="text-sm text-gray-600">
-                              {progress.correctAnswers}/{progress.totalQuestions} 题
+                              {progress.questionsCompleted} 题
                             </div>
                           )}
                         </div>
@@ -628,9 +608,9 @@ export default function ProgressDashboard() {
                       <Progress value={percentage} className="h-2" />
                       {progress && (
                         <div className="flex items-center justify-between text-sm text-gray-600">
-                          <span>平均分: {progress.averageScore.toFixed(1)}</span>
+                          <span>平均分: {(progress.averageScore || 0).toFixed(1)}</span>
                           <span>
-                            最近练习: {progress.lastPracticeAt 
+                            最近练习: {progress.lastPracticeAt
                               ? new Date(progress.lastPracticeAt).toLocaleDateString()
                               : '未开始'
                             }

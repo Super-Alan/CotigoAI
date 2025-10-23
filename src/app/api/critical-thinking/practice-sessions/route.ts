@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateKnowledgeMastery } from '@/lib/knowledge/mastery-calculator';
+import { unifiedRecommendation } from '@/lib/services/unified-recommendation';
 
 /**
  * POST /api/critical-thinking/practice-sessions
@@ -144,6 +145,27 @@ export async function POST(request: NextRequest) {
     // 更新每日连续学习记录
     await updateDailyStreak(userId);
 
+    // 🎯 更新学习路径进度（新增）
+    let pathUpdateResult = null;
+    try {
+      // 获取今日任务以验证是否是路径推荐的任务
+      const todayTask = await unifiedRecommendation.getDailyTask(userId);
+
+      // 如果完成的是今日任务，更新学习路径
+      if (todayTask && todayTask.stepId && todayTask.thinkingTypeId === thinkingTypeId) {
+        pathUpdateResult = await unifiedRecommendation.completeTask(userId, {
+          stepId: todayTask.stepId,
+          questionId,
+          score: score || 0,
+          timeSpent: timeSpent || 0
+        });
+        console.log(`✅ 学习路径进度已更新 (userId: ${userId}, progress: ${pathUpdateResult.newProgress}%)`);
+      }
+    } catch (error) {
+      console.error('更新学习路径进度失败:', error);
+      // 不阻断主流程，记录错误即可
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -156,7 +178,15 @@ export async function POST(request: NextRequest) {
           questionsCompleted: newQuestionsCompleted,
           averageScore: newAverageScore,
           progressPercentage: newProgressPercentage
-        }
+        },
+        // 新增：学习路径更新结果
+        pathProgress: pathUpdateResult ? {
+          updated: true,
+          newProgress: pathUpdateResult.newProgress,
+          completedSteps: pathUpdateResult.completedSteps,
+          totalSteps: pathUpdateResult.totalSteps,
+          nextStep: pathUpdateResult.nextStep
+        } : null
       }
     });
 

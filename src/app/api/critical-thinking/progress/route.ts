@@ -103,7 +103,13 @@ export async function POST(request: NextRequest) {
       const newQuestionsCompleted = existingProgress.questionsCompleted + 1;
       const newTotalScore = existingProgress.averageScore * existingProgress.questionsCompleted + score;
       const newAverageScore = newTotalScore / newQuestionsCompleted;
-      const newProgressPercentage = Math.min(100, Math.floor((newQuestionsCompleted / 50) * 100));
+
+      // 计算综合进度百分比
+      // 公式: 50% 基于题目数量 (最多50题) + 50% 基于级别解锁 (1-5级)
+      const quantityProgress = Math.min(100, Math.floor((newQuestionsCompleted / 50) * 100));
+      const currentLevel = existingProgress.currentLevel || 1;
+      const levelProgress = Math.round((currentLevel / 5) * 100);
+      const newProgressPercentage = Math.round((quantityProgress * 0.5) + (levelProgress * 0.5));
 
       progress = await prisma.criticalThinkingProgress.update({
         where: {
@@ -121,13 +127,19 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Create new progress record
+      // 初始: 1题 = 2% (quantity) + 20% (level 1) = 11%
+      const quantityProgress = Math.floor((1 / 50) * 100);
+      const levelProgress = 20; // Level 1
+      const initialProgress = Math.round((quantityProgress * 0.5) + (levelProgress * 0.5));
+
       progress = await prisma.criticalThinkingProgress.create({
         data: {
           userId: session.user.id,
           thinkingTypeId,
           questionsCompleted: 1,
           averageScore: score,
-          progressPercentage: 2,
+          progressPercentage: initialProgress,
+          currentLevel: 1,
           lastUpdated: new Date()
         }
       });

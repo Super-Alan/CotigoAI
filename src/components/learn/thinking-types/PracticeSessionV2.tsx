@@ -132,6 +132,13 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
 
   // Core state
   const [currentQuestion, setCurrentQuestion] = useState<CriticalThinkingQuestion | null>(null)
+  const [availableQuestions, setAvailableQuestions] = useState<CriticalThinkingQuestion[]>([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [questionStats, setQuestionStats] = useState<{ total: number; completed: number; completionRate: number }>({
+    total: 0,
+    completed: 0,
+    completionRate: 0
+  })
   const [flowStep, setFlowStep] = useState<FlowStep>('problem')
   const [loading, setLoading] = useState(false)
   const [startTime, setStartTime] = useState<Date | null>(null)
@@ -359,27 +366,32 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
     }
   }, [currentLevel, session, levels.length])
 
-  const loadQuestion = async () => {
+  const loadQuestion = async (resetIndex = true) => {
     if (!session) return
 
     try {
       setLoading(true)
-      setFlowStep('problem')
-      setUserAnswer('')
-      setEvaluation(null)
-      setReflection(null)
-      setCaseAnalysis(null)
-      setIntelligentGuided(null)
-      setJustUnlockedLevel(undefined)
 
-      // 清除localStorage中的旧状态
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(`practice-session-${thinkingTypeId}`)
+      // 只在重置索引时清除状态
+      if (resetIndex) {
+        setFlowStep('problem')
+        setUserAnswer('')
+        setEvaluation(null)
+        setReflection(null)
+        setCaseAnalysis(null)
+        setIntelligentGuided(null)
+        setJustUnlockedLevel(undefined)
+        setCurrentQuestionIndex(0)
+
+        // 清除localStorage中的旧状态
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(`practice-session-${thinkingTypeId}`)
+        }
       }
 
-      // 使用Level-filtered API获取题目
+      // 使用Level-filtered API获取所有未完成的题目
       const response = await fetch(
-        `/api/critical-thinking/questions/by-level?thinkingTypeId=${thinkingTypeId}&level=${currentLevel}&limit=1`
+        `/api/critical-thinking/questions/by-level?thinkingTypeId=${thinkingTypeId}&level=${currentLevel}&limit=50`
       )
 
       console.log('🔍 API Response Status:', response.status)
@@ -390,7 +402,16 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
         console.log('🔍 Questions Count:', data.data?.questions?.length)
 
         if (data.success && data.data && data.data.questions && data.data.questions.length > 0) {
-          const question = data.data.questions[0]
+          const questions = data.data.questions
+          setAvailableQuestions(questions)
+
+          // 保存统计信息
+          if (data.data.stats) {
+            setQuestionStats(data.data.stats)
+          }
+
+          // 设置当前题目为第一题或指定索引
+          const question = questions[resetIndex ? 0 : currentQuestionIndex]
           console.log('✅ Found question:', question.topic)
           setCurrentQuestion(question)
           setStartTime(new Date())
@@ -424,7 +445,9 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
         const generateData = await generateResponse.json()
         if (generateData.success && generateData.data.question) {
           const question = generateData.data.question
+          setAvailableQuestions([question])
           setCurrentQuestion(question)
+          setCurrentQuestionIndex(0)
           setStartTime(new Date())
 
           if (question.id) {
@@ -624,6 +647,56 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
 
     // 加载新题目
     loadQuestion()
+  }
+
+  // 切换到上一题
+  const goToPreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      const newIndex = currentQuestionIndex - 1
+      setCurrentQuestionIndex(newIndex)
+
+      // 重置状态
+      setFlowStep('problem')
+      setUserAnswer('')
+      setEvaluation(null)
+      setReflection(null)
+      setCaseAnalysis(null)
+      setIntelligentGuided(null)
+
+      // 设置题目
+      const question = availableQuestions[newIndex]
+      setCurrentQuestion(question)
+      setStartTime(new Date())
+
+      if (question.caseAnalysis) {
+        setCaseAnalysis(question.caseAnalysis as CaseAnalysisResult)
+      }
+    }
+  }
+
+  // 切换到下一题
+  const goToNextQuestion = () => {
+    if (currentQuestionIndex < availableQuestions.length - 1) {
+      const newIndex = currentQuestionIndex + 1
+      setCurrentQuestionIndex(newIndex)
+
+      // 重置状态
+      setFlowStep('problem')
+      setUserAnswer('')
+      setEvaluation(null)
+      setReflection(null)
+      setCaseAnalysis(null)
+      setIntelligentGuided(null)
+
+      // 设置题目
+      const question = availableQuestions[newIndex]
+      setCurrentQuestion(question)
+      setStartTime(new Date())
+
+      if (question.caseAnalysis) {
+        setCaseAnalysis(question.caseAnalysis as CaseAnalysisResult)
+      }
+    }
   }
 
   const handleStepClick = (stepKey: string) => {
@@ -929,14 +1002,48 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
               <div className="space-y-6">
                 <Card className="border-2 border-purple-200">
                   <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
-                      <MessageSquare className="h-6 w-6 mr-2 text-purple-600" />
-                      Step 1: Level {currentLevel} 练习题目
-                    </CardTitle>
+                    <div className="flex items-center justify-between mb-2">
+                      <CardTitle className="flex items-center text-xl">
+                        <MessageSquare className="h-6 w-6 mr-2 text-purple-600" />
+                        Step 1: Level {currentLevel} 练习题目
+                      </CardTitle>
+                      {/* 题目导航 */}
+                      {availableQuestions.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToPreviousQuestion}
+                            disabled={currentQuestionIndex === 0}
+                            className="h-8"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-gray-600 min-w-[60px] text-center">
+                            {currentQuestionIndex + 1} / {availableQuestions.length}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToNextQuestion}
+                            disabled={currentQuestionIndex === availableQuestions.length - 1}
+                            className="h-8"
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-2 mt-2">
                       <Badge className={`${currentLevelConfig.bgColor} ${currentLevelConfig.color} border-0`}>
                         {currentLevelConfig.name}
                       </Badge>
+                      {/* 进度统计 */}
+                      {questionStats.total > 0 && (
+                        <Badge variant="secondary">
+                          已完成 {questionStats.completed}/{questionStats.total} 题 ({questionStats.completionRate}%)
+                        </Badge>
+                      )}
                       {currentQuestion.tags && (
                         <div className="flex flex-wrap gap-2">
                           {(currentQuestion.tags as string[]).map((tag, index) => (

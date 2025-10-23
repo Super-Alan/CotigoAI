@@ -39,8 +39,38 @@ export async function GET(req: NextRequest) {
       where.difficulty = difficulty;
     }
 
-    const questions = await prisma.criticalThinkingQuestion.findMany({
-      where,
+    // 获取用户已完成且及格的题目ID列表
+    const completedSessions = await prisma.criticalThinkingPracticeSession.findMany({
+      where: {
+        userId: session.user.id,
+        score: {
+          gte: 60 // 及格线60分
+        },
+        question: {
+          thinkingTypeId,
+          level: levelNum
+        }
+      },
+      select: {
+        questionId: true,
+        completedAt: true,
+        score: true
+      },
+      orderBy: {
+        completedAt: 'desc'
+      }
+    });
+
+    const completedQuestionIds = completedSessions.map(s => s.questionId);
+
+    // 优先获取未完成的题目
+    let questions = await prisma.criticalThinkingQuestion.findMany({
+      where: {
+        ...where,
+        id: {
+          notIn: completedQuestionIds
+        }
+      },
       take: limit,
       include: {
         guidingQuestions: {
@@ -52,11 +82,33 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // 映射数据库字段到前端期望的字段名
-    const mappedQuestions = questions.map(q => ({
-      ...q,
-      content: q.question, // 将 question 映射为 content
-    }));
+    // 如果没有未完成的题目,则返回所有题目(允许重新练习)
+    if (questions.length === 0) {
+      questions = await prisma.criticalThinkingQuestion.findMany({
+        where,
+        take: limit,
+        include: {
+          guidingQuestions: {
+            orderBy: { orderIndex: 'asc' },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
+
+    // 映射数据库字段到前端期望的字段名,并添加完成状态
+    const mappedQuestions = questions.map(q => {
+      const session = completedSessions.find(s => s.questionId === q.id);
+      return {
+        ...q,
+        content: q.question, // 将 question 映射为 content
+        isCompleted: completedQuestionIds.includes(q.id),
+        completedAt: session?.completedAt || null,
+        lastScore: session?.score || null
+      };
+    });
 
     const userProgress = await prisma.criticalThinkingProgress.findUnique({
       where: {
@@ -65,6 +117,14 @@ export async function GET(req: NextRequest) {
           thinkingTypeId,
         },
       },
+    });
+
+    // 获取该Level的完成统计
+    const totalQuestions = await prisma.criticalThinkingQuestion.count({
+      where: {
+        thinkingTypeId,
+        level: levelNum
+      }
     });
 
     return NextResponse.json({
@@ -79,6 +139,13 @@ export async function GET(req: NextRequest) {
           level4Unlocked: false,
           level5Unlocked: false,
         },
+        stats: {
+          totalQuestions,
+          completedQuestions: completedQuestionIds.length,
+          completionRate: totalQuestions > 0
+            ? Math.round((completedQuestionIds.length / totalQuestions) * 100)
+            : 0
+        }
       },
     });
   } catch (error) {

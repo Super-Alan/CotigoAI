@@ -296,130 +296,74 @@ export default function LearningCenter() {
           </div>
         </div>
 
-        {/* Search Bar - Mobile Optimized */}
-        <div className="max-w-2xl mx-auto mb-6 sm:mb-10 px-2 sm:px-0">
-          <div className="relative">
-            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5 z-10" />
+        {/* Enhanced Search Bar - Navigate to search page */}
+        <div className="max-w-4xl mx-auto mb-6 sm:mb-10 px-2 sm:px-0">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (searchQuery.trim()) {
+                window.location.href = `/learn/search?q=${encodeURIComponent(searchQuery.trim())}`
+              }
+            }}
+            className="relative group"
+          >
+            <Search className="absolute left-4 sm:left-6 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6 z-10 group-focus-within:text-blue-500 transition-colors" />
             <Input
-              placeholder="搜索思维维度、学习内容..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 sm:pl-12 h-12 sm:h-14 text-sm sm:text-base rounded-xl sm:rounded-2xl border-2 border-gray-200 focus:border-blue-500 shadow-md hover:shadow-lg transition-shadow bg-white"
+              placeholder="搜索理论知识、学习内容、思维方法..."
+              className="pl-12 sm:pl-16 pr-32 h-20 sm:h-24 text-base sm:text-lg rounded-2xl sm:rounded-3xl border-2 border-gray-200 focus:border-blue-500 shadow-lg hover:shadow-xl transition-all bg-white"
             />
-          </div>
+            <div className="absolute right-4 sm:right-6 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              <Button
+                type="submit"
+                size="sm"
+                className="hidden sm:inline-flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                搜索
+              </Button>
+            </div>
+          </form>
         </div>
 
-        {/* Stats & AI Question - Mobile Optimized */}
+        {/* Unified Container - Consistent Width */}
         <div className="mb-6 sm:mb-10 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Left: Learning Overview - Enhanced with Circular Progress */}
-            <Card className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
-              <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-base sm:text-lg flex items-center">
-                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 text-blue-600" />
-                  学习概览
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4">
-                {/* Circular Progress */}
-                <div className="flex justify-center">
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28">
-                    {/* Background Circle */}
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
-                      <circle
-                        cx="64"
-                        cy="64"
-                        r="56"
-                        stroke="currentColor"
-                        strokeWidth="12"
-                        fill="none"
-                        className="text-gray-200"
-                      />
-                      <circle
-                        cx="64"
-                        cy="64"
-                        r="56"
-                        stroke="url(#gradient)"
-                        strokeWidth="12"
-                        fill="none"
-                        strokeDasharray={`${2 * Math.PI * 56}`}
-                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - totalProgress / 100)}`}
-                        className="transition-all duration-1000 ease-out"
-                        strokeLinecap="round"
-                      />
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#3b82f6" />
-                          <stop offset="100%" stopColor="#8b5cf6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        {totalProgress}%
+          {/* Section: AI 每日一问 */}
+          <div className="mb-6 sm:mb-8">
+            <AIQuestionChatbox />
+          </div>
+
+          {/* Section: 快速入口 */}
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center">
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-purple-600" />
+              快速入口
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {quickActions.map((action) => (
+                <Link key={action.id} href={action.href}>
+                  <Card className={`${action.bg} ${action.border} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group active:scale-95 h-full`}>
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
+                        <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
+                          <action.icon className={`h-6 w-6 sm:h-7 sm:w-7 ${action.color}`} />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-sm sm:text-base text-gray-900">{action.title}</div>
+                          <div className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{action.description}</div>
+                        </div>
                       </div>
-                      <div className="text-[10px] sm:text-xs text-gray-600">总进度</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
-                    <div className="flex justify-center mb-1 sm:mb-1.5">
-                      <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900">{dailyStreak?.currentStreak || 0}</div>
-                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">连续打卡</div>
-                  </div>
-                  <div className="bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
-                    <div className="flex justify-center mb-1 sm:mb-1.5">
-                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900">{totalQuestions}</div>
-                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">已完成</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Right: AI Question & Quick Actions */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* AI Question - Compact */}
-              <AIQuestionChatbox />
-
-              {/* Quick Actions - Mobile Optimized */}
-              <div>
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
-                  <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-purple-600" />
-                  快速入口
-                </h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                  {quickActions.map((action) => (
-                    <Link key={action.id} href={action.href}>
-                      <Card className={`${action.bg} ${action.border} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group active:scale-95`}>
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-2">
-                            <div className="p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
-                              <action.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${action.color}`} />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-xs sm:text-sm text-gray-900">{action.title}</div>
-                              <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 line-clamp-2">{action.description}</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Core Thinking Dimensions - Mobile Optimized */}
-        <div className="mb-8 sm:mb-12 md:mb-16">
+        <div className="mb-8 sm:mb-12 md:mb-16 max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
             <div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1.5 sm:mb-2">
@@ -573,7 +517,7 @@ export default function LearningCenter() {
         </div>
 
         {/* Theory System - Collapsible per dimension */}
-        <div className="mb-8 sm:mb-12 md:mb-16">
+        <div className="mb-8 sm:mb-12 md:mb-16 max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
             <div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1.5 sm:mb-2 flex items-center gap-2">
@@ -603,7 +547,7 @@ export default function LearningCenter() {
         </div>
 
         {/* Call to Action - Mobile Optimized */}
-        <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
+        <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white max-w-7xl mx-auto">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
             开始你的批判性思维之旅
           </h2>

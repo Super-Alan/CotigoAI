@@ -93,16 +93,23 @@ model UserSettings {
 }
 
 model Conversation {
-  id        String    @id @default(cuid())
-  userId    String?
-  title     String    @default("新对话")
-  topic     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
+  id               String    @id @default(cuid())
+  userId           String?
+  title            String    @default("新对话")
+  topic            String?
+  // 新增: 对话分类和时长追踪
+  conversationType String    @default("general") // general | daily_question | ai_tutor | socratic_dialogue
+  timeSpent        Int       @default(0)         // 总时长(秒)
+  messageCount     Int       @default(0)         // 消息数量
+  status           String    @default("active")  // active | completed | archived
+  completedAt      DateTime?                     // 完成时间
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages         Message[]
 
   @@index([userId, createdAt])
+  @@index([userId, conversationType, createdAt])
   @@map("conversations")
 }
 
@@ -120,13 +127,16 @@ model Message {
 }
 
 model ArgumentAnalysis {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   inputText String
   analysis  Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 新增: 时长和状态追踪
+  timeSpent Int       @default(0) // 分析时长(秒)
+  status    String    @default("completed") // draft | completed
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@map("argument_analyses")
@@ -136,6 +146,10 @@ model PerspectiveSession {
   id           String               @id @default(cuid())
   userId       String
   topic        String
+  // 新增: 时长和状态追踪
+  timeSpent    Int                  @default(0)       // 总时长(秒)
+  status       String               @default("active") // active | completed
+  completedAt  DateTime?                               // 完成时间
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   messages     PerspectiveMessage[]
@@ -737,6 +751,7 @@ model LearningPathState {
   currentStepIndex  Int      @default(0)
   totalSteps        Int
   completedSteps    Int      @default(0)
+  progressPercent   Int      @default(0) // 0-100的百分比进度
 
   // 路径配置
   targetDimensions  String[] // 目标学习维度

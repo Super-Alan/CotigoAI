@@ -183,6 +183,12 @@ export async function GET(
       };
     }
 
+    // 计算综合进度百分比
+    // 公式: 50% 基于题目数量 (最多50题) + 50% 基于级别解锁 (1-5级)
+    const quantityProgress = Math.min(100, Math.floor((totalSessions / 50) * 100));
+    const levelProgress = Math.round((currentLevel / 5) * 100);
+    const combinedProgress = Math.round((quantityProgress * 0.5) + (levelProgress * 0.5));
+
     // 更新或创建进度记录
     await prisma.criticalThinkingProgress.upsert({
       where: {
@@ -192,17 +198,19 @@ export async function GET(
         }
       },
       update: {
-        progressPercentage: Math.round((currentLevel / 5) * 100),
+        progressPercentage: combinedProgress,
         questionsCompleted: totalSessions,
         averageScore: averageScore,
+        currentLevel: currentLevel,
         lastUpdated: new Date()
       },
       create: {
         userId,
         thinkingTypeId,
-        progressPercentage: Math.round((currentLevel / 5) * 100),
+        progressPercentage: combinedProgress,
         questionsCompleted: totalSessions,
         averageScore: averageScore,
+        currentLevel: currentLevel,
         lastUpdated: new Date()
       }
     });

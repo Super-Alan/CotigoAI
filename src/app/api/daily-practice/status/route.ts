@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { unifiedRecommendation } from '@/lib/services/unified-recommendation'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -16,6 +17,15 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
+    // 使用统一推荐服务获取今日任务
+    const todayTask = await unifiedRecommendation.getDailyTask(userId)
+
+    // 获取额外练习选项（排除今日任务的思维类型）
+    const optionalPractices = await unifiedRecommendation.getOptionalPractices(
+      userId,
+      todayTask.thinkingTypeId
+    )
 
     // 检查今日是否已完成练习
     const todayStreak = await prisma.dailyStreak.findUnique({
@@ -41,7 +51,7 @@ export async function GET(request: NextRequest) {
     // 获取本周完成情况
     const weekStart = new Date(today)
     weekStart.setDate(today.getDate() - today.getDay())
-    
+
     const weekSessions = await prisma.dailyStreak.count({
       where: {
         userId,
@@ -75,7 +85,10 @@ export async function GET(request: NextRequest) {
       userLevel,
       totalSessions,
       weeklyCompletion,
-      achievements
+      achievements,
+      // 新增：今日任务和路径上下文
+      todayTask,
+      optionalPractices
     })
 
   } catch (error: any) {
