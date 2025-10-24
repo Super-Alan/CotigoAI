@@ -50,9 +50,12 @@ import {
   CheckCircle,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Database,
+  Info
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ContentBlocksEditor } from './content-editors'
 
 interface Topic {
   id: string
@@ -690,7 +693,16 @@ export function ContentManagement() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>话题管理</CardTitle>
+                <div className="flex flex-col gap-1">
+                  <CardTitle>话题管理</CardTitle>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Database className="h-3 w-3" />
+                    <span>数据表: GeneratedConversationTopic</span>
+                    <span className="text-gray-300">|</span>
+                    <Info className="h-3 w-3" />
+                    <span>用于: 对话话题生成、多维话题库</span>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button 
                     variant="outline"
@@ -1188,7 +1200,16 @@ export function ContentManagement() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>题库管理</CardTitle>
+                <div className="flex flex-col gap-1">
+                  <CardTitle>题库管理</CardTitle>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Database className="h-3 w-3" />
+                    <span>数据表: CriticalThinkingQuestion</span>
+                    <span className="text-gray-300">|</span>
+                    <Info className="h-3 w-3" />
+                    <span>用于: 批判性思维练习题、5大维度题目、引导问题</span>
+                  </div>
+                </div>
                 <Button
                   variant="outline"
                   onClick={() => setActiveTab('ai-generation')}
@@ -1462,7 +1483,16 @@ export function ContentManagement() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>课程管理 - Level 学习内容</CardTitle>
+                <div className="flex flex-col gap-1">
+                  <CardTitle>课程管理 - Level 学习内容</CardTitle>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Database className="h-3 w-3" />
+                    <span>数据表: LevelLearningContent</span>
+                    <span className="text-gray-300">|</span>
+                    <Info className="h-3 w-3" />
+                    <span>用于: 学习路径内容、理论知识、概念框架、案例示例、练习指南</span>
+                  </div>
+                </div>
                 <Button
                   variant="default"
                   onClick={() => setCreateContentDialogOpen(true)}
@@ -1641,10 +1671,89 @@ export function ContentManagement() {
                               {/* Content Preview */}
                               <div>
                                 <h4 className="font-semibold text-sm text-gray-700 mb-2">📄 内容预览</h4>
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <pre className="text-xs text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
-                                    {JSON.stringify(content.content, null, 2)}
-                                  </pre>
+                                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                  {content.content?.blocks && Array.isArray(content.content.blocks) ? (
+                                    <div className="divide-y divide-gray-100">
+                                      {content.content.blocks.map((block: any, idx: number) => (
+                                        <div key={idx} className="p-4">
+                                          {/* Block Type Badge */}
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {block.type === 'text' && '📝 文本'}
+                                              {block.type === 'list' && '📋 列表'}
+                                              {block.type === 'code' && '💻 代码'}
+                                              {block.type === 'quote' && '💬 引用'}
+                                              {block.type === 'table' && '📊 表格'}
+                                              {block.type === 'image' && '🖼️ 图片'}
+                                              {block.type === 'video' && '🎥 视频'}
+                                            </Badge>
+                                            {block.title && (
+                                              <span className="text-sm font-medium text-gray-700">{block.title}</span>
+                                            )}
+                                          </div>
+
+                                          {/* Block Content */}
+                                          <div className="text-sm text-gray-600">
+                                            {block.type === 'text' && (
+                                              <p className="leading-relaxed whitespace-pre-wrap">{block.content}</p>
+                                            )}
+                                            {block.type === 'list' && block.items && (
+                                              <ul className="list-disc list-inside space-y-1">
+                                                {block.items.map((item: string, i: number) => (
+                                                  <li key={i}>{item}</li>
+                                                ))}
+                                              </ul>
+                                            )}
+                                            {block.type === 'code' && (
+                                              <div>
+                                                {block.language && (
+                                                  <div className="text-xs text-gray-500 mb-1">语言: {block.language}</div>
+                                                )}
+                                                <pre className="bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto">
+                                                  <code>{block.content}</code>
+                                                </pre>
+                                              </div>
+                                            )}
+                                            {block.type === 'quote' && (
+                                              <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700">
+                                                {block.content}
+                                              </blockquote>
+                                            )}
+                                            {block.type === 'table' && block.rows && (
+                                              <div className="overflow-x-auto">
+                                                <table className="min-w-full border border-gray-300 text-xs">
+                                                  <tbody>
+                                                    {block.rows.map((row: string[], rowIdx: number) => (
+                                                      <tr key={rowIdx} className={rowIdx === 0 ? 'bg-gray-100 font-medium' : ''}>
+                                                        {row.map((cell: string, cellIdx: number) => (
+                                                          <td key={cellIdx} className="border border-gray-300 px-2 py-1">
+                                                            {cell}
+                                                          </td>
+                                                        ))}
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            )}
+                                            {(block.type === 'image' || block.type === 'video') && (
+                                              <div className="text-blue-600 hover:underline">
+                                                {block.content}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="p-4 bg-gray-50">
+                                      <pre className="text-xs text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                                        {typeof content.content === 'string'
+                                          ? content.content
+                                          : JSON.stringify(content.content, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
