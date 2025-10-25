@@ -1672,7 +1672,60 @@ export function ContentManagement() {
                               <div>
                                 <h4 className="font-semibold text-sm text-gray-700 mb-2">📄 内容预览</h4>
                                 <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                                  {content.content?.blocks && Array.isArray(content.content.blocks) ? (
+                                  {/* 1. 支持 sections 格式 (markdown + sections 结构) */}
+                                  {content.content?.sections && Array.isArray(content.content.sections) ? (
+                                    <div className="divide-y divide-gray-100">
+                                      {content.content.sections.map((section: any, idx: number) => (
+                                        <div key={idx} className="p-4">
+                                          {/* Section Header */}
+                                          <div className="flex items-center gap-2 mb-3">
+                                            <Badge variant="outline" className="text-xs">
+                                              {section.type === 'text' && '📝 文本内容'}
+                                              {section.type === 'list' && '📋 列表'}
+                                              {section.type === 'code' && '💻 代码'}
+                                              {section.type === 'quote' && '💬 引用'}
+                                            </Badge>
+                                            {section.title && (
+                                              <span className="text-sm font-semibold text-gray-800">{section.title}</span>
+                                            )}
+                                          </div>
+
+                                          {/* Section Content - Markdown渲染 */}
+                                          <div className="prose prose-sm max-w-none text-gray-700">
+                                            <div
+                                              className="markdown-preview text-sm leading-relaxed"
+                                              style={{
+                                                whiteSpace: 'pre-wrap',
+                                                wordBreak: 'break-word'
+                                              }}
+                                            >
+                                              {/* 简化的Markdown渲染 - 显示前500字符 */}
+                                              {section.content?.length > 500
+                                                ? section.content.substring(0, 500) + '...'
+                                                : section.content}
+                                            </div>
+                                            {section.content?.length > 500 && (
+                                              <p className="text-xs text-blue-600 mt-2">
+                                                （内容过长，仅显示前500字符）
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                      {/* 如果有完整markdown，提供查看链接 */}
+                                      {content.content.markdown && (
+                                        <div className="p-4 bg-gray-50 border-t">
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <Info className="h-3 w-3" />
+                                            <span>完整内容包含 {content.content.markdown.length} 字符的 Markdown 格式文本</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) :
+                                  /* 2. 支持 blocks 格式 (ContentBlocks结构) */
+                                  content.content?.blocks && Array.isArray(content.content.blocks) ? (
                                     <div className="divide-y divide-gray-100">
                                       {content.content.blocks.map((block: any, idx: number) => (
                                         <div key={idx} className="p-4">
@@ -1746,6 +1799,7 @@ export function ContentManagement() {
                                       ))}
                                     </div>
                                   ) : (
+                                    /* 3. 回退方案：纯文本/JSON显示 */
                                     <div className="p-4 bg-gray-50">
                                       <pre className="text-xs text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
                                         {typeof content.content === 'string'
