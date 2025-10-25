@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
       // 🔥 保存到数据库缓存（仅当提供了questionId时）
       if (questionId) {
         try {
+          // 1. 保存到缓存表
           await prisma.intelligentGuidedQuestionCache.upsert({
             where: { questionId },
             create: {
@@ -148,9 +149,26 @@ export async function POST(request: NextRequest) {
             }
           });
           console.log(`✅ 智能引导问题已缓存 (questionId: ${questionId})`);
+
+          // 2. 同时更新题目本身的 scaffolding 字段，使其成为题目的永久数据
+          await prisma.criticalThinkingQuestion.update({
+            where: { id: questionId },
+            data: {
+              scaffolding: {
+                intelligentGuided: {
+                  questions: guidedThinking.questions,
+                  thinkingPath: guidedThinking.thinkingPath || '',
+                  expectedInsights: guidedThinking.expectedInsights || [],
+                  generatedAt: new Date().toISOString(),
+                  generatedBy: 'ai'
+                }
+              } as any
+            }
+          });
+          console.log(`✅ 智能引导问题已保存到题目数据 (questionId: ${questionId})`);
         } catch (cacheError) {
-          console.error('缓存智能引导问题失败:', cacheError);
-          // 缓存失败不影响主流程，继续返回结果
+          console.error('保存智能引导问题失败:', cacheError);
+          // 保存失败不影响主流程，继续返回结果
         }
       }
     } catch (parseError: any) {

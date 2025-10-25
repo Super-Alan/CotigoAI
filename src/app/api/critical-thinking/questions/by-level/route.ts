@@ -63,8 +63,8 @@ export async function GET(req: NextRequest) {
 
     const completedQuestionIds = completedSessions.map(s => s.questionId);
 
-    // 优先获取未完成的题目
-    let questions = await prisma.criticalThinkingQuestion.findMany({
+    // 只获取未完成的题目（已完成的题目不再出现）
+    const questions = await prisma.criticalThinkingQuestion.findMany({
       where: {
         ...where,
         id: {
@@ -81,22 +81,6 @@ export async function GET(req: NextRequest) {
         createdAt: 'desc',
       },
     });
-
-    // 如果没有未完成的题目,则返回所有题目(允许重新练习)
-    if (questions.length === 0) {
-      questions = await prisma.criticalThinkingQuestion.findMany({
-        where,
-        take: limit,
-        include: {
-          guidingQuestions: {
-            orderBy: { orderIndex: 'asc' },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-    }
 
     // 映射数据库字段到前端期望的字段名,并添加完成状态
     const mappedQuestions = questions.map(q => {
@@ -127,10 +111,14 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    // 检查是否所有题目都已完成
+    const allCompleted = totalQuestions > 0 && completedQuestionIds.length >= totalQuestions;
+
     return NextResponse.json({
       success: true,
       data: {
         questions: mappedQuestions,
+        allCompleted,  // 是否全部完成
         userProgress: userProgress || {
           currentLevel: 1,
           level1Unlocked: true,

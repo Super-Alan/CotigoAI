@@ -134,11 +134,12 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
   const [currentQuestion, setCurrentQuestion] = useState<CriticalThinkingQuestion | null>(null)
   const [availableQuestions, setAvailableQuestions] = useState<CriticalThinkingQuestion[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [questionStats, setQuestionStats] = useState<{ total: number; completed: number; completionRate: number }>({
-    total: 0,
-    completed: 0,
+  const [questionStats, setQuestionStats] = useState<{ totalQuestions: number; completedQuestions: number; completionRate: number }>({
+    totalQuestions: 0,
+    completedQuestions: 0,
     completionRate: 0
   })
+  const [allCompleted, setAllCompleted] = useState(false)
   const [flowStep, setFlowStep] = useState<FlowStep>('problem')
   const [loading, setLoading] = useState(false)
   const [startTime, setStartTime] = useState<Date | null>(null)
@@ -167,6 +168,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
 
   // Mobile UI state
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [guidedQuestionsExpanded, setGuidedQuestionsExpanded] = useState(false) // Step 3引导问题展开状态
 
   const typeName = thinkingTypeNames[thinkingTypeId as keyof typeof thinkingTypeNames] || '批判性思维'
   const currentLevelConfig = LEVEL_CONFIGS.find(config => config.level === currentLevel) || LEVEL_CONFIGS[0]
@@ -291,6 +293,7 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       questionLoadedRef.current[newLevel] = false
       setCurrentLevel(newLevel)
       setShowLevelSelector(false)
+      setAllCompleted(false) // 重置完成状态
       // Reload question and learning contents for new level
       loadQuestion()
       loadLearningContents()
@@ -417,31 +420,48 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
         console.log('🔍 API Response Data:', data)
         console.log('🔍 Questions Count:', data.data?.questions?.length)
 
-        if (data.success && data.data && data.data.questions && data.data.questions.length > 0) {
-          const questions = data.data.questions
-          setAvailableQuestions(questions)
-
-          // 保存统计信息
-          if (data.data.stats) {
-            setQuestionStats(data.data.stats)
+        if (data.success && data.data) {
+          // 检查是否所有题目都已完成
+          if (data.data.allCompleted) {
+            console.log('🎉 所有题目已完成！')
+            setAllCompleted(true)
+            setCurrentQuestion(null)
+            // 保存统计信息以便显示完成率
+            if (data.data.stats) {
+              setQuestionStats(data.data.stats)
+            }
+            setLoading(false)
+            return
           }
 
-          // 设置当前题目为第一题或指定索引
-          const question = questions[resetIndex ? 0 : currentQuestionIndex]
-          console.log('✅ Found question:', question.topic)
-          setCurrentQuestion(question)
-          setStartTime(new Date())
+          // 有未完成的题目
+          if (data.data.questions && data.data.questions.length > 0) {
+            const questions = data.data.questions
+            setAvailableQuestions(questions)
+            setAllCompleted(false) // 有题目可练习，重置完成标记
 
-          // 不再自动加载案例分析，因为我们移除了案例学习步骤
-          // 如果需要案例分析，用户可以在练习过程中查看
-          if (question.caseAnalysis) {
-            setCaseAnalysis(question.caseAnalysis as CaseAnalysisResult)
+            // 保存统计信息
+            if (data.data.stats) {
+              setQuestionStats(data.data.stats)
+            }
+
+            // 设置当前题目为第一题或指定索引
+            const question = questions[resetIndex ? 0 : currentQuestionIndex]
+            console.log('✅ Found question:', question.topic)
+            setCurrentQuestion(question)
+            setStartTime(new Date())
+
+            // 不再自动加载案例分析，因为我们移除了案例学习步骤
+            // 如果需要案例分析，用户可以在练习过程中查看
+            if (question.caseAnalysis) {
+              setCaseAnalysis(question.caseAnalysis as CaseAnalysisResult)
+            }
+
+            console.log('✅ Question loaded successfully, exiting function')
+            return
+          } else {
+            console.log('⚠️ No questions found in response')
           }
-
-          console.log('✅ Question loaded successfully, exiting function')
-          return
-        } else {
-          console.log('⚠️ No questions found in response or invalid data structure')
         }
       } else {
         console.log('❌ API Response not OK, status:', response.status)
@@ -743,6 +763,85 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
   }
 
   if (!currentQuestion) {
+    // 区分两种情况：1) 所有题目都已完成 2) 该Level暂无题目
+    if (allCompleted) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center p-4">
+          <Card className="max-w-2xl w-full border-2 border-green-200 shadow-lg">
+            <CardContent className="text-center py-12">
+              <div className="mb-6">
+                <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">🎉 恭喜完成所有题目！</h2>
+                <p className="text-lg text-gray-700 mb-4">
+                  你已完成 <strong>Level {currentLevel}</strong> 的所有 <strong>{questionStats.totalQuestions}</strong> 道题目
+                </p>
+              </div>
+
+              {/* 完成统计 */}
+              <div className="bg-green-50 rounded-lg p-6 mb-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{questionStats.completedQuestions}</div>
+                    <div className="text-sm text-gray-600">已完成题目</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{questionStats.totalQuestions}</div>
+                    <div className="text-sm text-gray-600">总题目数</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{questionStats.completionRate}%</div>
+                    <div className="text-sm text-gray-600">完成率</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className="space-y-3">
+                <div className="text-sm text-gray-600 mb-3">
+                  💡 选择下一步行动
+                </div>
+                {currentLevel < 5 && (
+                  <Button
+                    onClick={() => {
+                      const nextLevel = currentLevel + 1
+                      if (isLevelUnlocked(nextLevel)) {
+                        setCurrentLevel(nextLevel)
+                        setAllCompleted(false)
+                        setCurrentQuestion(null)
+                        setAvailableQuestions([])
+                      } else {
+                        setShowLevelSelector(true)
+                      }
+                    }}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <ArrowRight className="mr-2 h-5 w-5" />
+                    进入 Level {currentLevel + 1}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setShowLevelSelector(true)}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  选择其他级别
+                </Button>
+                <Link href={`/learn/critical-thinking/${thinkingTypeId}`}>
+                  <Button variant="outline" className="w-full" size="lg">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    返回学习页面
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // 该Level暂无题目
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -1055,9 +1154,9 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                         {currentLevelConfig.name}
                       </Badge>
                       {/* 进度统计 */}
-                      {questionStats.total > 0 && (
+                      {questionStats.totalQuestions > 0 && (
                         <Badge variant="secondary">
-                          已完成 {questionStats.completed}/{questionStats.total} 题 ({questionStats.completionRate}%)
+                          已完成 {questionStats.completedQuestions}/{questionStats.totalQuestions} 题 ({questionStats.completionRate}%)
                         </Badge>
                       )}
                       {currentQuestion.tags && (
@@ -1300,6 +1399,68 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
                         )}
                       </div>
                     </div>
+
+                    {/* 引导问题参考（可折叠） */}
+                    {intelligentGuided && intelligentGuided.questions && intelligentGuided.questions.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg overflow-hidden">
+                        {/* 标题栏 - 可点击展开/收起 */}
+                        <button
+                          onClick={() => setGuidedQuestionsExpanded(!guidedQuestionsExpanded)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-green-100 transition-colors"
+                        >
+                          <div className="flex items-center">
+                            <Lightbulb className="h-5 w-5 text-green-600 mr-2" />
+                            <h4 className="font-semibold text-green-900">💡 引导思考参考</h4>
+                            <span className="ml-2 text-xs text-green-600">
+                              ({intelligentGuided.questions.length}个问题)
+                            </span>
+                          </div>
+                          {guidedQuestionsExpanded ? (
+                            <ChevronUp className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-green-600" />
+                          )}
+                        </button>
+
+                        {/* 展开内容 */}
+                        {guidedQuestionsExpanded && (
+                          <div className="px-4 pb-4 pt-0 space-y-3">
+                            {intelligentGuided.thinkingPath && (
+                              <p className="text-sm text-green-700 italic border-l-2 border-green-400 pl-3 py-2">
+                                {intelligentGuided.thinkingPath}
+                              </p>
+                            )}
+                            <div className="space-y-2">
+                              {intelligentGuided.questions.map((gq: any, index: number) => (
+                                <div key={index} className="bg-white rounded-md p-3 border border-green-100">
+                                  <div className="flex items-start space-x-2">
+                                    <span className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                                      {index + 1}
+                                    </span>
+                                    <div className="flex-1 space-y-1">
+                                      <p className="text-sm font-medium text-gray-900">{gq.question}</p>
+                                      {gq.purpose && (
+                                        <p className="text-xs text-gray-600">
+                                          <span className="font-medium text-green-700">目的：</span>{gq.purpose}
+                                        </p>
+                                      )}
+                                      {gq.approach && (
+                                        <p className="text-xs text-gray-600">
+                                          <span className="font-medium text-blue-700">方向：</span>{gq.approach}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-green-600 mt-2 text-center">
+                              📝 建议参考这些问题组织你的回答，体现深入的思考过程
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <Textarea
                       placeholder="请在这里输入你的完整回答...&#10;&#10;建议：&#10;1. 结构清晰，分点论述&#10;2. 结合引导问题的思考&#10;3. 说明理由和依据"
