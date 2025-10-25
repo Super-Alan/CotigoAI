@@ -6,11 +6,8 @@ interface PracticePageProps {
   }
 }
 
-// 禁用静态生成，使用动态渲染
-export const dynamic = 'force-dynamic'
-
-// 禁用自动重新验证，防止切换标签页时重新加载
-export const revalidate = false
+// 使用客户端组件，避免服务端重新渲染导致状态丢失
+// 不使用 force-dynamic，让客户端组件完全控制状态
 
 export default function PracticePage({ params }: PracticePageProps) {
   return <PracticeSessionV2 thinkingTypeId={params.id} />

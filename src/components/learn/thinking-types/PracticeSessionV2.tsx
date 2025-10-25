@@ -305,19 +305,31 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState)
-        if (parsed.flowStep) setFlowStep(parsed.flowStep)
-        if (parsed.userAnswer) setUserAnswer(parsed.userAnswer)
-        if (parsed.intelligentGuided) setIntelligentGuided(parsed.intelligentGuided)
-        if (parsed.evaluation) setEvaluation(parsed.evaluation)
-        if (parsed.reflection) setReflection(parsed.reflection)
-        if (parsed.caseAnalysis) setCaseAnalysis(parsed.caseAnalysis)
+
+        // 检查保存的状态是否在5分钟内（避免恢复过期的状态）
+        const isRecent = parsed.timestamp && (Date.now() - parsed.timestamp < 5 * 60 * 1000)
+
+        if (isRecent) {
+          console.log('🔄 恢复练习状态:', parsed)
+          if (parsed.flowStep) setFlowStep(parsed.flowStep)
+          if (parsed.userAnswer) setUserAnswer(parsed.userAnswer)
+          if (parsed.intelligentGuided) setIntelligentGuided(parsed.intelligentGuided)
+          if (parsed.evaluation) setEvaluation(parsed.evaluation)
+          if (parsed.reflection) setReflection(parsed.reflection)
+          if (parsed.caseAnalysis) setCaseAnalysis(parsed.caseAnalysis)
+          if (parsed.currentLevel) setCurrentLevel(parsed.currentLevel)
+          if (parsed.currentQuestion) setCurrentQuestion(parsed.currentQuestion)
+        } else {
+          console.log('⏰ 练习状态已过期，清除缓存')
+          localStorage.removeItem(`practice-session-${thinkingTypeId}`)
+        }
       } catch (e) {
         console.error('Failed to restore session state:', e)
       }
     }
   }, [thinkingTypeId])
 
-  // 保存状态到 localStorage
+  // 保存状态到 localStorage（自动保存，防止切换窗口丢失）
   useEffect(() => {
     if (typeof window === 'undefined' || !currentQuestion) return
 
@@ -328,10 +340,14 @@ export default function PracticeSessionV2({ thinkingTypeId }: PracticeSessionPro
       evaluation,
       reflection,
       caseAnalysis,
+      currentLevel,
+      currentQuestion,
       timestamp: Date.now()
     }
+
+    console.log('💾 自动保存练习状态')
     localStorage.setItem(`practice-session-${thinkingTypeId}`, JSON.stringify(stateToSave))
-  }, [flowStep, userAnswer, intelligentGuided, evaluation, reflection, caseAnalysis, thinkingTypeId, currentQuestion])
+  }, [flowStep, userAnswer, intelligentGuided, evaluation, reflection, caseAnalysis, currentLevel, currentQuestion, thinkingTypeId])
 
   useEffect(() => {
     if (status === 'loading') return
