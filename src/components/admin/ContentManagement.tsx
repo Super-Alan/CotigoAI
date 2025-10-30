@@ -56,6 +56,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ContentBlocksEditor } from './content-editors'
+import { TheoryContentTab } from './TheoryContentTab'
 
 interface Topic {
   id: string
@@ -258,6 +259,45 @@ export function ContentManagement() {
     prerequisites: [] as string[]
   })
   const [isCreatingContent, setIsCreatingContent] = useState(false)
+
+  // Theory Content state (理论知识管理)
+  const [theoryContents, setTheoryContents] = useState<any[]>([])
+  const [theoryContentsLoading, setTheoryContentsLoading] = useState(false)
+  const [theoryContentsPage, setTheoryContentsPage] = useState(1)
+  const [theoryContentsTotalPages, setTheoryContentsTotalPages] = useState(1)
+  const [theoryContentsFilters, setTheoryContentsFilters] = useState({
+    thinkingTypeId: '',
+    level: '',
+    difficulty: '',
+    validationStatus: '',
+    isPublished: '',
+    search: ''
+  })
+  const [expandedTheoryId, setExpandedTheoryId] = useState<string | null>(null)
+  const [createTheoryDialogOpen, setCreateTheoryDialogOpen] = useState(false)
+  const [editingTheory, setEditingTheory] = useState<any | null>(null)
+  const [theoryFormData, setTheoryFormData] = useState({
+    thinkingTypeId: '',
+    level: 1,
+    title: '',
+    subtitle: '',
+    description: '',
+    learningObjectives: [] as string[],
+    conceptsIntro: '',
+    conceptsContent: {},
+    modelsIntro: '',
+    modelsContent: {},
+    demonstrationsIntro: '',
+    demonstrationsContent: {},
+    estimatedTime: 30,
+    difficulty: 'intermediate',
+    tags: [] as string[],
+    keywords: [] as string[],
+    prerequisites: [] as string[],
+    relatedTopics: [] as string[],
+    isPublished: false
+  })
+  const [isSubmittingTheory, setIsSubmittingTheory] = useState(false)
 
   // Fetch thinking types for AI generation
   const fetchThinkingTypes = async () => {
@@ -469,6 +509,42 @@ export function ContentManagement() {
     }
   }, [activeTab, learningContentsPage, learningContentsFilters])
 
+  // Fetch theory contents
+  const fetchTheoryContents = async () => {
+    try {
+      setTheoryContentsLoading(true)
+      const params = new URLSearchParams({
+        page: theoryContentsPage.toString(),
+        limit: '10'
+      })
+      if (theoryContentsFilters.thinkingTypeId) params.append('thinkingTypeId', theoryContentsFilters.thinkingTypeId)
+      if (theoryContentsFilters.level) params.append('level', theoryContentsFilters.level)
+      if (theoryContentsFilters.difficulty) params.append('difficulty', theoryContentsFilters.difficulty)
+      if (theoryContentsFilters.validationStatus) params.append('validationStatus', theoryContentsFilters.validationStatus)
+      if (theoryContentsFilters.isPublished) params.append('isPublished', theoryContentsFilters.isPublished)
+      if (theoryContentsFilters.search) params.append('search', theoryContentsFilters.search)
+
+      const response = await fetch(`/api/admin/content/theory?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch theory contents')
+
+      const data = await response.json()
+      setTheoryContents(data.data.contents)
+      setTheoryContentsTotalPages(data.data.pagination.totalPages)
+    } catch (error) {
+      console.error('Failed to fetch theory contents:', error)
+      toast.error('加载理论内容失败')
+    } finally {
+      setTheoryContentsLoading(false)
+    }
+  }
+
+  // Load theory contents when switching to theory tab
+  useEffect(() => {
+    if (activeTab === 'theory') {
+      fetchTheoryContents()
+    }
+  }, [activeTab, theoryContentsPage, theoryContentsFilters])
+
   // Create learning content handler
   const handleCreateLearningContent = async () => {
     try {
@@ -516,6 +592,144 @@ export function ContentManagement() {
     } finally {
       setIsCreatingContent(false)
     }
+  }
+
+  // Theory content handlers
+  const handleCreateTheory = async () => {
+    try {
+      // Validation
+      if (!theoryFormData.thinkingTypeId || !theoryFormData.title || !theoryFormData.description || theoryFormData.learningObjectives.length === 0) {
+        toast.error('请填写必填字段（思维类型、标题、描述、学习目标）')
+        return
+      }
+
+      setIsSubmittingTheory(true)
+
+      const response = await fetch('/api/admin/content/theory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(theoryFormData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '创建失败')
+      }
+
+      toast.success('理论内容创建成功')
+      setCreateTheoryDialogOpen(false)
+      resetTheoryForm()
+      fetchTheoryContents()
+    } catch (error) {
+      console.error('Failed to create theory content:', error)
+      toast.error(error instanceof Error ? error.message : '创建理论内容失败')
+    } finally {
+      setIsSubmittingTheory(false)
+    }
+  }
+
+  const handleUpdateTheory = async () => {
+    if (!editingTheory) return
+
+    try {
+      setIsSubmittingTheory(true)
+
+      const response = await fetch(`/api/admin/content/theory/${editingTheory.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(theoryFormData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '更新失败')
+      }
+
+      toast.success('理论内容更新成功')
+      setCreateTheoryDialogOpen(false)
+      setEditingTheory(null)
+      resetTheoryForm()
+      fetchTheoryContents()
+    } catch (error) {
+      console.error('Failed to update theory content:', error)
+      toast.error(error instanceof Error ? error.message : '更新理论内容失败')
+    } finally {
+      setIsSubmittingTheory(false)
+    }
+  }
+
+  const handleDeleteTheory = async (id: string) => {
+    if (!confirm('确定要删除这个理论内容吗？此操作不可恢复。')) return
+
+    try {
+      const response = await fetch(`/api/admin/content/theory/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete theory content')
+
+      toast.success('理论内容删除成功')
+      fetchTheoryContents()
+    } catch (error) {
+      console.error('Failed to delete theory content:', error)
+      toast.error('删除理论内容失败')
+    }
+  }
+
+  const resetTheoryForm = () => {
+    setTheoryFormData({
+      thinkingTypeId: '',
+      level: 1,
+      title: '',
+      subtitle: '',
+      description: '',
+      learningObjectives: [],
+      conceptsIntro: '',
+      conceptsContent: {},
+      modelsIntro: '',
+      modelsContent: {},
+      demonstrationsIntro: '',
+      demonstrationsContent: {},
+      estimatedTime: 30,
+      difficulty: 'intermediate',
+      tags: [],
+      keywords: [],
+      prerequisites: [],
+      relatedTopics: [],
+      isPublished: false
+    })
+  }
+
+  const openEditTheoryDialog = (theory: any) => {
+    setEditingTheory(theory)
+    setTheoryFormData({
+      thinkingTypeId: theory.thinkingTypeId,
+      level: theory.level,
+      title: theory.title,
+      subtitle: theory.subtitle || '',
+      description: theory.description,
+      learningObjectives: theory.learningObjectives || [],
+      conceptsIntro: theory.conceptsIntro || '',
+      conceptsContent: theory.conceptsContent || {},
+      modelsIntro: theory.modelsIntro || '',
+      modelsContent: theory.modelsContent || {},
+      demonstrationsIntro: theory.demonstrationsIntro || '',
+      demonstrationsContent: theory.demonstrationsContent || {},
+      estimatedTime: theory.estimatedTime,
+      difficulty: theory.difficulty,
+      tags: theory.tags || [],
+      keywords: theory.keywords || [],
+      prerequisites: theory.prerequisites || [],
+      relatedTopics: theory.relatedTopics || [],
+      isPublished: theory.isPublished
+    })
+    setCreateTheoryDialogOpen(true)
+  }
+
+  const openCreateTheoryDialog = () => {
+    setEditingTheory(null)
+    resetTheoryForm()
+    setCreateTheoryDialogOpen(true)
   }
 
   const handleCreateTopic = async () => {
@@ -666,7 +880,7 @@ export function ContentManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="topics" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             话题管理
@@ -682,6 +896,10 @@ export function ContentManagement() {
           <TabsTrigger value="lessons" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             课程管理
+          </TabsTrigger>
+          <TabsTrigger value="theory" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            理论知识
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -1877,6 +2095,24 @@ export function ContentManagement() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="theory">
+          <TheoryContentTab
+            theoryContents={theoryContents}
+            theoryContentsLoading={theoryContentsLoading}
+            theoryContentsPage={theoryContentsPage}
+            theoryContentsTotalPages={theoryContentsTotalPages}
+            theoryContentsFilters={theoryContentsFilters}
+            expandedTheoryId={expandedTheoryId}
+            thinkingTypes={thinkingTypes}
+            setTheoryContentsFilters={setTheoryContentsFilters}
+            setTheoryContentsPage={setTheoryContentsPage}
+            setExpandedTheoryId={setExpandedTheoryId}
+            openCreateTheoryDialog={openCreateTheoryDialog}
+            openEditTheoryDialog={openEditTheoryDialog}
+            handleDeleteTheory={handleDeleteTheory}
+          />
+        </TabsContent>
+
         <TabsContent value="templates">
           <Card>
             <CardHeader>
@@ -2178,6 +2414,328 @@ export function ContentManagement() {
                 <>
                   <Plus className="h-4 w-4 mr-2" />
                   创建
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Theory Content Create/Edit Dialog */}
+      <Dialog open={createTheoryDialogOpen} onOpenChange={setCreateTheoryDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              {editingTheory ? '编辑理论内容' : '创建理论内容'}
+            </DialogTitle>
+            <DialogDescription>
+              理论体系包含3个核心章节：核心概念、思维模型、实例演示（纯理论，不含练习）
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Thinking Type & Level */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="theory-thinking-type">思维类型 *</Label>
+                <Select
+                  value={theoryFormData.thinkingTypeId}
+                  onValueChange={(value) => setTheoryFormData({ ...theoryFormData, thinkingTypeId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择思维类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {thinkingTypes.map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.icon} {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="theory-level">Level *</Label>
+                <Select
+                  value={theoryFormData.level.toString()}
+                  onValueChange={(value) => setTheoryFormData({ ...theoryFormData, level: parseInt(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(level => (
+                      <SelectItem key={level} value={level.toString()}>
+                        Level {level}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Title & Subtitle */}
+            <div>
+              <Label htmlFor="theory-title">标题 *</Label>
+              <Input
+                id="theory-title"
+                value={theoryFormData.title}
+                onChange={(e) => setTheoryFormData({ ...theoryFormData, title: e.target.value })}
+                placeholder="例如：因果分析的基础理论"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="theory-subtitle">副标题</Label>
+              <Input
+                id="theory-subtitle"
+                value={theoryFormData.subtitle}
+                onChange={(e) => setTheoryFormData({ ...theoryFormData, subtitle: e.target.value })}
+                placeholder="可选的副标题"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label htmlFor="theory-description">描述 *</Label>
+              <Textarea
+                id="theory-description"
+                value={theoryFormData.description}
+                onChange={(e) => setTheoryFormData({ ...theoryFormData, description: e.target.value })}
+                placeholder="详细描述这个理论内容的核心要点..."
+                rows={3}
+              />
+            </div>
+
+            {/* Learning Objectives */}
+            <div>
+              <Label htmlFor="theory-objectives">学习目标 * (每行一个)</Label>
+              <Textarea
+                id="theory-objectives"
+                value={theoryFormData.learningObjectives.join('\n')}
+                onChange={(e) => setTheoryFormData({
+                  ...theoryFormData,
+                  learningObjectives: e.target.value.split('\n').filter(Boolean)
+                })}
+                placeholder="掌握因果分析的基本原理&#10;学会区分相关性与因果性&#10;能够识别混淆因素"
+                rows={3}
+              />
+            </div>
+
+            {/* Concepts Section */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-sm mb-3">1️⃣ 核心概念章节</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="concepts-intro">概念导言</Label>
+                  <Textarea
+                    id="concepts-intro"
+                    value={theoryFormData.conceptsIntro}
+                    onChange={(e) => setTheoryFormData({ ...theoryFormData, conceptsIntro: e.target.value })}
+                    placeholder="简短的章节介绍..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="concepts-content">概念内容 (JSON)</Label>
+                  <Textarea
+                    id="concepts-content"
+                    value={JSON.stringify(theoryFormData.conceptsContent, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value || '{}')
+                        setTheoryFormData({ ...theoryFormData, conceptsContent: parsed })
+                      } catch (err) {}
+                    }}
+                    placeholder='{"sections": [{"type": "text", "content": "..."}]}'
+                    rows={4}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Models Section */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-sm mb-3">2️⃣ 思维模型章节</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="models-intro">模型导言</Label>
+                  <Textarea
+                    id="models-intro"
+                    value={theoryFormData.modelsIntro}
+                    onChange={(e) => setTheoryFormData({ ...theoryFormData, modelsIntro: e.target.value })}
+                    placeholder="简短的章节介绍..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="models-content">模型内容 (JSON)</Label>
+                  <Textarea
+                    id="models-content"
+                    value={JSON.stringify(theoryFormData.modelsContent, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value || '{}')
+                        setTheoryFormData({ ...theoryFormData, modelsContent: parsed })
+                      } catch (err) {}
+                    }}
+                    placeholder='{"sections": [{"type": "text", "content": "..."}]}'
+                    rows={4}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Demonstrations Section */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-sm mb-3">3️⃣ 实例演示章节</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="demos-intro">演示导言</Label>
+                  <Textarea
+                    id="demos-intro"
+                    value={theoryFormData.demonstrationsIntro}
+                    onChange={(e) => setTheoryFormData({ ...theoryFormData, demonstrationsIntro: e.target.value })}
+                    placeholder="简短的章节介绍..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="demos-content">演示内容 (JSON)</Label>
+                  <Textarea
+                    id="demos-content"
+                    value={JSON.stringify(theoryFormData.demonstrationsContent, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value || '{}')
+                        setTheoryFormData({ ...theoryFormData, demonstrationsContent: parsed })
+                      } catch (err) {}
+                    }}
+                    placeholder='{"sections": [{"type": "text", "content": "..."}]}'
+                    rows={4}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="theory-time">预计学习时间（分钟）</Label>
+                <Input
+                  id="theory-time"
+                  type="number"
+                  min="1"
+                  value={theoryFormData.estimatedTime}
+                  onChange={(e) => setTheoryFormData({ ...theoryFormData, estimatedTime: parseInt(e.target.value) || 30 })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="theory-difficulty">难度</Label>
+                <Select
+                  value={theoryFormData.difficulty}
+                  onValueChange={(value) => setTheoryFormData({ ...theoryFormData, difficulty: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">初级</SelectItem>
+                    <SelectItem value="intermediate">中级</SelectItem>
+                    <SelectItem value="advanced">高级</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Tags & Keywords */}
+            <div>
+              <Label htmlFor="theory-tags">标签（逗号分隔）</Label>
+              <Input
+                id="theory-tags"
+                value={theoryFormData.tags.join(', ')}
+                onChange={(e) => setTheoryFormData({
+                  ...theoryFormData,
+                  tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                })}
+                placeholder="例如：基础理论, 必修, 核心知识"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="theory-keywords">关键词（逗号分隔）</Label>
+              <Input
+                id="theory-keywords"
+                value={theoryFormData.keywords.join(', ')}
+                onChange={(e) => setTheoryFormData({
+                  ...theoryFormData,
+                  keywords: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                })}
+                placeholder="例如：因果关系, 混淆因素, 逻辑推理"
+              />
+            </div>
+
+            {/* Published Status */}
+            <div className="flex items-center justify-between p-3 rounded-lg border">
+              <div className="flex-1">
+                <Label htmlFor="theory-published" className="text-sm font-medium">
+                  发布状态
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">
+                  发布后用户可见，未发布仅管理员可见
+                </p>
+              </div>
+              <Switch
+                id="theory-published"
+                checked={theoryFormData.isPublished}
+                onCheckedChange={(checked) => setTheoryFormData({
+                  ...theoryFormData,
+                  isPublished: checked
+                })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateTheoryDialogOpen(false)
+                setEditingTheory(null)
+                resetTheoryForm()
+              }}
+              disabled={isSubmittingTheory}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={editingTheory ? handleUpdateTheory : handleCreateTheory}
+              disabled={isSubmittingTheory || !theoryFormData.thinkingTypeId || !theoryFormData.title || !theoryFormData.description || theoryFormData.learningObjectives.length === 0}
+            >
+              {isSubmittingTheory ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {editingTheory ? '更新中...' : '创建中...'}
+                </>
+              ) : (
+                <>
+                  {editingTheory ? (
+                    <>
+                      <Edit className="h-4 w-4 mr-2" />
+                      更新
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      创建
+                    </>
+                  )}
                 </>
               )}
             </Button>
