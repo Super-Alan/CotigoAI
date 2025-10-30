@@ -146,51 +146,30 @@ export async function generateTopicsWithLLM(
   userPrompt: string
 ): Promise<GeneratedTopic[]> {
   try {
-    // 获取API配置（兼容多个环境变量名）
-    const apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY || process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      throw new Error('API Key not configured. Please set DASHSCOPE_API_KEY, QWEN_API_KEY, or DEEPSEEK_API_KEY');
-    }
-
     console.log('[LLM] 开始生成话题...');
     console.log('[LLM] System Prompt 长度:', systemPrompt.length);
     console.log('[LLM] User Prompt 长度:', userPrompt.length);
 
-    const response = await fetch(
-      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+    // 使用统一的 AI Router 而不是直接调用 API
+    const { aiRouter } = await import('@/lib/ai/router');
+
+    const content = await aiRouter.chat(
+      [
+        {
+          role: 'system',
+          content: systemPrompt,
         },
-        body: JSON.stringify({
-          model: 'qwen-plus',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            {
-              role: 'user',
-              content: userPrompt,
-            },
-          ],
-          temperature: 0.8, // 提高创造性
-          max_tokens: 8000, // 增加 token 限制以支持更长的专业提示词响应
-          response_format: { type: 'json_object' }, // 要求返回 JSON 格式
-        }),
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+      {
+        temperature: 0.8, // 提高创造性
+        maxTokens: 8000, // 增加 token 限制以支持更长的专业提示词响应
+        stream: false
       }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[LLM] API 错误响应:', errorText);
-      throw new Error(`LLM API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    ) as string;
 
     if (!content) {
       throw new Error('No content in LLM response');
