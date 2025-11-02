@@ -19,6 +19,8 @@
     "generate:theory-content": "tsx scripts/generate-theory-content.ts",
     "generate:theory-v3": "tsx scripts/generate-theory-content-v3.ts",
     "generate:practice-questions": "tsx scripts/generate-practice-questions.ts",
+    "generate:concepts": "tsx scripts/generate-concept-content.ts",
+    "generate:concepts:test": "tsx scripts/generate-concept-content.ts --test",
     "check:questions-progress": "tsx scripts/check-questions-progress.ts",
     "publish:theory-content": "tsx scripts/publish-theory-content.ts",
     "test:daily-questions": "tsx scripts/test-daily-questions.ts",

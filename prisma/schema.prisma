@@ -34,6 +34,8 @@ model User {
   settings                                                       UserSettings?
   theoryProgress                                                 TheoryProgress[]
   theoryContentFeedback                                          TheoryContentFeedback[] // V3新增
+  dailyTheoryLearning                                            DailyTheoryLearning[] // 每日概念学习记录
+  theoryLearningStreak                                           TheoryLearningStreak? // 每日概念连续学习
   learningPathStates                                             LearningPathState[]
   userPreferences                                                UserPreferences?
 
@@ -333,6 +335,7 @@ model ThinkingType {
   questions            CriticalThinkingQuestion[]
   levelLearningContent LevelLearningContent[]
   theoryContents       TheoryContent[]
+  conceptContents      ConceptContent[]           // 新增：每日概念内容
 
   @@map("thinking_types")
 }
@@ -695,6 +698,121 @@ model TheoryProgress {
   @@index([status])
   @@index([lastViewedAt])
   @@map("theory_progress")
+}
+
+// 每日概念学习记录表
+// ============================================
+// 每日概念内容系统 (Daily Concept Content)
+// 区别于 TheoryContent（系统化理论课程）
+// ============================================
+
+model ConceptContent {
+  id             String   @id @default(cuid())
+  thinkingTypeId String
+  level          Int      // Level 1-5
+  order          Int      // 同一级别内的顺序
+
+  // 基础信息
+  title          String
+  subtitle       String?
+  description    String   @db.Text
+  learningObjectives Json  // 学习目标数组
+
+  // 3个核心章节（精简版，适合碎片化学习）
+  conceptsIntro      String?  @db.Text // 概念简介
+  conceptsContent    Json     // 核心概念详细内容
+
+  modelsIntro        String?  @db.Text // 模型简介
+  modelsContent      Json     // 思维模型详细内容
+
+  demonstrationsIntro String?  @db.Text // 演示简介
+  demonstrationsContent Json   // 实例演示详细内容
+
+  // 元数据
+  estimatedTime      Int      @default(10) // 预计学习时间（分钟，默认10分钟）
+  difficulty         String   // beginner | intermediate | advanced
+  tags               String[] // 标签数组
+  keywords           String[] // 关键词（用于搜索）
+
+  // 内容质量
+  isPublished        Boolean  @default(true)
+  publishedAt        DateTime @default(now())
+  viewCount          Int      @default(0)
+  completionRate     Float    @default(0)
+  averageRating      Float?
+
+  // AI生成元数据
+  generatedBy        String   @default("ai") // ai | manual
+  generationModel    String?  // deepseek-v3.1 | qwen3-max
+  generatedAt        DateTime @default(now())
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // 关系
+  thinkingType       ThinkingType @relation(fields: [thinkingTypeId], references: [id], onDelete: Cascade)
+  dailyLearning      DailyTheoryLearning[]
+
+  @@unique([thinkingTypeId, level, order]) // 确保同一维度、同一级别的顺序唯一
+  @@index([thinkingTypeId])
+  @@index([level])
+  @@index([difficulty])
+  @@index([isPublished])
+  @@index([viewCount])
+  @@map("concept_content")
+}
+
+model DailyTheoryLearning {
+  id              String   @id @default(cuid())
+  userId          String
+  conceptContentId String  // 改为关联 ConceptContent
+  date            DateTime @db.Date // 学习日期
+
+  // 学习行为
+  startedAt       DateTime?
+  completedAt     DateTime?
+  timeSpent       Int      @default(0) // 实际学习时长（秒）
+
+  // 交互数据
+  sectionsViewed  Json     @default("[]") // 查看的章节 ["concepts", "models", "demonstrations"]
+  isBookmarked    Boolean  @default(false)
+  userRating      Int?     // 1-5星评分
+  feedback        String?  @db.Text
+
+  // 学习效果
+  comprehensionScore Float? // 理解程度自评 0-100
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 关系
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptContent  ConceptContent @relation(fields: [conceptContentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date]) // 每天只能学习一个概念
+  @@index([userId])
+  @@index([date])
+  @@index([completedAt])
+  @@map("daily_theory_learning")
+}
+
+// 每日概念连续学习激励表
+model TheoryLearningStreak {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  totalDays       Int      @default(0)
+  lastLearningDate DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([currentStreak])
+  @@index([lastLearningDate])
+  @@map("theory_learning_streak")
 }
 
 // V3新增：理论内容用户反馈表

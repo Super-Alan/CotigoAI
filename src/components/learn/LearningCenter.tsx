@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import AIQuestionChatbox from './AIQuestionChatbox'
 import TheorySystemContainerV2 from './thinking-types/TheorySystemContainerV2'
+import { DailyTheoryCard } from './daily-theory/DailyTheoryCard'
 import {
   Brain,
   Search,
@@ -329,6 +330,11 @@ export default function LearningCenter() {
 
         {/* Unified Container - Consistent Width */}
         <div className="mb-6 sm:mb-10 max-w-7xl mx-auto">
+          {/* Section: 每日理论概念 */}
+          <div className="mb-6 sm:mb-8">
+            <DailyTheoryCard />
+          </div>
+
           {/* Section: AI 每日一问 */}
           <div className="mb-6 sm:mb-8">
             <AIQuestionChatbox />

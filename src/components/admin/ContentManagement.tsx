@@ -57,6 +57,7 @@ import {
 import { toast } from 'sonner'
 import { ContentBlocksEditor } from './content-editors'
 import { TheoryContentTab } from './TheoryContentTab'
+import ConceptContentTab from './ConceptContentTab'
 
 interface Topic {
   id: string
@@ -880,7 +881,7 @@ export function ContentManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-7 w-full max-w-4xl">
           <TabsTrigger value="topics" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             话题管理
@@ -900,6 +901,10 @@ export function ContentManagement() {
           <TabsTrigger value="theory" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             理论知识
+          </TabsTrigger>
+          <TabsTrigger value="concepts" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            每日概念
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -2111,6 +2116,10 @@ export function ContentManagement() {
             openEditTheoryDialog={openEditTheoryDialog}
             handleDeleteTheory={handleDeleteTheory}
           />
+        </TabsContent>
+
+        <TabsContent value="concepts">
+          <ConceptContentTab />
         </TabsContent>
 
         <TabsContent value="templates">

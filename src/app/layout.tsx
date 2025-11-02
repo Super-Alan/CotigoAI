@@ -1,15 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
 import Providers from '@/components/Providers';
 
-// SF Pro 风格的西文字体 - Inter 是最接近的开源替代
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-});
+// 使用系统字体以避免 Google Fonts 连接问题
+// Inter 字体回退到系统 sans-serif 字体栈
 
 export const metadata: Metadata = {
   title: 'Cogito AI - 批判性思维数智导师',
@@ -29,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

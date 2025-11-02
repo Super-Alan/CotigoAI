@@ -10,7 +10,7 @@ import { Search, Sparkles, BookOpen, Brain, Loader2, ArrowRight, X } from 'lucid
 import Link from 'next/link'
 
 interface SearchResult {
-  type: 'theory' | 'learning_content'
+  type: 'theory' | 'learning_content' | 'concept_content'
   id: string
   thinkingTypeId: string
   thinkingTypeName?: string
@@ -21,6 +21,9 @@ interface SearchResult {
   tags?: string[]
   keywords?: string[]
   matchScore?: number
+  order?: number
+  difficulty?: string
+  estimatedTime?: number
 }
 
 interface EnhancedSearchModalProps {
@@ -221,30 +224,57 @@ export default function EnhancedSearchModal({ open, onOpenChange }: EnhancedSear
                 <span className="font-semibold text-gray-900">找到 {results.length} 条相关内容</span>
               </div>
 
-              {results.map((result) => (
-                <Link
-                  key={result.id}
-                  href={`/learn/critical-thinking/${result.thinkingTypeId}${result.level ? `?level=${result.level}` : ''}`}
-                  onClick={handleClose}
-                >
-                  <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer border-2 hover:border-blue-300">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {result.type === 'theory' && (
-                              <Badge className="bg-purple-100 text-purple-800">理论知识</Badge>
-                            )}
-                            {result.type === 'learning_content' && (
-                              <Badge className="bg-blue-100 text-blue-800">学习内容</Badge>
-                            )}
-                            {result.level && (
-                              <Badge variant="outline">Level {result.level}</Badge>
-                            )}
-                            {result.contentType && (
-                              <Badge variant="secondary">{getContentTypeLabel(result.contentType)}</Badge>
-                            )}
-                          </div>
+              {results.map((result) => {
+                // 根据结果类型生成不同的跳转链接
+                const getResultHref = (result: SearchResult) => {
+                  switch (result.type) {
+                    case 'concept_content':
+                      return `/learn/daily-theory/${result.id}`
+                    case 'theory':
+                    case 'learning_content':
+                    default:
+                      return `/learn/critical-thinking/${result.thinkingTypeId}${result.level ? `?level=${result.level}` : ''}`
+                  }
+                }
+
+                return (
+                  <Link
+                    key={result.id}
+                    href={getResultHref(result)}
+                    onClick={handleClose}
+                  >
+                    <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer border-2 hover:border-blue-300">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {result.type === 'theory' && (
+                                <Badge className="bg-purple-100 text-purple-800">理论知识</Badge>
+                              )}
+                              {result.type === 'learning_content' && (
+                                <Badge className="bg-blue-100 text-blue-800">学习内容</Badge>
+                              )}
+                              {result.type === 'concept_content' && (
+                                <Badge className="bg-green-100 text-green-800">每日概念</Badge>
+                              )}
+                              {result.level && (
+                                <Badge variant="outline">Level {result.level}</Badge>
+                              )}
+                              {result.contentType && (
+                                <Badge variant="secondary">{getContentTypeLabel(result.contentType)}</Badge>
+                              )}
+                              {result.difficulty && (
+                                <Badge variant="secondary">
+                                  {result.difficulty === 'beginner' ? '初级' : 
+                                   result.difficulty === 'intermediate' ? '中级' : '高级'}
+                                </Badge>
+                              )}
+                              {result.estimatedTime && (
+                                <Badge variant="outline" className="text-xs">
+                                  {result.estimatedTime}分钟
+                                </Badge>
+                              )}
+                            </div>
                           <h3 className="text-lg font-bold text-gray-900 mb-2">{result.title}</h3>
                           <p className="text-gray-600 line-clamp-2">{result.description}</p>
                         </div>
@@ -270,10 +300,11 @@ export default function EnhancedSearchModal({ open, onOpenChange }: EnhancedSear
                         </div>
                       )}
                     </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                     </Card>
+                   </Link>
+                 )
+               })}
+             </div>
           )}
 
           {/* AI Response */}
